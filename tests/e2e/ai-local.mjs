@@ -2,7 +2,7 @@
 //   npm run build && node tests/e2e/ai-local.mjs   (ONLY=flux,chat ile seçilebilir; motor dev-models/engine/python yoksa ISIL_PYTHON=<python.exe>)
 // Modeller dev-models/ (ONNX) ve dev-models/engine/models/ (motor) altında olmalı.
 import { _electron as electron } from 'playwright'
-import { mkdtempSync, mkdirSync, copyFileSync, readdirSync, writeFileSync, existsSync, statSync } from 'fs'
+import { mkdtempSync, mkdirSync, copyFileSync, readdirSync, readFileSync, writeFileSync, existsSync, statSync } from 'fs'
 import { tmpdir } from 'os'
 import { join } from 'path'
 
@@ -23,9 +23,10 @@ const ok = (name, pass, info = '') => {
 const out = join(root, 'replica', 'ai-results')
 mkdirSync(out, { recursive: true })
 
+// PACKAGED=1: paketlenmiş uygulamayı (release/win-unpacked) dene
+const target = process.env.PACKAGED ? { executablePath: join(root, 'release', 'win-unpacked', 'Isil.exe') } : { args: ['.'], cwd: root }
 const app = await electron.launch({
-  args: ['.'],
-  cwd: root,
+  ...target,
   env: { ...process.env, ISIL_TEST: '1', ISIL_USERDATA: userData, ...(engine ? { ISIL_ENGINE_DIR: join(dev, 'engine') } : {}) }
 })
 const win = await app.firstWindow()
@@ -33,10 +34,16 @@ const errors = []
 win.on('console', (m) => { if (m.type() === 'error') errors.push(m.text()) })
 win.on('pageerror', (e) => errors.push(String(e)))
 await win.waitForFunction(() => !!window.__isil, null, { timeout: 20000 })
-await win.evaluate(() => window.__isil.open('isil://app/test/portrait.jpg'))
+// test görseli paketlenmiş uygulamada yok: Node'dan blob URL olarak ver
+const photo = readFileSync(join(root, 'src', 'renderer', 'public', 'test', 'portrait.jpg')).toString('base64')
+await win.evaluate((b64) => {
+  const bytes = Uint8Array.from(atob(b64), (c) => c.charCodeAt(0))
+  window.__photo = URL.createObjectURL(new Blob([bytes], { type: 'image/jpeg' }))
+  return window.__isil.open(window.__photo)
+}, photo)
 await win.waitForFunction(async () => { const s = (await window.__isil.mod('session')).session; return s.W > 0 && !!s.lastOut }, null, { timeout: 20000 })
 await win.evaluate(async () => {
-  const bm = await createImageBitmap(await (await fetch('isil://app/test/portrait.jpg')).blob())
+  const bm = await createImageBitmap(await (await fetch(window.__photo)).blob())
   const ops = await window.__isil.mod('ops')
   window.__src = ops.toCanvas(bm, 600, 900)
   window.__png = async (c) => {
