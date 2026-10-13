@@ -9,6 +9,7 @@ const files = {
   'face_landmarker.task': `${base}/face_landmarker/face_landmarker/float16/1/face_landmarker.task`,
   'pose_landmarker_lite.task': `${base}/pose_landmarker/pose_landmarker_lite/float16/1/pose_landmarker_lite.task`,
   'selfie_multiclass_256x256.tflite': `${base}/image_segmenter/selfie_multiclass_256x256/float32/latest/selfie_multiclass_256x256.tflite`,
+  'magic_touch.tflite': `${base}/interactive_segmenter/magic_touch/float32/1/magic_touch.tflite`,
   'interactive_segmentation.task': `${base}/interactive_segmenter_v2/magic_touch/int8/latest/interactive_segmentation.task`
 }
 for (const [name, url] of Object.entries(files)) {

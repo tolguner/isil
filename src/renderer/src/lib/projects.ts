@@ -115,3 +115,15 @@ export async function putImageAsset(bytes: Uint8Array, ext = 'png') {
   if (!p) throw new Error('proje yok')
   return platform.putAsset({ id: p.id, name: `${Date.now().toString(36)}-img.${ext}`, bytes })
 }
+
+/** Editördeyken başka ekrana geçmeden önce açık aracı uygula ve kaydet. */
+export async function leaveEditorTo(screen: import('@/store/editor').Screen) {
+  const st = useEditor.getState()
+  if (st.screen === 'editor') {
+    if (st.tool) st.closeTool(true)
+    await saveNow()
+    useEditor.getState().closeProject()
+  }
+  useEditor.getState().go(screen)
+}
+export const goSettings = () => leaveEditorTo('settings')

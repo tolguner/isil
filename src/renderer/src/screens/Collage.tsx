@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { ImagePlus, Download, Pencil } from 'lucide-react'
+import { ImagePlus, Download, Pencil, X } from 'lucide-react'
 import { useEditor } from '@/store/editor'
 import { useT } from '@/lib/i18n'
 import { platform } from '@/lib/platform'
@@ -177,8 +177,13 @@ export function Collage() {
         <div className="panel-body">
           <Segmented items={[{ id: 'grid', label: tr('Yerleşim', 'Layout') }, { id: 'stitch', label: tr('Birleştir', 'Stitch') }]} value={mode} onChange={setMode} />
           <div className="row wrap" style={{ margin: '8px 0' }}>
-            {imgs.map((im, i) => <img key={im.url} src={im.url} alt="" title={tr('Kaldırmak için tıkla', 'Click to remove')} onClick={() => setImgs(imgs.filter((_, k) => k !== i))} style={{ width: 44, height: 44, objectFit: 'cover', borderRadius: 6, cursor: 'pointer' }} />)}
-            {imgs.length < 9 && <button className="btn sm" onClick={pick}><ImagePlus size={14} /></button>}
+            {imgs.length < 9 && <button className="btn" style={{ width: 44, height: 44, padding: 0 }} onClick={pick} title={tr('Fotoğraf ekle', 'Add photo')} aria-label={tr('Fotoğraf ekle', 'Add photo')}><ImagePlus size={16} /></button>}
+            {imgs.map((im, i) => (
+              <span key={im.url} style={{ position: 'relative' }}>
+                <img src={im.url} alt="" style={{ width: 44, height: 44, objectFit: 'cover', borderRadius: 6, display: 'block' }} />
+                <button className="icon-btn" style={{ position: 'absolute', top: -8, right: -8, width: 20, height: 20, background: 'var(--c-surface-3)', borderRadius: 10 }} onClick={() => setImgs(imgs.filter((_, k) => k !== i))} aria-label={tr('Kaldır', 'Remove')} title={tr('Kaldır', 'Remove')}><X size={12} /></button>
+              </span>
+            ))}
           </div>
           {mode === 'grid' ? (
             <>

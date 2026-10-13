@@ -77,7 +77,7 @@ export function SettingsPage() {
                   )}
                 </div>
               ) : (
-                <button className="btn sm" disabled={!platform.isElectron} onClick={async () => { await ensureModel(m.id); void refresh() }}><Download size={14} /> {tr('İndir', 'Download')}</button>
+                <button className="btn sm" disabled={!platform.isElectron} onClick={async () => { await ensureModel(m.id, false); void refresh() }}><Download size={14} /> {tr('İndir', 'Download')}</button>
               )}
             </div>
           ))}

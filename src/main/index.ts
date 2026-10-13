@@ -1,7 +1,7 @@
 import { app, BrowserWindow, dialog, ipcMain, net, protocol, safeStorage, shell } from 'electron'
 import { createHash, randomUUID } from 'crypto'
-import { promises as fs, createWriteStream, existsSync } from 'fs'
-import { join, extname, basename, normalize, sep } from 'path'
+import { promises as fs, createWriteStream, existsSync, writeFileSync } from 'fs'
+import { join, extname, basename, dirname, normalize, sep } from 'path'
 import { pathToFileURL } from 'url'
 import { DEFAULT_SETTINGS, type Project, type ProjectMeta, type Settings } from '../shared/schema'
 import { registerAiHandlers } from './ai'
@@ -53,10 +53,15 @@ async function writeJSONAtomic(file: string, data: unknown) {
   await fs.rename(tmp, file)
 }
 
-function createWindow() {
+const windowFile = () => join(root(), 'window.json')
+
+async function createWindow() {
+  const st = await readJSON<{ x?: number; y?: number; width: number; height: number; maximized?: boolean }>(windowFile(), { width: 1440, height: 900, maximized: true })
   const win = new BrowserWindow({
-    width: 1440,
-    height: 900,
+    x: st.x,
+    y: st.y,
+    width: st.width,
+    height: st.height,
     minWidth: 1100,
     minHeight: 700,
     backgroundColor: '#0e0f12',
@@ -72,7 +77,18 @@ function createWindow() {
       nodeIntegration: false
     }
   })
-  win.once('ready-to-show', () => win.show())
+  win.once('ready-to-show', () => {
+    if (st.maximized) win.maximize()
+    win.show()
+  })
+  win.on('close', () => {
+    const b = win.getNormalBounds()
+    try {
+      writeFileSync(windowFile(), JSON.stringify({ ...b, maximized: win.isMaximized() }))
+    } catch {
+      /* yoksay */
+    }
+  })
   win.webContents.setWindowOpenHandler(({ url }) => {
     if (url.startsWith('https://')) shell.openExternal(url)
     return { action: 'deny' }
@@ -106,9 +122,9 @@ app.whenReady().then(async () => {
 
   registerIpc()
   registerAiHandlers({ getSecret: readSecret, settings: loadSettings })
-  createWindow()
+  await createWindow()
   app.on('activate', () => {
-    if (BrowserWindow.getAllWindows().length === 0) createWindow()
+    if (BrowserWindow.getAllWindows().length === 0) void createWindow()
   })
 })
 
@@ -130,13 +146,18 @@ async function readSecret(): Promise<string | null> {
 }
 
 function registerIpc() {
+  const stateFile = () => join(root(), 'state.json')
   ipcMain.handle('file:open', async (e, opts: { multi?: boolean } = {}) => {
     const win = BrowserWindow.fromWebContents(e.sender)!
+    const state = await readJSON<{ lastDir?: string }>(stateFile(), {})
+    const defaultPath = state.lastDir && existsSync(state.lastDir) ? state.lastDir : app.getPath('pictures')
     const r = await dialog.showOpenDialog(win, {
+      defaultPath,
       properties: opts.multi ? ['openFile', 'multiSelections'] : ['openFile'],
       filters: [{ name: 'Görseller', extensions: IMAGE_EXT }]
     })
     if (r.canceled) return []
+    if (r.filePaths[0]) await writeJSONAtomic(stateFile(), { ...state, lastDir: dirname(r.filePaths[0]) })
     return Promise.all(r.filePaths.map(async (p) => ({ name: basename(p), bytes: new Uint8Array(await fs.readFile(p)) })))
   })
 
@@ -153,7 +174,8 @@ function registerIpc() {
       const p = await readJSON<Project | null>(join(projectsDir(), id, 'project.json'), null)
       if (!p) continue
       const { doc: _d, sourceFile: _s, version: _v, ...meta } = p
-      metas.push({ ...meta, thumb: `isil://project/${id}/thumb.jpg?v=${encodeURIComponent(p.updatedAt)}` })
+      const hasThumb = existsSync(join(projectsDir(), id, 'thumb.jpg'))
+      metas.push({ ...meta, thumb: hasThumb ? `isil://project/${id}/thumb.jpg?v=${encodeURIComponent(p.updatedAt)}` : null })
     }
     return metas.sort((a, b) => b.updatedAt.localeCompare(a.updatedAt))
   })

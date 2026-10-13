@@ -7,6 +7,7 @@ import { useT, useName } from '@/lib/i18n'
 import { openExisting, startEditing } from '@/lib/projects'
 import { confirmDialog } from '@/components/ui'
 import { MOODS, filterById } from '@/engine/presets'
+import { cutRequest } from '@/tools/cutout'
 
 async function pickAndEdit(tab?: TabId, tool?: string, after?: () => void) {
   const files = await platform.openFiles(false)
@@ -47,7 +48,7 @@ export function Home() {
   const quick: { icon: React.ReactNode; title: string; sub: string; run: () => void }[] = [
     { icon: <ImagePlus size={20} />, title: tr('Fotoğraf düzenle', 'Edit a photo'), sub: tr('Tüm araçlar', 'All tools'), run: () => pickAndEdit() },
     { icon: <Wand2 size={20} />, title: tr('Yapay zekâ editörü', 'AI editor'), sub: tr('Yazarak düzenle', 'Edit by typing'), run: () => pickAndEdit('ai') },
-    { icon: <Scissors size={20} />, title: tr('Arka planı kaldır', 'Remove background'), sub: tr('Tek tıkla kes', 'One-click cutout'), run: () => pickAndEdit('cutout', 'cutout') },
+    { icon: <Scissors size={20} />, title: tr('Arka planı kaldır', 'Remove background'), sub: tr('Tek tıkla kes', 'One-click cutout'), run: () => { cutRequest.auto = true; void pickAndEdit('cutout', 'cutout') } },
     { icon: <Eraser size={20} />, title: tr('Sihirli silgi', 'Magic eraser'), sub: tr('İstenmeyeni sil', 'Remove objects'), run: () => pickAndEdit('cleanup', 'erase') },
     { icon: <LayoutGrid size={20} />, title: tr('Kolaj', 'Collage'), sub: tr('2–9 fotoğraf', '2–9 photos'), run: () => go('collage') },
     { icon: <Layers size={20} />, title: tr('Toplu düzenle', 'Batch edit'), sub: tr('Aynı ayar, çok foto', 'One look, many photos'), run: () => go('batch') },

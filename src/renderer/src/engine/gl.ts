@@ -106,8 +106,11 @@ export function createTexture(
   if (src) {
     gl.pixelStorei(gl.UNPACK_PREMULTIPLY_ALPHA_WEBGL, false)
     gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA8, gl.RGBA, gl.UNSIGNED_BYTE, src)
-    const s = src as { width: number; height: number }
-    return { tex, w: s.width, h: s.height }
+    // video/img öğelerinde width özelliği 0 olabilir; gerçek piksel boyutunu kullan
+    const s = src as { width: number; height: number; videoWidth?: number; videoHeight?: number; naturalWidth?: number; naturalHeight?: number }
+    const w = s.videoWidth || s.naturalWidth || s.width
+    const h = s.videoHeight || s.naturalHeight || s.height
+    return { tex, w, h }
   }
   gl.texImage2D(
     gl.TEXTURE_2D, 0, opts.internal ?? gl.RGBA8, w!, h!, 0,

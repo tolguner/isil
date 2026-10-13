@@ -15,6 +15,7 @@ import { BrushOverlay, type BrushState } from './brush'
 import { busy } from './raster'
 
 // Düzenlenebilir gri maske (önizleme boyutunda): beyaz = konu
+export const cutRequest = { auto: false }
 const cut = { mask: null as HTMLCanvasElement | null, v: 0, brush: { size: 0.04, hardness: 0.6, erase: false } as BrushState, mode: 'brush' as 'brush' | 'tap', changed: false }
 const L = new Set<() => void>()
 const emit = () => {
@@ -105,6 +106,11 @@ function CutoutPanel() {
       taps.length = 0
       if (session.maskBitmap) setMaskFrom(session.maskBitmap)
       cut.changed = false
+      if (cutRequest.auto) {
+        cutRequest.auto = false
+        for (let i = 0; i < 50 && !session.preview; i++) await new Promise((r) => setTimeout(r, 100))
+        await autoCut(false)
+      }
     })()
     return () => {
       if (session.maskBitmap) session.renderer?.setSubjectMask(session.maskBitmap)

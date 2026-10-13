@@ -47,12 +47,12 @@ export async function modelReady(id: string) {
 }
 
 /** Model yoksa (kullanıcı onayıyla) indir. */
-export async function ensureModel(id: string): Promise<boolean> {
+export async function ensureModel(id: string, ask = true): Promise<boolean> {
   if (await modelReady(id)) return true
   const m = modelById(id)
   const mb = Math.round((m.size + (m.extra?.size ?? 0)) / 1e6)
   const { confirmDialog } = await import('@/components/ui')
-  const ok = await confirmDialog({
+  const ok = !ask || await confirmDialog({
     title: tNow('Model indirilsin mi?', 'Download the model?'),
     text: tNow(
       `${m.task[0]} için "${m.name[0]}" modeli gerekiyor (${mb} MB, ${m.license}). Bir kez indirilir, sonra internetsiz çalışır.`,

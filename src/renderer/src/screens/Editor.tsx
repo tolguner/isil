@@ -134,6 +134,7 @@ function Stage({ toolDef }: { toolDef: ToolDef | null }) {
   const again = useRef(false)
   const toolRef = useRef(toolDef)
   toolRef.current = toolDef
+  const firstSaved = useRef(false)
 
   const draw = useCallback(async () => {
     if (drawing.current) {
@@ -149,6 +150,10 @@ function Stage({ toolDef }: { toolDef: ToolDef | null }) {
       const vd = toolRef.current?.viewDoc ? toolRef.current.viewDoc(st.doc) : st.doc
       const o = session.draw(vd, { compare: st.compare, skipGeometry: src, skipBackground: src })
       if (o) {
+        if (!firstSaved.current) {
+          firstSaved.current = true
+          scheduleSave()
+        }
         setOut((p) => (p.w === o.w && p.h === o.h ? p : { w: o.w, h: o.h }))
         const ov = ovRef.current
         if (ov) {

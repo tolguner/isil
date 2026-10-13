@@ -7,6 +7,7 @@ import { session } from '@/engine/session'
 import { animeStyle, toCanvas } from '@/ai/ops'
 import { ensureCloud, geminiAvailable, geminiEdit } from '@/ai/gemini'
 import { platform } from '@/lib/platform'
+import { goSettings } from '@/lib/projects'
 import type { ToolDef, View } from './types'
 import { WorkFooter, WorkOverlayImage, busy, setWorkResult, useWork, useWorkLifecycle, work } from './raster'
 
@@ -18,18 +19,19 @@ function useGemini() {
   return ok
 }
 
-function KeyCard() {
+function KeyCard({ local = false }: { local?: boolean }) {
   const tr = useT()
   return (
     <div className="card">
       <b><KeyRound size={14} /> {tr('Gemini anahtarı gerekli', 'Gemini key required')}</b>
       <p className="note">
         {tr(
-          'Serbest yazıyla düzenleme bulut modeli gerektirir. Ayarlar’dan kendi Google Gemini API anahtarını eklersen bu araçlar açılır; ücretsiz kotan varsa ücret ödemezsin. Yerel çalışan alternatifler aşağıda.',
-          'Free-form editing needs a cloud model. Add your own Google Gemini API key in Settings to unlock these tools; with a free quota it costs nothing. Local alternatives are below.'
+          'Bu araçlar bulut modeli gerektirir. Ayarlar’dan kendi Google Gemini API anahtarını eklersen açılır; ücretsiz kotan varsa ücret ödemezsin.',
+          'These tools need a cloud model. Add your own Google Gemini API key in Settings to unlock them; with a free quota it costs nothing.'
         )}
+        {local && tr(' ⚡ işaretli stiller anahtarsız da çalışır.', ' Styles marked ⚡ work without a key.')}
       </p>
-      <button className="btn sm primary" onClick={() => useEditor.getState().go('settings')}>{tr('Ayarlara git', 'Open Settings')}</button>
+      <button className="btn sm primary" onClick={() => void goSettings()}>{tr('Ayarlara git', 'Open Settings')}</button>
     </div>
   )
 }
@@ -161,7 +163,7 @@ function AiFxPanel() {
   }
   return (
     <>
-      {ok === false && <KeyCard />}
+      {ok === false && <KeyCard local />}
       <Tabs items={STYLE_CATS.map(([id, a, b]) => ({ id, label: tr(a, b) }))} value={cat} onChange={setCat} />
       <div className="presets">
         {STYLES.filter((s) => s.cat === cat).map((s) => (

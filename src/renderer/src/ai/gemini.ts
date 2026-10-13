@@ -17,7 +17,7 @@ export async function ensureCloud(): Promise<boolean> {
   if (!platform.isElectron || !(await platform.hasSecret())) {
     st.toast('info', tNow('Bu araç için Ayarlar’dan kendi Gemini API anahtarını ekle.', 'Add your own Gemini API key in Settings to use this tool.'), {
       label: tNow('Ayarlar', 'Settings'),
-      run: () => useEditor.getState().go('settings')
+      run: () => void import('@/lib/projects').then((m) => m.goSettings())
     })
     return false
   }
