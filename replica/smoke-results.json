@@ -1,0 +1,67 @@
+{
+  "at": "2026-10-13T15:34:02.988Z",
+  "gpu": {
+    "webgpu": true,
+    "vendor": "nvidia",
+    "arch": "ampere",
+    "coi": true,
+    "storageBuffers": 16
+  },
+  "results": [
+    {
+      "name": "Ana sayfa açıldı",
+      "pass": true,
+      "info": ""
+    },
+    {
+      "name": "GPU bilgisi",
+      "pass": true,
+      "info": "{\"webgpu\":true,\"vendor\":\"nvidia\",\"arch\":\"ampere\",\"coi\":true,\"storageBuffers\":16}"
+    },
+    {
+      "name": "Editör fotoğrafı çizdi",
+      "pass": true,
+      "info": ""
+    },
+    {
+      "name": "Ayar + filtre + efekt",
+      "pass": true,
+      "info": ""
+    },
+    {
+      "name": "Yüz algılama + rötuş",
+      "pass": true,
+      "info": "yüz=1"
+    },
+    {
+      "name": "Arka plan kesme (ISNet)",
+      "pass": true,
+      "info": "{\"ok\":true,\"firstMs\":2930,\"secondMs\":360,\"provider\":\"webgpu\"}"
+    },
+    {
+      "name": "Nesne silme (LaMa)",
+      "pass": true,
+      "info": "{\"ok\":true,\"ms\":14221,\"provider\":\"webgpu\"}"
+    },
+    {
+      "name": "Kalite artırma 4× (Real-ESRGAN)",
+      "pass": true,
+      "info": "{\"ok\":true,\"w\":1024,\"ms\":790}"
+    },
+    {
+      "name": "Tam çözünürlükte dışa aktarma",
+      "pass": true,
+      "info": "{\"size\":698141,\"w\":1400,\"h\":2098,\"type\":\"image/jpeg\"}"
+    },
+    {
+      "name": "Proje otomatik kaydedildi",
+      "pass": true,
+      "info": "kart=1"
+    },
+    {
+      "name": "Konsolda hata yok",
+      "pass": true,
+      "info": ""
+    }
+  ]
+}

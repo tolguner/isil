@@ -1,0 +1,14 @@
+node_modules/
+out/
+dist/
+release/
+*.log
+resources/models/*.onnx
+resources/models/*.task
+resources/models/*.tflite
+replica/screens/
+src/renderer/public/models/
+src/renderer/public/mediapipe/
+src/renderer/public/ort/
+src/renderer/public/test/
+dev-models/

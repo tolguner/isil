@@ -1,0 +1,465 @@
+// Yüz: landmark → bükme işlemleri, bölge maskeleri, rötuş uniform'ları.
+import type { FaceEdit } from '@shared/schema'
+import type { Pt } from '@/ai/vision'
+import { emptyFaceUniforms, type FaceUniforms } from './renderer'
+
+export const OVAL = [10, 338, 297, 332, 284, 251, 389, 356, 454, 323, 361, 288, 397, 365, 379, 378, 400, 377, 152, 148, 176, 149, 150, 136, 172, 58, 132, 93, 234, 127, 162, 21, 54, 103, 67, 109]
+export const LIPS_OUT = [61, 146, 91, 181, 84, 17, 314, 405, 321, 375, 291, 409, 270, 269, 267, 0, 37, 39, 40, 185]
+export const LIPS_IN = [78, 95, 88, 178, 87, 14, 317, 402, 318, 324, 308, 415, 310, 311, 312, 13, 82, 81, 80, 191]
+export const EYE_R = [33, 7, 163, 144, 145, 153, 154, 155, 133, 173, 157, 158, 159, 160, 161, 246] // görüntüde solda
+export const EYE_L = [263, 249, 390, 373, 374, 380, 381, 382, 362, 398, 384, 385, 386, 387, 388, 466] // görüntüde sağda
+export const BROW_R = [46, 53, 52, 65, 55, 107, 66, 105, 63, 70]
+export const BROW_L = [276, 283, 282, 295, 285, 336, 296, 334, 293, 300]
+const LOWER_LID_R = [33, 7, 163, 144, 145, 153, 154, 155, 133]
+const LOWER_LID_L = [263, 249, 390, 373, 374, 380, 381, 382, 362]
+const UPPER_LID_R = [33, 246, 161, 160, 159, 158, 157, 173, 133]
+const UPPER_LID_L = [263, 466, 388, 387, 386, 385, 384, 398, 362]
+
+type V = { x: number; y: number }
+const sub = (a: V, b: V): V => ({ x: a.x - b.x, y: a.y - b.y })
+const add = (a: V, b: V): V => ({ x: a.x + b.x, y: a.y + b.y })
+const mul = (a: V, k: number): V => ({ x: a.x * k, y: a.y * k })
+const len = (a: V) => Math.hypot(a.x, a.y)
+const mean = (pts: V[]): V => mul(pts.reduce(add, { x: 0, y: 0 }), 1 / pts.length)
+
+/** Piksel uzayında yüz geometrisi. */
+export class FaceGeo {
+  P: V[]
+  constructor(lm: Pt[], public W: number, public H: number) {
+    this.P = lm.map((p) => ({ x: p.x * W, y: p.y * H }))
+  }
+  p(i: number) { return this.P[i] }
+  m(idx: number[]) { return mean(idx.map((i) => this.P[i])) }
+  get center() { return mean([this.P[10], this.P[152], this.P[234], this.P[454]]) }
+  get width() { return len(sub(this.P[234], this.P[454])) }
+  get height() { return len(sub(this.P[10], this.P[152])) }
+  /** Yüzün aşağı yönü (alından çeneye birim vektör). */
+  get down() { const d = sub(this.P[152], this.P[10]); return mul(d, 1 / Math.max(len(d), 1)) }
+  get right() { const d = this.down; return { x: -d.y, y: d.x } } // görüntü sağı (yaklaşık)
+  bbox(pad = 0.15) {
+    const xs = OVAL.map((i) => this.P[i].x)
+    const ys = OVAL.map((i) => this.P[i].y)
+    const x0 = Math.min(...xs), x1 = Math.max(...xs), y0 = Math.min(...ys), y1 = Math.max(...ys)
+    const pw = (x1 - x0) * pad, ph = (y1 - y0) * pad
+    return { x: x0 - pw, y: y0 - ph, w: x1 - x0 + 2 * pw, h: y1 - y0 + 2 * ph }
+  }
+}
+
+// ---- Bükme işlemleri ----
+export type WarpOp =
+  | { t: 'move'; c: V; r: number; v: V }
+  | { t: 'scale'; c: V; r: number; sx: number; sy: number }
+
+const falloff = (d: number, r: number) => {
+  if (d >= r) return 0
+  const t = d / r
+  const k = 1 - t * t
+  return k * k
+}
+
+/** Ters eşleme: çıktıdaki p, kaynakta p + offset noktasından örneklenir. */
+export function opOffset(op: WarpOp, p: V): V {
+  const d = sub(p, op.c)
+  const w = falloff(len(d), op.r)
+  if (w === 0) return { x: 0, y: 0 }
+  if (op.t === 'move') return mul(op.v, -w)
+  const sx = 1 + op.sx * w
+  const sy = 1 + op.sy * w
+  return { x: d.x / sx - d.x, y: d.y / sy - d.y }
+}
+
+type Side = FaceEdit['side']
+function sideOk(side: Side, c: V, fc: V) {
+  if (side === 'both') return true
+  return side === 'left' ? c.x <= fc.x : c.x >= fc.x
+}
+
+/** Kaydırıcı → bükme işlemleri. v: -1..1. */
+export function faceOps(g: FaceGeo, shape: Record<string, number>, side: Side): WarpOp[] {
+  const ops: WarpOp[] = []
+  const F = g.width
+  const Hh = g.height
+  const fc = g.center
+  const dn = g.down
+  const rt = g.right
+  const pair = (iR: number, iL: number, f: (c: V, sign: number) => WarpOp | null) => {
+    for (const [i, sign] of [[iR, -1], [iL, 1]] as const) {
+      const c = g.p(i)
+      if (!sideOk(side, c, fc)) continue
+      const op = f(c, sign)
+      if (op) ops.push(op)
+    }
+  }
+  const inward = (c: V, amt: number) => mul(sub(fc, c), amt / Math.max(len(sub(fc, c)), 1))
+  const eyeR = g.m(EYE_R), eyeL = g.m(EYE_L)
+  const ew = len(sub(g.p(33), g.p(133)))
+  const nw = len(sub(g.p(129), g.p(358)))
+  const mouth = g.m([13, 14, 61, 291])
+  const mw = len(sub(g.p(61), g.p(291)))
+  const browR = g.m(BROW_R), browL = g.m(BROW_L)
+  const bw = len(sub(g.p(70), g.p(107)))
+
+  for (const [key, raw] of Object.entries(shape)) {
+    const v = raw / 100
+    if (!v) continue
+    switch (key) {
+      case 'resize': ops.push({ t: 'scale', c: fc, r: Hh * 0.85, sx: 0.12 * v, sy: 0.12 * v }); break
+      case 'smallFace': ops.push({ t: 'scale', c: add(fc, mul(dn, Hh * 0.1)), r: Hh * 0.8, sx: -0.12 * v, sy: -0.08 * v }); break
+      case 'slim':
+        for (const [a, b] of [[132, 361], [58, 288], [172, 397], [136, 365]]) pair(a, b, (c) => ({ t: 'move', c, r: 0.3 * F, v: inward(c, 0.055 * F * v) }))
+        break
+      case 'width': pair(234, 454, (c) => ({ t: 'move', c, r: 0.38 * F, v: inward(c, -0.05 * F * v) })); break
+      case 'temple': pair(127, 356, (c) => ({ t: 'move', c, r: 0.26 * F, v: inward(c, -0.04 * F * v) })); break
+      case 'cheekbone': pair(234, 454, (c) => ({ t: 'move', c: add(c, mul(dn, -0.03 * Hh)), r: 0.22 * F, v: inward(c, 0.045 * F * v) })); break
+      case 'jaw': pair(58, 288, (c) => ({ t: 'move', c, r: 0.26 * F, v: inward(c, 0.06 * F * v) })); break
+      case 'chin': ops.push({ t: 'move', c: g.p(152), r: 0.3 * F, v: mul(dn, 0.06 * Hh * v) }); break
+      case 'vshape':
+        for (const [a, b] of [[172, 397], [150, 379], [136, 365]]) pair(a, b, (c) => ({ t: 'move', c, r: 0.24 * F, v: add(inward(c, 0.05 * F * v), mul(dn, -0.015 * Hh * v)) }))
+        break
+      case 'hairline': case 'upperFace': ops.push({ t: 'move', c: g.p(10), r: 0.45 * F, v: mul(dn, -0.05 * Hh * v) }); break
+      case 'length': case 'lowerFace':
+        ops.push({ t: 'move', c: g.p(152), r: 0.4 * F, v: mul(dn, 0.04 * Hh * v) })
+        if (key === 'length') ops.push({ t: 'move', c: g.p(10), r: 0.4 * F, v: mul(dn, -0.03 * Hh * v) })
+        break
+      case 'midFace': ops.push({ t: 'move', c: g.p(2), r: 0.45 * F, v: mul(dn, 0.035 * Hh * v) }); break
+      case 'pointed':
+        ops.push({ t: 'move', c: g.p(152), r: 0.25 * F, v: mul(dn, 0.035 * Hh * v) })
+        pair(148, 377, (c) => ({ t: 'move', c, r: 0.18 * F, v: inward(c, 0.04 * F * v) }))
+        break
+      case 'eyeSize': for (const [c, ok] of [[eyeR, sideOk(side, eyeR, fc)], [eyeL, sideOk(side, eyeL, fc)]] as const) if (ok) ops.push({ t: 'scale', c, r: 1.15 * ew, sx: 0.28 * v, sy: 0.28 * v }); break
+      case 'eyeHeight': for (const c of [eyeR, eyeL]) if (sideOk(side, c, fc)) ops.push({ t: 'scale', c, r: 1.1 * ew, sx: 0, sy: 0.3 * v }); break
+      case 'eyeWidth': for (const c of [eyeR, eyeL]) if (sideOk(side, c, fc)) ops.push({ t: 'scale', c, r: 1.1 * ew, sx: 0.25 * v, sy: 0 }); break
+      case 'eyePos': for (const c of [eyeR, eyeL]) if (sideOk(side, c, fc)) ops.push({ t: 'move', c, r: 1.2 * ew, v: mul(dn, -0.12 * ew * v) }); break
+      case 'eyeDist': case 'eyeSpacing':
+        if (sideOk(side, eyeR, fc)) ops.push({ t: 'move', c: eyeR, r: 1.2 * ew, v: mul(rt, -0.1 * ew * v) })
+        if (sideOk(side, eyeL, fc)) ops.push({ t: 'move', c: eyeL, r: 1.2 * ew, v: mul(rt, 0.1 * ew * v) })
+        break
+      case 'eyeTilt': pair(33, 263, (c) => ({ t: 'move', c, r: 0.55 * ew, v: mul(dn, -0.09 * ew * v) })); break
+      case 'eyeLower': pair(145, 374, (c) => ({ t: 'move', c, r: 0.5 * ew, v: mul(dn, 0.07 * ew * v) })); break
+      case 'iris': pair(468, 473, (c) => ({ t: 'scale', c, r: 0.38 * ew, sx: 0.18 * v, sy: 0.18 * v })); break
+      case 'eyeInner': pair(133, 362, (c) => ({ t: 'move', c, r: 0.45 * ew, v: inward(c, 0.06 * ew * v) })); break
+      case 'eyeOuter': pair(33, 263, (c) => ({ t: 'move', c, r: 0.45 * ew, v: inward(c, -0.07 * ew * v) })); break
+      case 'noseSize': ops.push({ t: 'scale', c: g.m([1, 4, 5, 195]), r: 1.15 * nw, sx: 0.16 * v, sy: 0.16 * v }); break
+      case 'noseWidth':
+        for (const [a, b] of [[129, 358], [98, 327]]) pair(a, b, (c) => ({ t: 'move', c, r: 0.45 * nw, v: inward(c, -0.1 * nw * v) }))
+        break
+      case 'noseBridge': ops.push({ t: 'scale', c: g.m([6, 197, 195]), r: 0.9 * nw, sx: 0.22 * v, sy: 0 }); break
+      case 'noseLift': ops.push({ t: 'move', c: g.p(1), r: 0.55 * nw, v: mul(dn, -0.08 * nw * v) }); break
+      case 'noseTip': ops.push({ t: 'scale', c: g.p(1), r: 0.5 * nw, sx: 0.2 * v, sy: 0.2 * v }); break
+      case 'noseRoot': ops.push({ t: 'scale', c: g.p(168), r: 0.6 * nw, sx: 0.25 * v, sy: 0 }); break
+      case 'noseLength': ops.push({ t: 'move', c: g.p(2), r: 0.7 * nw, v: mul(dn, 0.07 * nw * v) }); break
+      case 'browPos': for (const c of [browR, browL]) if (sideOk(side, c, fc)) ops.push({ t: 'move', c, r: 0.85 * bw, v: mul(dn, -0.12 * bw * v) }); break
+      case 'browTilt': pair(46, 276, (c) => ({ t: 'move', c, r: 0.45 * bw, v: mul(dn, -0.1 * bw * v) })); break
+      case 'browDist': pair(107, 336, (c) => ({ t: 'move', c, r: 0.45 * bw, v: inward(c, -0.08 * bw * v) })); break
+      case 'browThick': for (const c of [browR, browL]) if (sideOk(side, c, fc)) ops.push({ t: 'scale', c, r: 0.7 * bw, sx: 0, sy: 0.3 * v }); break
+      case 'browLength': pair(46, 276, (c) => ({ t: 'move', c, r: 0.4 * bw, v: inward(c, -0.08 * bw * v) })); break
+      case 'browHigh': pair(105, 334, (c) => ({ t: 'move', c, r: 0.4 * bw, v: mul(dn, -0.08 * bw * v) })); break
+      case 'lipSize': ops.push({ t: 'scale', c: mouth, r: 0.8 * mw, sx: 0.2 * v, sy: 0.2 * v }); break
+      case 'lipWidth': ops.push({ t: 'scale', c: mouth, r: 0.85 * mw, sx: 0.2 * v, sy: 0 }); break
+      case 'lipPos': ops.push({ t: 'move', c: mouth, r: 0.9 * mw, v: mul(dn, -0.08 * mw * v) }); break
+      case 'smile': pair(61, 291, (c) => ({ t: 'move', c, r: 0.28 * mw, v: add(mul(dn, -0.07 * mw * v), inward(c, -0.02 * mw * v)) })); break
+      case 'upperLip': ops.push({ t: 'move', c: g.p(0), r: 0.42 * mw, v: mul(dn, -0.06 * mw * v) }); break
+      case 'lowerLip': ops.push({ t: 'move', c: g.p(17), r: 0.42 * mw, v: mul(dn, 0.06 * mw * v) }); break
+      case 'plump': ops.push({ t: 'scale', c: mouth, r: 0.65 * mw, sx: 0.04 * v, sy: 0.2 * v }); break
+      case 'mShape': pair(37, 267, (c) => ({ t: 'move', c, r: 0.2 * mw, v: mul(dn, -0.05 * mw * v) })); break
+      case 'lipAngle': pair(61, 291, (c, s) => ({ t: 'move', c, r: 0.3 * mw, v: mul(dn, -0.05 * mw * v * s) })); break
+    }
+  }
+  return ops
+}
+
+/** Bükme alanı: kaynak uv cinsinden örnekleme ofseti, gw×gh ızgara (RG). */
+export function buildField(ops: WarpOp[], W: number, H: number, extra?: Float32Array | null, gw = 0, gh = 0): { field: Float32Array; gw: number; gh: number } | null {
+  if (!ops.length && !extra) return null
+  if (!gw) {
+    gw = 192
+    gh = Math.max(16, Math.round((192 * H) / W))
+  }
+  const field = extra ? Float32Array.from(extra) : new Float32Array(gw * gh * 2)
+  if (!ops.length) return { field, gw, gh }
+  // işlemleri sınırlayıcı kutuya göre hızlıca ele
+  for (const op of ops) {
+    const x0 = Math.max(0, Math.floor(((op.c.x - op.r) / W) * gw - 1))
+    const x1 = Math.min(gw - 1, Math.ceil(((op.c.x + op.r) / W) * gw + 1))
+    const y0 = Math.max(0, Math.floor(((op.c.y - op.r) / H) * gh - 1))
+    const y1 = Math.min(gh - 1, Math.ceil(((op.c.y + op.r) / H) * gh + 1))
+    for (let j = y0; j <= y1; j++) {
+      for (let i = x0; i <= x1; i++) {
+        const k = (j * gw + i) * 2
+        const p = { x: ((i + 0.5) / gw) * W + field[k] * W, y: ((j + 0.5) / gh) * H + field[k + 1] * H }
+        const o = opOffset(op, p)
+        field[k] += o.x / W
+        field[k + 1] += o.y / H
+      }
+    }
+  }
+  return { field, gw, gh }
+}
+
+// ---- Maskeler ----
+function poly(ctx: CanvasRenderingContext2D, g: FaceGeo, idx: number[], s: number) {
+  ctx.beginPath()
+  idx.forEach((i, n) => {
+    const p = g.p(i)
+    if (n === 0) ctx.moveTo(p.x * s, p.y * s)
+    else ctx.lineTo(p.x * s, p.y * s)
+  })
+  ctx.closePath()
+}
+function polyPts(ctx: CanvasRenderingContext2D, pts: V[], s: number) {
+  ctx.beginPath()
+  pts.forEach((p, n) => (n ? ctx.lineTo(p.x * s, p.y * s) : ctx.moveTo(p.x * s, p.y * s)))
+  ctx.closePath()
+}
+
+function layer(w: number, h: number) {
+  const c = document.createElement('canvas')
+  c.width = w
+  c.height = h
+  const ctx = c.getContext('2d', { willReadFrequently: true })!
+  ctx.fillStyle = '#fff'
+  ctx.strokeStyle = '#fff'
+  ctx.lineJoin = 'round'
+  return { c, ctx }
+}
+
+export interface MaskSet { a: HTMLCanvasElement; b: HTMLCanvasElement; c: HTMLCanvasElement }
+
+/**
+ * Kaynak uzayında bölge maskeleri. faceSkin/hair: segmentasyon (aynı boyutta float, isteğe bağlı).
+ */
+export function buildMasks(
+  faces: FaceGeo[], W: number, H: number,
+  seg: { w: number; h: number; faceSkin: Float32Array; hair: Float32Array } | null,
+  needHair: boolean
+): MaskSet {
+  const s = Math.min(1, 1024 / Math.max(W, H))
+  const w = Math.max(1, Math.round(W * s))
+  const h = Math.max(1, Math.round(H * s))
+  const L = {
+    skin: layer(w, h), under: layer(w, h), teeth: layer(w, h), eyes: layer(w, h),
+    lips: layer(w, h), cheeks: layer(w, h), lids: layer(w, h), brows: layer(w, h),
+    id: layer(w, h), contour: layer(w, h), high: layer(w, h)
+  }
+  faces.forEach((g, fi) => {
+    const F = g.width * s
+    const blur = (ctx: CanvasRenderingContext2D, k: number) => (ctx.filter = `blur(${Math.max(1, F * k)}px)`)
+    // kimlik haritası (yüz + boyun payı)
+    const bb = g.bbox(0.18)
+    const v = Math.round(((fi + 1) / 8) * 255)
+    L.id.ctx.fillStyle = `rgb(${v},${v},${v})`
+    L.id.ctx.fillRect(bb.x * s, bb.y * s, bb.w * s, bb.h * s * 1.15)
+    // cilt: oval − gözler, kaşlar, dudaklar
+    const sk = L.skin.ctx
+    blur(sk, 0.025)
+    poly(sk, g, OVAL, s)
+    sk.fill()
+    sk.globalCompositeOperation = 'destination-out'
+    sk.filter = `blur(${Math.max(1, F * 0.012)}px)`
+    for (const idx of [EYE_R, EYE_L, LIPS_OUT]) {
+      poly(sk, g, idx, s)
+      sk.lineWidth = F * 0.035
+      sk.fill()
+      sk.stroke()
+    }
+    for (const idx of [BROW_R, BROW_L]) {
+      poly(sk, g, idx, s)
+      sk.lineWidth = F * 0.02
+      sk.fill()
+      sk.stroke()
+    }
+    sk.globalCompositeOperation = 'source-over'
+    sk.filter = 'none'
+    // göz altı: alt kapak çizgisinin altına kayan şerit
+    const ue = L.under.ctx
+    blur(ue, 0.03)
+    for (const lid of [LOWER_LID_R, LOWER_LID_L]) {
+      const top = lid.map((i) => g.p(i))
+      const eh = F * 0.075
+      const d = g.down
+      const bottom = top.map((p) => add(p, mul(d, eh))).reverse()
+      polyPts(ue, [...top.map((p) => add(p, mul(d, F * 0.015))), ...bottom], s)
+      ue.fill()
+    }
+    // dişler: iç dudak
+    const te = L.teeth.ctx
+    blur(te, 0.006)
+    poly(te, g, LIPS_IN, s)
+    te.fill()
+    // gözler
+    const ey = L.eyes.ctx
+    blur(ey, 0.008)
+    poly(ey, g, EYE_R, s)
+    ey.fill()
+    poly(ey, g, EYE_L, s)
+    ey.fill()
+    // dudaklar: dış − iç
+    const li = L.lips.ctx
+    blur(li, 0.008)
+    poly(li, g, LIPS_OUT, s)
+    li.fill()
+    li.globalCompositeOperation = 'destination-out'
+    poly(li, g, LIPS_IN, s)
+    li.fill()
+    li.globalCompositeOperation = 'source-over'
+    // yanaklar (allık)
+    const ch = L.cheeks.ctx
+    for (const i of [50, 280]) {
+      const c = g.p(i)
+      const r = F * 0.16
+      const grd = ch.createRadialGradient(c.x * s, c.y * s, 0, c.x * s, c.y * s, r * s)
+      grd.addColorStop(0, 'rgba(255,255,255,0.9)')
+      grd.addColorStop(1, 'rgba(255,255,255,0)')
+      ch.fillStyle = grd
+      ch.fillRect((c.x - r) * s, (c.y - r) * s, 2 * r * s, 2 * r * s)
+    }
+    // göz kapağı (far): üst kapak ile kaş arası
+    const ld = L.lids.ctx
+    blur(ld, 0.02)
+    for (const [lidIdx, browIdx] of [[UPPER_LID_R, BROW_R], [UPPER_LID_L, BROW_L]] as const) {
+      const lid = lidIdx.map((i) => g.p(i))
+      const browC = g.m(browIdx)
+      const up = lid.map((p) => add(p, mul(sub(browC, p), 0.55))).reverse()
+      polyPts(ld, [...lid, ...up], s)
+      ld.fill()
+    }
+    // kaşlar
+    const br = L.brows.ctx
+    blur(br, 0.006)
+    poly(br, g, BROW_R, s)
+    br.fill()
+    poly(br, g, BROW_L, s)
+    br.fill()
+    // kontür: çene yanları
+    const co = L.contour.ctx
+    blur(co, 0.05)
+    co.lineWidth = F * 0.09
+    co.lineCap = 'round'
+    for (const idx of [[127, 234, 93, 132, 58, 172], [356, 454, 323, 361, 288, 397]]) {
+      co.beginPath()
+      idx.forEach((i, n) => {
+        const p = add(g.p(i), mul(sub(g.center, g.p(i)), 0.08))
+        if (n) co.lineTo(p.x * s, p.y * s)
+        else co.moveTo(p.x * s, p.y * s)
+      })
+      co.stroke()
+    }
+    // aydınlatıcı: burun sırtı + elmacık üstü + alın ortası
+    const hi = L.high.ctx
+    blur(hi, 0.035)
+    hi.lineWidth = F * 0.05
+    hi.lineCap = 'round'
+    hi.beginPath()
+    hi.moveTo(g.p(168).x * s, g.p(168).y * s)
+    hi.lineTo(g.p(4).x * s, g.p(4).y * s)
+    hi.stroke()
+    for (const i of [117, 346, 151]) {
+      hi.beginPath()
+      hi.arc(g.p(i).x * s, g.p(i).y * s, F * 0.06 * s, 0, Math.PI * 2)
+      hi.fill()
+    }
+  })
+
+  // segmentasyonla cilt maskesini sıkılaştır, saç maskesi
+  const readA = (l: { ctx: CanvasRenderingContext2D }) => l.ctx.getImageData(0, 0, w, h).data
+  const skinD = readA(L.skin)
+  let segFace: Float32Array | null = null
+  let segHair: Float32Array | null = null
+  if (seg) {
+    const sample = (arr: Float32Array) => {
+      const out = new Float32Array(w * h)
+      for (let y = 0; y < h; y++) {
+        const sy = Math.min(seg.h - 1, Math.floor((y / h) * seg.h))
+        for (let x = 0; x < w; x++) out[y * w + x] = arr[sy * seg.w + Math.min(seg.w - 1, Math.floor((x / w) * seg.w))]
+      }
+      return out
+    }
+    segFace = sample(seg.faceSkin)
+    if (needHair) segHair = sample(seg.hair)
+  }
+  const pack = (ch: [Uint8ClampedArray | null, Uint8ClampedArray | null, Uint8ClampedArray | null, Uint8ClampedArray | null], mod?: (i: number, k: number, v: number) => number) => {
+    const c = document.createElement('canvas')
+    c.width = w
+    c.height = h
+    const ctx = c.getContext('2d')!
+    const id = ctx.createImageData(w, h)
+    const d = id.data
+    for (let i = 0; i < w * h; i++) {
+      for (let k = 0; k < 4; k++) {
+        const src = ch[k]
+        let v = src ? src[i * 4 + 3] : 0
+        if (mod) v = mod(i, k, v)
+        d[i * 4 + k] = v
+      }
+    }
+    // tarayıcı alfa=0 iken rgb'yi düşürebilir; A kanalını ayrı tutuyoruz → putImageData ön-çarpımsız kalır
+    ctx.putImageData(id, 0, 0)
+    return c
+  }
+  // 2D tuval alfa=0 olan pikselin rengini korumaz; bu yüzden maskeleri ImageData olarak doğrudan WebGL'e yükleriz.
+  const toImageData = (ch: (Uint8ClampedArray | null)[], mod?: (i: number, k: number, v: number) => number) => {
+    const d = new Uint8ClampedArray(w * h * 4)
+    for (let i = 0; i < w * h; i++) {
+      for (let k = 0; k < 4; k++) {
+        const src = ch[k]
+        let v = src ? src[i * 4 + 3] : 0
+        if (mod) v = mod(i, k, v)
+        d[i * 4 + k] = v
+      }
+    }
+    return new ImageData(d, w, h)
+  }
+  void pack
+  const a = toImageData([skinD, readA(L.under), readA(L.teeth), readA(L.eyes)], (i, k, v) => {
+    if (k === 0 && segFace) return Math.round(v * Math.min(1, segFace[i] * 1.6))
+    return v
+  })
+  const b = toImageData([readA(L.lips), readA(L.cheeks), readA(L.lids), readA(L.brows)])
+  const idD = L.id.ctx.getImageData(0, 0, w, h).data
+  const c = toImageData([null, null, readA(L.contour), readA(L.high)], (i, k, v) => {
+    if (k === 0) return idD[i * 4]
+    if (k === 1) return segHair ? Math.round(Math.min(1, segHair[i]) * 255) : 0
+    return v
+  })
+  return { a: imageDataCanvas(a), b: imageDataCanvas(b), c: imageDataCanvas(c) } as unknown as MaskSet
+}
+
+/** ImageData'yı taşıyan sahte kaynak: WebGL texImage2D ImageData'yı ön-çarpımsız alır. */
+function imageDataCanvas(d: ImageData) {
+  return d as unknown as HTMLCanvasElement
+}
+
+// ---- Uniform'lar ----
+export function hexRgb(hex: string): [number, number, number] {
+  const n = parseInt(hex.replace('#', ''), 16)
+  return [((n >> 16) & 255) / 255, ((n >> 8) & 255) / 255, (n & 255) / 255]
+}
+
+export function faceUniforms(edits: FaceEdit[], count: number): FaceUniforms {
+  const u = emptyFaceUniforms()
+  for (let i = 0; i < Math.min(count, 8); i++) {
+    const e = edits.find((x) => x.index === i)
+    if (!e) continue
+    const k = (n: string) => (e.skin[n] ?? 0) / 100
+    const o = i * 4
+    u.skin.set([k('smooth'), k('blemish'), k('whiten'), k('pores')], o)
+    u.skin2.set([k('undereye'), k('teeth'), k('eyes'), k('tone')], o)
+    const tone = hexRgb((e.makeup.tone?.color as string) || '#d9a88a')
+    u.tone.set([...tone, k('detail')], o)
+    const mk = (n: string, def: string) => {
+      const m = e.makeup[n]
+      if (!m || !m.amount) return [0.5, 0.5, 0.5, 0]
+      return [...hexRgb(m.color || def), m.amount / 100]
+    }
+    u.lip.set(mk('lip', '#b8324a'), o)
+    u.blush.set(mk('blush', '#f08a8a'), o)
+    u.lid.set(mk('lid', '#8a5a6a'), o)
+    u.brow.set(mk('brow', '#4a3426'), o)
+    u.sculpt.set([k('contour'), k('highlight'), k('plumpLight'), k('wrinkle')], o)
+  }
+  return u
+}
+
+export function faceHasSkinWork(e: FaceEdit) {
+  return Object.values(e.skin).some((v) => v) || Object.values(e.makeup).some((m) => m && m.amount)
+}
