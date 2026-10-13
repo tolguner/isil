@@ -1,37 +1,35 @@
 import { useEffect, useState } from 'react'
-import { Wand2, Bot, Send, ImagePlus, X, KeyRound } from 'lucide-react'
+import { Wand2, Bot, Send, ImagePlus, X, Cpu } from 'lucide-react'
 import { useEditor } from '@/store/editor'
 import { useT, useLang } from '@/lib/i18n'
 import { Tabs, Preset } from '@/components/ui'
 import { session } from '@/engine/session'
 import { animeStyle, toCanvas } from '@/ai/ops'
-import { ensureCloud, geminiAvailable, geminiEdit } from '@/ai/gemini'
+import { engineStatus, localEdit } from '@/ai/generative'
 import { platform } from '@/lib/platform'
 import { goSettings } from '@/lib/projects'
 import type { ToolDef, View } from './types'
 import { WorkFooter, WorkOverlayImage, busy, setWorkResult, useWork, useWorkLifecycle, work } from './raster'
 
-function useGemini() {
+function useEngine() {
   const [ok, setOk] = useState<boolean | null>(null)
   useEffect(() => {
-    geminiAvailable().then(setOk)
+    engineStatus().then((s) => setOk(s.available))
   }, [])
   return ok
 }
 
-function KeyCard({ local = false }: { local?: boolean }) {
+function EngineCard() {
   const tr = useT()
   return (
     <div className="card">
-      <b><KeyRound size={14} /> {tr('Gemini anahtarı gerekli', 'Gemini key required')}</b>
+      <b><Cpu size={14} /> {tr('Yerel YZ motoru', 'Local AI engine')}</b>
       <p className="note">
         {tr(
-          'Bu araçlar bulut modeli gerektirir. Ayarlar’dan kendi Google Gemini API anahtarını eklersen açılır; ücretsiz kotan varsa ücret ödemezsin.',
-          'These tools need a cloud model. Add your own Google Gemini API key in Settings to unlock them; with a free quota it costs nothing.'
+          'Yazıyla düzenleme bilgisayarında FLUX.2 klein ile çalışır; internet ve ücret yok. İlk kullanımda motor ve model bir kez indirilir. Düzenleme senin ekran kartında 20–60 saniye sürebilir.',
+          'Prompt editing runs on your computer with FLUX.2 klein — no internet, no fees. The engine and model download once on first use. An edit can take 20–60 seconds on your GPU.'
         )}
-        {local && tr(' ⚡ işaretli stiller anahtarsız da çalışır.', ' Styles marked ⚡ work without a key.')}
       </p>
-      <button className="btn sm primary" onClick={() => void goSettings()}>{tr('Ayarlara git', 'Open Settings')}</button>
     </div>
   )
 }
@@ -54,7 +52,7 @@ const QUICK: [string, string, string][] = [
 function AiEditorPanel() {
   const tr = useT()
   const lang = useLang()
-  const ok = useGemini()
+  const ok = useEngine()
   useWorkLifecycle()
   const w = useWork()
   const [prompt, setPrompt] = useState('')
@@ -62,18 +60,19 @@ function AiEditorPanel() {
   const [history, setHistory] = useState<string[]>([])
   const run = async (text: string) => {
     if (!text.trim() || !work.full) return
-    if (!(await ensureCloud())) return
-    const res = await busy(tr('Yapay zekâ düzenliyor…', 'AI is editing…'), () =>
-      geminiEdit(work.full!, `${text.trim()}\n\nKeep the person's identity, the composition and everything not mentioned unchanged. Return a photorealistic result.`, refs.map((r) => r.bm))
-    )
-    if (res) {
-      setWorkResult(res)
-      setHistory((h) => [text.trim(), ...h].slice(0, 6))
+    try {
+      const res = await localEdit(work.full, `${text.trim()}. Keep the person's identity, the composition and everything not mentioned unchanged. Photorealistic.`, refs.map((r) => r.bm))
+      if (res) {
+        setWorkResult(res)
+        setHistory((h) => [text.trim(), ...h].slice(0, 6))
+      }
+    } catch (e) {
+      useEditor.getState().toast('error', tr('Düzenleme başarısız: ', 'Edit failed: ') + (e as Error).message)
     }
   }
   return (
     <>
-      {ok === false && <KeyCard />}
+      {ok === false ? <p className="note">{tr('Yerel YZ motoru yalnızca masaüstü uygulamasında çalışır.', 'The local AI engine only runs in the desktop app.')}</p> : <EngineCard />}
       <label className="field">
         <span>{tr('Ne yapmak istersin?', 'What should change?')}</span>
         <textarea className="textarea" value={prompt} placeholder={tr('Örn: arka plana sakura ağaçları ekle', 'e.g. add cherry blossom trees to the background')} onChange={(e) => setPrompt(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) void run(prompt) }} />
@@ -91,12 +90,12 @@ function AiEditorPanel() {
           const blob = new Blob([f[0].bytes as BlobPart])
           setRefs([...refs, { url: URL.createObjectURL(blob), bm: await createImageBitmap(blob) }].slice(0, 3))
         }}><ImagePlus size={14} /> {tr('Referans', 'Reference')}</button>
-        <button className="btn sm primary" style={{ marginLeft: 'auto' }} disabled={!prompt.trim() || ok === false} onClick={() => run(prompt)}><Send size={14} /> {tr('Oluştur', 'Generate')}</button>
+        <button className="btn sm primary" style={{ marginLeft: 'auto' }} disabled={!prompt.trim() || !ok} onClick={() => run(prompt)}><Send size={14} /> {tr('Oluştur', 'Generate')}</button>
       </div>
       <div className="group-label">{tr('Hazır komutlar', 'Quick prompts')}</div>
       <div className="stack">
         {QUICK.map(([a, b, e]) => (
-          <button key={a} className="btn sm" style={{ justifyContent: 'flex-start' }} disabled={ok === false} onClick={() => { const t = lang === 'en' ? b : a; setPrompt(t); void run(t) }}>{e} {lang === 'en' ? b : a}</button>
+          <button key={a} className="btn sm" style={{ justifyContent: 'flex-start' }} disabled={!ok} onClick={() => { const t = lang === 'en' ? b : a; setPrompt(t); void run(t) }}>{e} {lang === 'en' ? b : a}</button>
         ))}
       </div>
       {!!history.length && (
@@ -140,7 +139,7 @@ const STYLE_CATS: [string, string, string][] = [['trend', 'Öne çıkan', 'Trend
 
 function AiFxPanel() {
   const tr = useT()
-  const ok = useGemini()
+  const ok = useEngine()
   useWorkLifecycle()
   const [cat, setCat] = useState('trend')
   const [sel, setSel] = useState<string | null>(null)
@@ -157,13 +156,16 @@ function AiFxPanel() {
       if (res) setWorkResult(res)
       return
     }
-    if (!(await ensureCloud())) return
-    const res = await busy(tr('Yapay zekâ çiziyor…', 'AI is drawing…'), () => geminiEdit(work.full!, s.prompt))
-    if (res) setWorkResult(res)
+    try {
+      const res = await localEdit(work.full, s.prompt)
+      if (res) setWorkResult(res)
+    } catch (e) {
+      useEditor.getState().toast('error', tr('Stil uygulanamadı: ', 'Style failed: ') + (e as Error).message)
+    }
   }
   return (
     <>
-      {ok === false && <KeyCard local />}
+      {ok === false ? <p className="note">{tr('Yerel YZ motoru yalnızca masaüstü uygulamasında çalışır.', 'The local AI engine only runs in the desktop app.')}</p> : <EngineCard />}
       <Tabs items={STYLE_CATS.map(([id, a, b]) => ({ id, label: tr(a, b) }))} value={cat} onChange={setCat} />
       <div className="presets">
         {STYLES.filter((s) => s.cat === cat).map((s) => (
@@ -172,7 +174,7 @@ function AiFxPanel() {
           </Preset>
         ))}
       </div>
-      <p className="note">{tr('⚡ işaretliler bilgisayarında çalışır; ✦ işaretliler Gemini anahtarınla bulutta çalışır.', '⚡ runs on your computer; ✦ runs in the cloud with your Gemini key.')}</p>
+      <p className="note">{tr('⚡ anında çalışan hafif model; ✦ FLUX.2 klein ile daha ayrıntılı (daha uzun sürer). Hepsi bilgisayarında.', '⚡ instant lightweight model; ✦ more detailed with FLUX.2 klein (takes longer). All on your computer.')}</p>
       <WorkFooter type="style" params={{ style: sel }} />
     </>
   )

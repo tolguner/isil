@@ -33,24 +33,24 @@ Makeup full looks + lipstick / blush / eyeshadow / brows,retouch,must,yes,yes,
 Contour / highlighter,retouch,should,yes,yes,
 Eyeliner / lashes / pupil light / mole,retouch,could,yes,no,
 Skin tone,retouch,should,yes,yes,
-AI skin presets (freckles / dewy / matte / tan),retouch,could,yes,partial,dewy + matte local; freckles/tan via AI editor (Gemini)
+AI skin presets (freckles / dewy / matte / tan),retouch,could,yes,partial,dewy + matte local; freckles/tan via local AI editor (FLUX.2 klein)
 Face lift / plump face,retouch,should,yes,yes,warp + light
 Hair color,retouch,should,yes,yes,segmentation recolor; local
-Hair texture / style (wavy / long / bangs),retouch,could,yes,partial,AI effects -> Gemini only
+Hair texture / style (wavy / long / bangs),retouch,could,yes,partial,AI effects -> local FLUX.2 klein
 Relight with draggable light,retouch,should,yes,yes,Depth Anything local
 Retouch brush (smooth / conceal / repair / fade / wrinkle / brighten / detail),retouch,must,yes,yes,
 Manual reshape (liquify push / twirl / pinch / bloat / restore + protect bg),reshape,must,yes,yes,
 Automatic body (presets / ratios / parts),body,should,yes,yes,MediaPipe pose warp
 Manual body stretch / slim band,body,should,yes,yes,
 Face hide (blur / pixel / bar / emoji),retouch,should,yes,yes,
-Change expression / open closed eyes,retouch,could,yes,partial,Gemini prompt presets
+Change expression / open closed eyes,retouch,could,yes,partial,local FLUX.2 klein prompt presets
 Magic eraser (paint to remove),cleanup,must,yes,yes,LaMa local
 Smart select (tap object to remove),cleanup,should,yes,yes,MediaPipe interactive segmenter
 Smart select categories (people / text / reflections / poles),cleanup,could,yes,no,
 Clone stamp,cleanup,should,yes,yes,
 Mosaic brush,cleanup,should,yes,yes,
-AI replace (paint + prompt),cleanup,could,yes,yes,Gemini; masked composite keeps rest identical
-AI background removal,cutout,must,yes,yes,ISNet local; BiRefNet detailed
+AI replace (paint + prompt),cleanup,could,yes,yes,local FLUX.2 klein inpaint; masked composite keeps rest identical
+AI background removal,cutout,must,yes,yes,ISNet local; detailed = BiRefNet full (CUDA via AI engine) or BiRefNet lite
 Refine mask brush (restore / erase / hardness),cutout,must,yes,yes,
 Quick person cutout / tap select cutout,cutout,should,yes,yes,
 Save cutout as transparent PNG,cutout,must,yes,yes,
@@ -65,12 +65,12 @@ Text brush (text along stroke),draw,could,yes,no,
 Layer move / rotate / scale / duplicate / delete / order,layers,must,yes,yes,
 Recipes (one-tap templates in editor),recipes,should,yes,yes,17 recipes in 4 groups
 Community template feed (creators / usage counts),templates,skip,yes,skip,their network
-AI editor (free prompt + reference images),ai,should,yes,yes,Gemini with own key
-AI effects (anime / 3D / plush / comic / cyberpunk / wardrobe / hair),ai,should,yes,yes,Gemini; anime also local AnimeGANv2
-Enhance quality 2x / 4x,ai,should,yes,yes,Real-ESRGAN local
-AI face restoration,ai,could,yes,no,GFPGAN 340 MB not bundled yet
+AI editor (free prompt + reference images),ai,should,yes,yes,local FLUX.2 klein 4B (fast) / 9B (best); no key; no cloud
+AI effects (anime / 3D / plush / comic / cyberpunk / wardrobe / hair),ai,should,yes,yes,local FLUX.2 klein; anime also AnimeGANv2
+Enhance quality 2x / 4x,ai,should,yes,yes,4x-UltraSharp V2 (CUDA via AI engine) or Real-ESRGAN
+AI face restoration,ai,could,yes,yes,CodeFormer (CUDA via AI engine); MediaPipe 5-point alignment + feathered paste-back
 AI expand (outpaint),ai,could,yes,partial,via AI editor prompt; no dedicated canvas tool
-Style advisor chat,ai,could,yes,yes,Gemini text model
+Style advisor chat,ai,could,yes,yes,local Qwen3-VL 4B (4-bit); streamed answer
 Collage layouts 1-9 photos,collage,should,yes,yes,pan/zoom per cell; ratio; spacing; radius
 Stitch vertical / horizontal,collage,should,yes,yes,
 Batch edit (recipe / look / copy from project),batch,should,yes,yes,save to folder
@@ -79,7 +79,7 @@ Export JPG / PNG / WebP with quality and size,export,must,yes,yes,full resolutio
 Saved toast + show in folder,export,must,yes,yes,
 Settings: language TR/EN / autosave / export defaults,settings,must,yes,yes,
 Local model manager (download / delete),settings,must,no,yes,
-Gemini key (encrypted) + cloud consent,settings,must,no,yes,safeStorage DPAPI
+Local AI engine manager (install parts, quality 4B/9B),settings,must,no,yes,Python + PyTorch CUDA sidecar; replaces the earlier Gemini key
 Windows installer,distribution,must,no,yes,NSIS 176 MB
 Account sign in,account,skip,yes,skip,personal use
 HypicPro subscription and paywall,account,skip,yes,skip,everything free by decision

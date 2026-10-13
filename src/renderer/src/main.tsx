@@ -19,7 +19,7 @@ void (import.meta.env.DEV ? Promise.resolve(true) : (w0.isil?.testMode?.() ?? Pr
         await m.startEditing({ name: url.split('/').pop()!, bytes })
       },
       store: () => import('./store/editor').then((s) => s.useEditor),
-      mod: (name: string) => ({ session: () => import('./engine/session'), ops: () => import('./ai/ops'), models: () => import('./ai/models'), vision: () => import('./ai/vision') } as Record<string, () => Promise<unknown>>)[name]()
+      mod: (name: string) => ({ session: () => import('./engine/session'), ops: () => import('./ai/ops'), models: () => import('./ai/models'), vision: () => import('./ai/vision'), generative: () => import('./ai/generative'), platform: () => import('./lib/platform') } as Record<string, () => Promise<unknown>>)[name]()
     }
   })
 })

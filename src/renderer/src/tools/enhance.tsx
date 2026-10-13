@@ -3,7 +3,8 @@ import { useEditor } from '@/store/editor'
 import { useT } from '@/lib/i18n'
 import { Segmented } from '@/components/ui'
 import { session } from '@/engine/session'
-import { upscale, toCanvas } from '@/ai/ops'
+import { upscale, restoreFaces, toCanvas } from '@/ai/ops'
+import { isDesktop } from '@/lib/platform'
 import { commitRaster } from '@/lib/projects'
 
 const MAX_OUT = 8192
@@ -11,6 +12,7 @@ const MAX_OUT = 8192
 export function EnhanceTool() {
   const tr = useT()
   const [scale, setScale] = useState<'2' | '4'>('2')
+  const [faces, setFaces] = useState(isDesktop)
   const W = session.W, H = session.H
   const k = Number(scale)
   const pre = Math.min(1, MAX_OUT / (Math.max(W, H) * k))
@@ -22,8 +24,12 @@ export function EnhanceTool() {
     try {
       st.setBusy({ text: tr('Kalite artırılıyor…', 'Enhancing…'), progress: 0, cancel: () => (signal.cancelled = true) })
       const full = await session.fullBase()
-      const src = pre < 1 ? toCanvas(full, W * pre, H * pre) : toCanvas(full)
+      let src = pre < 1 ? toCanvas(full, W * pre, H * pre) : toCanvas(full)
       full.close()
+      if (faces) {
+        st.setBusy({ text: tr('Yüzler onarılıyor…', 'Restoring faces…') })
+        src = (await restoreFaces(src)) ?? src
+      }
       const up = await upscale(src, (p) => useEditor.getState().setBusy({ text: tr('Kalite artırılıyor…', 'Enhancing…'), progress: p, cancel: () => (signal.cancelled = true) }), signal)
       if (!up) return
       const final = k === 4 ? up : toCanvas(up, outW, outH)
@@ -43,6 +49,12 @@ export function EnhanceTool() {
     <>
       <p className="note">{tr('Yapay zekâ ile çözünürlüğü artırır, bulanık ve gürültülü ayrıntıları netleştirir. Bilgisayarında çalışır.', 'Increases resolution with AI and sharpens blurry, noisy detail. Runs on your computer.')}</p>
       <Segmented items={[{ id: '2', label: '2× HD' }, { id: '4', label: '4× Ultra' }]} value={scale} onChange={setScale} />
+      {isDesktop && (
+        <label className="row" style={{ gap: 8, cursor: 'pointer' }}>
+          <input type="checkbox" checked={faces} onChange={(e) => setFaces(e.target.checked)} />
+          <span>{tr('Yüzleri de onar (CodeFormer)', 'Also restore faces (CodeFormer)')}</span>
+        </label>
+      )}
       <div className="card">
         <div className="muted">{tr('Şimdi', 'Now')}: {W}×{H}</div>
         <div><b>{tr('Sonra', 'After')}: {outW}×{outH}</b></div>

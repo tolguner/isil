@@ -1,0 +1,132 @@
+// Yerel YZ testi (ağır): CUDA ONNX modelleri + üretken motor (FLUX.2 klein, Qwen3-VL).
+//   npm run build && node tests/e2e/ai-local.mjs   (ONLY=flux,chat ile seçilebilir; motor dev-models/engine/python yoksa ISIL_PYTHON=<python.exe>)
+// Modeller dev-models/ (ONNX) ve dev-models/engine/models/ (motor) altında olmalı.
+import { _electron as electron } from 'playwright'
+import { mkdtempSync, mkdirSync, copyFileSync, readdirSync, writeFileSync, existsSync, statSync } from 'fs'
+import { tmpdir } from 'os'
+import { join } from 'path'
+
+const root = process.cwd()
+const userData = mkdtempSync(join(tmpdir(), 'isil-ai-'))
+mkdirSync(join(userData, 'models'), { recursive: true })
+const dev = join(root, 'dev-models')
+for (const f of readdirSync(dev).filter((f) => statSync(join(dev, f)).isFile())) copyFileSync(join(dev, f), join(userData, 'models', f))
+const engine = existsSync(join(dev, 'engine', 'models')) && (!!process.env.ISIL_PYTHON || existsSync(join(dev, 'engine', 'python', '.ok')))
+const only = (process.env.ONLY || '').split(',').filter(Boolean)
+const want = (k) => !only.length || only.includes(k)
+
+const results = []
+const ok = (name, pass, info = '') => {
+  results.push({ name, pass, info })
+  console.log(`${pass ? 'GEÇTİ' : 'KALDI'}  ${name}  ${info}`)
+}
+const out = join(root, 'replica', 'ai-results')
+mkdirSync(out, { recursive: true })
+
+const app = await electron.launch({
+  args: ['.'],
+  cwd: root,
+  env: { ...process.env, ISIL_TEST: '1', ISIL_USERDATA: userData, ...(engine ? { ISIL_ENGINE_DIR: join(dev, 'engine') } : {}) }
+})
+const win = await app.firstWindow()
+const errors = []
+win.on('console', (m) => { if (m.type() === 'error') errors.push(m.text()) })
+win.on('pageerror', (e) => errors.push(String(e)))
+await win.waitForFunction(() => !!window.__isil, null, { timeout: 20000 })
+await win.evaluate(() => window.__isil.open('isil://app/test/portrait.jpg'))
+await win.waitForFunction(async () => { const s = (await window.__isil.mod('session')).session; return s.W > 0 && !!s.lastOut }, null, { timeout: 20000 })
+await win.evaluate(async () => {
+  const bm = await createImageBitmap(await (await fetch('isil://app/test/portrait.jpg')).blob())
+  const ops = await window.__isil.mod('ops')
+  window.__src = ops.toCanvas(bm, 600, 900)
+  window.__png = async (c) => {
+    const b = await new Promise((r) => c.toBlob(r, 'image/png'))
+    const u = new Uint8Array(await b.arrayBuffer())
+    let s = ''
+    for (let i = 0; i < u.length; i += 0x8000) s += String.fromCharCode(...u.subarray(i, i + 0x8000))
+    return btoa(s)
+  }
+})
+
+const run = async (label, key, fn) => {
+  if (!want(key)) return
+  const t0 = Date.now()
+  try {
+    const r = await win.evaluate(fn)
+    const { png, ...info } = r ?? {}
+    ok(label, !!r?.ok, JSON.stringify({ ...info, ms: Date.now() - t0 }))
+    if (png) writeFileSync(join(out, key + '.png'), Buffer.from(png, 'base64'))
+  } catch (e) {
+    ok(label, false, String(e).slice(0, 400))
+  }
+}
+
+await run('Detaylı kesim (BiRefNet, CUDA)', 'birefnet', async () => {
+  const s = (await window.__isil.mod('session')).session
+  const ops = await window.__isil.mod('ops')
+  const m = await ops.removeBackground(window.__src, true)
+  const models = await window.__isil.mod('models')
+  return { ok: !!m, provider: models.lastProvider, png: m && (await window.__png(m)) }
+})
+await run('Kalite artırma 4× (UltraSharp V2, CUDA)', 'ultrasharp', async () => {
+  const s = (await window.__isil.mod('session')).session
+  const ops = await window.__isil.mod('ops')
+  const r = await ops.upscale(ops.toCanvas(window.__src, 200, 300))
+  const models = await window.__isil.mod('models')
+  return { ok: !!r && r.width === 800, provider: models.lastProvider, png: r && (await window.__png(r)) }
+})
+await run('Yüz onarma (CodeFormer, CUDA)', 'codeformer', async () => {
+  const s = (await window.__isil.mod('session')).session
+  const ops = await window.__isil.mod('ops')
+  const small = ops.toCanvas(window.__src, 300, 450)
+  const vision = await window.__isil.mod('vision')
+  const faces = (await vision.detectFaces(small)).length
+  const r = await ops.restoreFaces(small)
+  return { ok: !!r, faces, png: r && (await window.__png(r)) }
+})
+await run('Derinlik (Depth Anything V2 Base, CUDA)', 'depth', async () => {
+  const s = (await window.__isil.mod('session')).session
+  const ops = await window.__isil.mod('ops')
+  const r = await ops.depthMap(window.__src)
+  return { ok: !!r && r.width > 100, w: r?.width, png: r && (await window.__png(r)) }
+})
+
+if (engine) {
+  await run('Motor durumu', 'status', async () => {
+    const { platform } = await window.__isil.mod('platform')
+    const st = await platform.engineStatus()
+    return { ok: st.available && st.installed.runtime && st.installed['flux-fast'], ...st }
+  })
+  await run('YZ düzenleyici (FLUX.2 klein 4B)', 'flux', async () => {
+    const g = await window.__isil.mod('generative')
+    const r = await g.localEdit(window.__src, 'Make it a rainy night in a neon-lit city street behind her. Keep the person exactly the same.')
+    return { ok: !!r && r.width === window.__src.width, png: r && (await window.__png(r)) }
+  })
+  await run('YZ ile değiştir (FLUX.2 klein inpaint)', 'inpaint', async () => {
+    const g = await window.__isil.mod('generative')
+    const src = window.__src
+    const m = document.createElement('canvas')
+    m.width = src.width
+    m.height = src.height
+    const c = m.getContext('2d')
+    c.fillStyle = '#000'
+    c.fillRect(0, 0, m.width, m.height)
+    c.fillStyle = '#fff'
+    c.fillRect(0, m.height * 0.68, m.width, m.height * 0.32)
+    const r = await g.localMaskedEdit(src, m, 'a dark green leather jacket')
+    return { ok: !!r, png: r && (await window.__png(r)) }
+  })
+  await run('Stil danışmanı (Qwen3-VL 4B)', 'chat', async () => {
+    const g = await window.__isil.mod('generative')
+    const t = await g.localChat([{ role: 'user', text: 'Bu fotoğraftaki kişiye hangi ruj tonu yakışır? Kısa yanıt ver.', image: window.__src }], 'Sen kısa ve somut konuşan bir stil danışmanısın. Türkçe yanıt ver.')
+    return { ok: !!t && t.length > 10, text: t }
+  })
+}
+
+const fatal = errors.filter((e) => !/Download the React DevTools|favicon|XNNPACK|onnxruntime|VerifyEachNodeIsAssignedToAnEp|odml\.pa\.googleapis/i.test(e))
+ok('Konsolda hata yok', fatal.length === 0, fatal.slice(0, 5).join(' | '))
+await app.close()
+writeFileSync(join(out, 'results.json'), JSON.stringify({ at: new Date().toISOString(), results }, null, 2))
+const failed = results.filter((r) => !r.pass).length
+console.log(`\n${results.length - failed}/${results.length} geçti`)
+process.exit(failed ? 1 : 0)

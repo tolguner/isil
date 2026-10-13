@@ -1,13 +1,13 @@
 // Uçtan uca duman testi: npm run build && node tests/e2e/smoke.mjs
 import { _electron as electron } from 'playwright'
-import { mkdtempSync, mkdirSync, copyFileSync, readdirSync, writeFileSync, existsSync } from 'fs'
+import { mkdtempSync, mkdirSync, copyFileSync, readdirSync, writeFileSync, existsSync, statSync } from 'fs'
 import { tmpdir } from 'os'
 import { join } from 'path'
 
 const root = process.cwd()
 const userData = mkdtempSync(join(tmpdir(), 'isil-test-'))
 mkdirSync(join(userData, 'models'), { recursive: true })
-if (existsSync(join(root, 'dev-models'))) for (const f of readdirSync(join(root, 'dev-models'))) copyFileSync(join(root, 'dev-models', f), join(userData, 'models', f))
+if (existsSync(join(root, 'dev-models'))) for (const f of readdirSync(join(root, 'dev-models')).filter((f) => statSync(join(root, 'dev-models', f)).isFile())) copyFileSync(join(root, 'dev-models', f), join(userData, 'models', f))
 
 const results = []
 const ok = (name, pass, info = '') => {
@@ -99,7 +99,7 @@ const up = await win.evaluate(async () => {
   const r = await ops.upscale(small)
   return { ok: !!r && r.width === 1024, w: r?.width, ms: Math.round(performance.now() - t0) }
 }).catch((e) => ({ ok: false, err: String(e) }))
-ok('Kalite artırma 4× (Real-ESRGAN)', up.ok, JSON.stringify(up))
+ok('Kalite artırma 4× (UltraSharp V2 / Real-ESRGAN)', up.ok, JSON.stringify(up))
 
 const ex = await win.evaluate(async () => {
   const S = await window.__isil.store()

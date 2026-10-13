@@ -2,17 +2,18 @@
 
 Windows için masaüstü fotoğraf düzenleyici. Hypic'in özellik setinin temiz-oda yeniden yapımı: kod, tasarım, adlar ve ön ayarlar sıfırdan yazıldı; Hypic'in hiçbir varlığı kullanılmadı.
 
-Her şey ücretsiz. Yapay zekâ araçlarının çoğu bilgisayarında, internetsiz çalışır. Üretken araçlar için isteğe bağlı olarak kendi Google Gemini API anahtarını ekleyebilirsin.
+Her şey ücretsiz ve yerel: yapay zekâ araçları bilgisayarında, internetsiz çalışır; hiçbir fotoğraf dışarı gönderilmez, API anahtarı gerekmez.
 
 ## Özellikler
 
 - **Ayarla:** pozlama, kontrast, vurgular/gölgeler, sıcaklık, HSL, ton eğrileri, netlik, pus giderme, gren, vinyet, akıllı otomatik ayar
 - **Filtreler ve efektler:** 37 filtre, 31 efekt, tek dokunuş tarifleri
 - **Rötuş:** çoklu yüz algılama, ~50 yüz şekli kaydırıcısı, cilt pürüzsüzleştirme, leke/göz altı, diş beyazlatma, makyaj, ten tonu, saç rengi, ışıklandırma, vücut şekillendirme, rötuş fırçası, yüz gizleme
-- **Temizle:** sihirli silgi (LaMa), dokun-seç, klonlama, mozaik, YZ ile değiştir
+- **Temizle:** sihirli silgi (LaMa), dokun-seç, klonlama, mozaik, YZ ile değiştir (FLUX.2 klein inpaint)
 - **Kesim ve arka plan:** yapay zekâyla arka plan kaldırma (ISNet / BiRefNet), maske fırçası, renk/degrade/bulanık/görsel zemin, tuval oranı
 - **Katmanlar:** metin (17 açık lisanslı yazı tipi), çıkartma, şekil, çizim
-- **Diğer:** kırpma/döndürme/perspektif, liquify, 4× kalite artırma (Real-ESRGAN), kolaj ve birleştirme, toplu düzenleme, kamera, projeler ve otomatik kayıt, Türkçe/İngilizce
+- **Üretken YZ (yerel):** YZ Editör ve YZ efektleri (FLUX.2 klein 4B / 9B), stil danışmanı (Qwen3-VL 4B), yüz onarma (CodeFormer)
+- **Diğer:** kırpma/döndürme/perspektif, liquify, 4× kalite artırma (4x-UltraSharp V2 / Real-ESRGAN), kolaj ve birleştirme, toplu düzenleme, kamera, projeler ve otomatik kayıt, Türkçe/İngilizce
 
 ## Geliştirme
 
@@ -27,14 +28,36 @@ npm run dist         # Windows yükleyicisi -> release/
 
 Büyük ONNX modelleri uygulamada **Ayarlar → Yerel yapay zekâ modelleri** bölümünden ilk kullanımda indirilir (`%APPDATA%/Işıl/models`). Testler için `dev-models/` klasörüne koyulabilirler.
 
+### Yerel YZ motoru
+
+Üretken araçlar ve güçlü ONNX modelleri **YZ motoru** ile çalışır: gömülü Python 3.12 + PyTorch (CUDA 12.8) + diffusers/transformers + onnxruntime-gpu. **Ayarlar → Yerel üretken yapay zekâ** bölümünden kurulur (`%APPDATA%/Işıl/engine`, ≈3 GB indirme, kurulu hali ≈5 GB). Modeller ayrı parçalar halinde iner:
+
+| parça | içerik | boyut |
+| --- | --- | --- |
+| FLUX.2 klein 4B (hızlı) | transformer GGUF Q5_K_M + Qwen3-4B metin kodlayıcı (4-bit) + VAE | ≈6 GB |
+| FLUX.2 klein 9B (en iyi) | transformer GGUF Q4_K_M + Qwen3-8B metin kodlayıcı (4-bit) | ≈12 GB |
+| Qwen3-VL 4B | stil danışmanı (4-bit) | ≈3,5 GB |
+
+Motor `engine/server.py` olarak main süreçten başlatılır ve stdin/stdout üzerinden JSON konuşur. Hazır llama.cpp / stable-diffusion.cpp ikilileri imzasız olduğu için Windows Akıllı Uygulama Denetimi onları engelliyor; python.org ve PyPI paketleri sorunsuz çalışıyor, bu yüzden Python seçildi.
+
+Geliştirirken var olan bir Python ortamı kullanılabilir:
+
+```bash
+node tests/e2e/ai-local.mjs                           # dev-models/engine (python + models) ile; ya da ISIL_PYTHON=<python.exe>
+node tests/e2e/engine-install.mjs                     # boş klasöre gerçek motor kurulumu (~3 GB)
+```
+
 ## Mimari
 
-- `src/main` — pencere, dosya sistemi, proje kaydı, model indirme, Gemini (anahtar yalnızca burada)
+- `src/main` — pencere, dosya sistemi, proje kaydı, model indirme, YZ motoru yönetimi (`engine.ts`)
+- `engine/server.py` — yerel YZ sunucusu (FLUX.2 klein, Qwen3-VL, CUDA ONNX)
 - `src/renderer/src/engine` — WebGL2 düzenleme motoru (shader zinciri, yüz/vücut bükme, katmanlar, dışa aktarma)
-- `src/renderer/src/ai` — MediaPipe ve ONNX Runtime Web (WebGPU, WASM yedeği)
+- `src/renderer/src/ai` — MediaPipe, ONNX Runtime Web (WebGPU, WASM yedeği) ve motor istemcisi (`generative.ts`)
 - `src/renderer/src/tools` — editör sekmeleri ve araç panelleri
 - `replica/` — recon, mimari, tasarım token'ları, özellik matrisi, yapım günlüğü
 
 ## Lisanslar
 
-Model ve kütüphane lisansları uygulamada **Ayarlar → Hakkında** bölümünde listelenir: MediaPipe (Apache-2.0), ONNX Runtime (MIT), ISNet (MIT), BiRefNet (MIT), LaMa (Apache-2.0), Real-ESRGAN (BSD-3), Depth Anything V2 Small (Apache-2.0), AnimeGANv2 (kişisel kullanım), Lucide (ISC), yazı tipleri (OFL).
+Model ve kütüphane lisansları uygulamada **Ayarlar → Hakkında** bölümünde listelenir: MediaPipe (Apache-2.0), ONNX Runtime (MIT), PyTorch (BSD-3), diffusers / transformers (Apache-2.0), FLUX.2 klein 4B (Apache-2.0), Qwen3 / Qwen3-VL (Apache-2.0), ISNet (MIT), BiRefNet (MIT), LaMa (Apache-2.0), Real-ESRGAN (BSD-3), Depth Anything V2 Small (Apache-2.0), Lucide (ISC), yazı tipleri (OFL).
+
+Bazı modeller yalnızca **ticari olmayan / kişisel kullanım** içindir: FLUX.2 klein 9B (FLUX Non-Commercial), 4x-UltraSharp V2 (CC BY-NC-SA 4.0), CodeFormer (S-Lab 1.0), Depth Anything V2 Base (CC BY-NC 4.0), AnimeGANv2. Işıl kişisel ve portfolyo projesidir; bu modeller ticari bir dağıtımda kullanılmamalı.

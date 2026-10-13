@@ -2,6 +2,15 @@
 import { DEFAULT_SETTINGS, type EditDoc, type Project, type ProjectMeta, type Settings } from '@shared/schema'
 
 export interface PickedFile { name: string; bytes: Uint8Array }
+export interface EngineStatus {
+  available: boolean            // bu platformda yerel motor çalışabilir mi
+  installed: Record<string, boolean> // parça → kurulu mu (runtime, flux-fast, flux-best, vlm)
+  running: boolean
+  device?: string
+  blocked?: string              // ör. Windows Uygulama Denetimi engeli
+}
+export interface EngineProgress { stage: 'download' | 'load' | 'generate' | 'chat'; part?: string; got?: number; total?: number; step?: number; steps?: number; text?: string }
+export interface GenEditArgs { image: Uint8Array; prompt: string; refs?: Uint8Array[]; mask?: Uint8Array | null; width: number; height: number; quality: 'fast' | 'best'; seed?: number }
 export interface ModelProgress { file: string; got: number; total: number; done?: boolean }
 
 export interface Platform {
@@ -21,16 +30,20 @@ export interface Platform {
   reveal(p: string): void
   getSettings(): Promise<Settings>
   setSettings(s: Partial<Settings>): Promise<Settings>
-  setSecret(k: string | null): Promise<boolean>
-  hasSecret(): Promise<boolean>
   modelUrl(file: string): string
   modelStatus(files: string[]): Promise<Record<string, number>>
   downloadModel(a: { file: string; url: string; sha256?: string }): Promise<unknown>
   cancelModel(file: string): Promise<void>
   deleteModel(file: string): Promise<void>
   onModelProgress(cb: (p: ModelProgress) => void): () => void
-  geminiEdit(a: { image: Uint8Array; mime: string; prompt: string; refs?: { bytes: Uint8Array; mime: string }[] }): Promise<{ bytes: Uint8Array; mime: string; text: string }>
-  geminiChat(a: { text: string; image?: { bytes: Uint8Array; mime: string }; previousId?: string; system?: string }): Promise<{ id: string; text: string }>
+  onnxRun(a: { file: string; feeds: Record<string, { data: Float32Array; dims: number[] }> }): Promise<{ outputs: Record<string, { data: Float32Array; dims: number[] }>; outputNames: string[]; provider?: string }>
+  onnxRelease(file: string): Promise<void>
+  engineStatus(): Promise<EngineStatus>
+  engineInstall(part: string): Promise<void>
+  genEdit(a: GenEditArgs): Promise<Uint8Array>
+  genCancel(): Promise<void>
+  chat(a: { messages: { role: 'user' | 'assistant'; text: string; image?: Uint8Array }[]; system: string }): Promise<string>
+  onEngineProgress(cb: (p: EngineProgress) => void): () => void
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -63,16 +76,20 @@ function electronPlatform(): Platform {
     reveal: (p) => api.reveal(p),
     getSettings: () => api.getSettings(),
     setSettings: (s) => api.setSettings(s),
-    setSecret: (k) => api.setSecret(k),
-    hasSecret: () => api.hasSecret(),
     modelUrl: (file) => `isil://model/${file}`,
     modelStatus: (files) => api.modelStatus(files),
     downloadModel: (a) => api.downloadModel(a),
     cancelModel: (f) => api.cancelModel(f),
     deleteModel: (f) => api.deleteModel(f),
     onModelProgress: (cb) => api.onModelProgress(cb),
-    geminiEdit: (a) => api.geminiEdit(a),
-    geminiChat: (a) => api.geminiChat(a)
+    onnxRun: (a) => api.onnxRun(a),
+    onnxRelease: (f) => api.onnxRelease(f),
+    engineStatus: () => api.engineStatus(),
+    engineInstall: (part) => api.engineInstall(part),
+    genEdit: (a) => api.genEdit(a),
+    genCancel: () => api.genCancel(),
+    chat: (a) => api.chat(a),
+    onEngineProgress: (cb) => api.onEngineProgress(cb)
   }
 }
 
@@ -207,8 +224,6 @@ function webPlatform(): Platform {
       localStorage.setItem('isil.settings', JSON.stringify(next))
       return next
     },
-    setSecret: async () => false,
-    hasSecret: async () => false,
     modelUrl: (file) => `/models/${file}`,
     modelStatus: async (files) => {
       const out: Record<string, number> = {}
@@ -224,14 +239,26 @@ function webPlatform(): Platform {
     cancelModel: async () => {},
     deleteModel: async () => {},
     onModelProgress: () => () => {},
-    geminiEdit: async () => {
-      throw new Error('NO_KEY')
+    onnxRun: async () => {
+      throw new Error('NATIVE_ONNX_UNAVAILABLE')
     },
-    geminiChat: async () => {
-      throw new Error('NO_KEY')
-    }
+    onnxRelease: async () => {},
+    engineStatus: async () => ({ available: false, installed: {}, running: false }),
+    engineInstall: async () => {
+      throw new Error('Tarayıcı modunda yerel motor yok')
+    },
+    genEdit: async () => {
+      throw new Error('Tarayıcı modunda yerel motor yok')
+    },
+    genCancel: async () => {},
+    chat: async () => {
+      throw new Error('Tarayıcı modunda yerel motor yok')
+    },
+    onEngineProgress: () => () => {}
   }
   return p
 }
 
 export const platform: Platform = w.isil ? electronPlatform() : webPlatform()
+/** Masaüstü uygulaması mı (main süreç: DirectML ONNX, yerel motor)? */
+export const isDesktop = !!w.isil

@@ -97,8 +97,7 @@ export interface Settings {
   exportFormat: 'jpeg' | 'png' | 'webp'
   exportQuality: number   // 50..100
   exportMaxSide: number   // 0 = orijinal
-  aiProvider: 'local' | 'gemini'
-  cloudConsent: boolean
+  genQuality: 'fast' | 'best'   // FLUX.2 klein 4B / 9B
   autosave: boolean
 }
 
@@ -107,8 +106,7 @@ export const DEFAULT_SETTINGS: Settings = {
   exportFormat: 'jpeg',
   exportQuality: 92,
   exportMaxSide: 0,
-  aiProvider: 'local',
-  cloudConsent: false,
+  genQuality: 'fast',
   autosave: true
 }
 

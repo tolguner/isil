@@ -2,7 +2,7 @@
 import * as ort from 'onnxruntime-web/webgpu'
 import ortWasm from 'onnxruntime-web/ort-wasm-simd-threaded.asyncify.wasm?url'
 import ortMjs from 'onnxruntime-web/ort-wasm-simd-threaded.asyncify.mjs?url'
-import { platform } from '@/lib/platform'
+import { platform, isDesktop } from '@/lib/platform'
 import { useEditor } from '@/store/editor'
 import { tNow } from '@/lib/i18n'
 
@@ -15,17 +15,42 @@ export interface ModelDef {
   size: number
   license: string
   extra?: { file: string; url: string; size: number }
+  /** YZ motorunda (Python + CUDA) çalışır; motor kurulu değilse yerine fallback (tarayıcıda çalışan model) kullanılır */
+  native?: boolean
+  fallback?: string
 }
 
 const HF = 'https://huggingface.co'
 export const MODELS: ModelDef[] = [
   { id: 'isnet', name: ['ISNet', 'ISNet'], task: ['Arka plan kesme', 'Background removal'], file: 'isnet_general.onnx', url: `${HF}/imgly/isnet-general-onnx/resolve/main/onnx/model.onnx`, size: 176149806, license: 'MIT' },
-  { id: 'birefnet', name: ['BiRefNet lite', 'BiRefNet lite'], task: ['Detaylı kesim (saç teli)', 'Detailed cutout (hair)'], file: 'birefnet_lite_fp16.onnx', url: `${HF}/onnx-community/BiRefNet_lite-ONNX/resolve/main/onnx/model_fp16.onnx`, size: 114538221, license: 'MIT' },
+  { id: 'birefnet', name: ['BiRefNet', 'BiRefNet'], task: ['Detaylı kesim (saç teli)', 'Detailed cutout (hair)'], file: 'birefnet_fp16.onnx', url: `${HF}/onnx-community/BiRefNet-ONNX/resolve/main/onnx/model_fp16.onnx`, size: 489666272, license: 'MIT', native: true, fallback: 'birefnet-lite' },
+  { id: 'birefnet-lite', name: ['BiRefNet lite', 'BiRefNet lite'], task: ['Detaylı kesim (tarayıcı)', 'Detailed cutout (browser)'], file: 'birefnet_lite_fp16.onnx', url: `${HF}/onnx-community/BiRefNet_lite-ONNX/resolve/main/onnx/model_fp16.onnx`, size: 114538221, license: 'MIT' },
   { id: 'lama', name: ['LaMa', 'LaMa'], task: ['Nesne silme', 'Object removal'], file: 'lama_fp32.onnx', url: `${HF}/Carve/LaMa-ONNX/resolve/main/lama_fp32.onnx`, size: 208044816, license: 'Apache-2.0' },
-  { id: 'esrgan', name: ['Real-ESRGAN', 'Real-ESRGAN'], task: ['Kalite artırma (4×)', 'Upscale (4×)'], file: 'realesrgan_x4.onnx', url: `${HF}/TheGuy444/Real-ESRGAN-ONNX/resolve/main/onnx/model.onnx`, size: 42443, license: 'BSD-3-Clause', extra: { file: 'model.data', url: `${HF}/TheGuy444/Real-ESRGAN-ONNX/resolve/main/onnx/model.data`, size: 4836096 } },
-  { id: 'depth', name: ['Depth Anything V2 Small', 'Depth Anything V2 Small'], task: ['Derinlik (ışık, odak)', 'Depth (relight, focus)'], file: 'depth_anything_v2_small_fp16.onnx', url: `${HF}/onnx-community/depth-anything-v2-small/resolve/main/onnx/model_fp16.onnx`, size: 49642442, license: 'Apache-2.0' },
+  { id: 'ultrasharp', name: ['4x-UltraSharp V2', '4x-UltraSharp V2'], task: ['Kalite artırma (4×)', 'Upscale (4×)'], file: 'ultrasharp_v2.onnx', url: `${HF}/Eric111/huggingworld_onnx-image-models/resolve/main/4x-UltraSharpV2_fp32_op17.onnx`, size: 51800517, license: 'CC BY-NC-SA 4.0 (kişisel / personal)', native: true, fallback: 'esrgan' },
+  { id: 'esrgan', name: ['Real-ESRGAN', 'Real-ESRGAN'], task: ['Kalite artırma (tarayıcı)', 'Upscale (browser)'], file: 'realesrgan_x4.onnx', url: `${HF}/TheGuy444/Real-ESRGAN-ONNX/resolve/main/onnx/model.onnx`, size: 42443, license: 'BSD-3-Clause', extra: { file: 'model.data', url: `${HF}/TheGuy444/Real-ESRGAN-ONNX/resolve/main/onnx/model.data`, size: 4836096 } },
+  { id: 'codeformer', name: ['CodeFormer', 'CodeFormer'], task: ['Yüz onarma', 'Face restoration'], file: 'codeformer.onnx', url: `${HF}/yuvraj108c/codeformer-onnx/resolve/main/codeformer.onnx`, size: 337171345, license: 'S-Lab 1.0 (kişisel / personal)', native: true },
+  { id: 'depth', name: ['Depth Anything V2 Base', 'Depth Anything V2 Base'], task: ['Derinlik (ışık, odak)', 'Depth (relight, focus)'], file: 'depth_anything_v2_base_fp16.onnx', url: `${HF}/onnx-community/depth-anything-v2-base/resolve/main/onnx/model_fp16.onnx`, size: 194570657, license: 'CC BY-NC 4.0 (kişisel / personal)', native: true, fallback: 'depth-small' },
+  { id: 'depth-small', name: ['Depth Anything V2 Small', 'Depth Anything V2 Small'], task: ['Derinlik (tarayıcı)', 'Depth (browser)'], file: 'depth_anything_v2_small_fp16.onnx', url: `${HF}/onnx-community/depth-anything-v2-small/resolve/main/onnx/model_fp16.onnx`, size: 49642442, license: 'Apache-2.0' },
   { id: 'anime', name: ['AnimeGANv2 (yüz boyama)', 'AnimeGANv2 (face paint)'], task: ['Anime/çizim stili', 'Anime/paint style'], file: 'animegan_face_paint_v2.onnx', url: `${HF}/akhaliq/AnimeGANv2-ONNX/resolve/main/face_paint_512_v2_0.onnx`, size: 8594990, license: 'Kişisel kullanım / personal use' }
 ]
+
+/** YZ motoru (Python + PyTorch CUDA) kurulu mu? Kuruluysa ağır modeller GPU'da onunla çalışır. */
+export async function nativeReady(): Promise<boolean> {
+  if (!isDesktop) return false
+  try {
+    return !!(await platform.engineStatus()).installed.runtime
+  } catch {
+    return false
+  }
+}
+
+/** Bu ortamda kullanılacak model: motor kuruluysa güçlü model, değilse tarayıcıda çalışan yedeği. */
+export async function pickModel(id: string): Promise<string> {
+  const m = modelById(id)
+  return m.native && m.fallback && !(await nativeReady()) ? m.fallback : id
+}
+/** Ayarlar ekranında gösterilecekler (tarayıcı modunda motor modelleri gizli). */
+export const visibleModels = () => MODELS.filter((m) => isDesktop || !m.native)
 
 export const modelById = (id: string) => MODELS.find((m) => m.id === id)!
 
@@ -115,7 +140,17 @@ export async function getSession(id: string): Promise<ort.InferenceSession> {
 }
 
 /** Çalıştır; WebGPU çalışma anında başarısız olursa (ör. GPU sınırları) WASM ile yeniden dene. */
-export async function runModel(id: string, feeds: Record<string, ort.Tensor>): Promise<{ out: ort.InferenceSession.OnnxValueMapType; sess: ort.InferenceSession }> {
+export async function runModel(id: string, feeds: Record<string, ort.Tensor>): Promise<{ out: ort.InferenceSession.OnnxValueMapType; sess: Pick<ort.InferenceSession, 'outputNames'> }> {
+  const def = modelById(id)
+  if (def.native) {
+    const raw: Record<string, { data: Float32Array; dims: number[] }> = {}
+    for (const [k, t] of Object.entries(feeds)) raw[k] = { data: t.data as Float32Array, dims: [...t.dims] }
+    const r = await platform.onnxRun({ file: def.file, feeds: raw })
+    lastProvider = r.provider ?? 'native'
+    const out: Record<string, ort.Tensor> = {}
+    for (const [k, v] of Object.entries(r.outputs)) out[k] = new ort.Tensor('float32', v.data, v.dims)
+    return { out, sess: { outputNames: r.outputNames } }
+  }
   let sess = await getSession(id)
   try {
     return { out: await sess.run(feeds), sess }
@@ -130,6 +165,8 @@ export async function runModel(id: string, feeds: Record<string, ort.Tensor>): P
 }
 
 export async function releaseSession(id: string) {
+  const def = modelById(id)
+  if (def.native) return platform.onnxRelease(def.file)
   const s = sessions.get(id)
   sessions.delete(id)
   if (s) (await s.catch(() => null))?.release()

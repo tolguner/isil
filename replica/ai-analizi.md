@@ -1,5 +1,7 @@
 # Yapay zeka gerektiren özellikler — analiz (2026-10-13)
 
+> **Güncelleme (2026-10-13):** Gemini tamamen bırakıldı. Üretken araçlar yerel FLUX.2 klein 4B/9B (görsel düzenleme, inpaint) ve Qwen3-VL 4B (stilist) ile; ağır algı modelleri (BiRefNet, 4x-UltraSharp V2, CodeFormer, Depth Anything V2 Base) aynı motorda CUDA ile çalışıyor. Aşağıdaki analiz ilk planı (Gemini + SD 1.5) anlatır; ayrıntılar `build-log.md` içinde.
+
 Kaynak: BlueStacks'te canlı inceleme (`inceleme-notlari.md`). Klonda **hiçbir özellik ücretli/kilitli değil**; Hypic'teki 👑 araçların hepsi açık.
 
 ## Önce kritik bulgu: Gemini ücretsiz değil

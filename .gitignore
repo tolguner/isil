@@ -12,3 +12,4 @@ src/renderer/public/mediapipe/
 src/renderer/public/ort/
 src/renderer/public/test/
 dev-models/
+replica/ai-results/

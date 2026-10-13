@@ -17,7 +17,7 @@ Bu yüzden şablondaki web katmanları (auth, payments, email, hosting) yerine m
 | üretken (yerel) | Python yan süreç: FastAPI + diffusers (SD 1.5 inpaint/img2img) | faz 3; isteğe bağlı kurulum, CUDA |
 | üretken (bulut) | @google/genai, main süreçte | anahtar renderer'a hiç inmez; isteğe bağlı |
 | saklama | Dosya sistemi: `%APPDATA%/Isil/projects/<id>/` (project.json + varlıklar) | tek kullanıcı; SQLite native modülüne gerek yok, yedeklemesi kolay |
-| sırlar | Electron `safeStorage` (Windows DPAPI) | Gemini anahtarı şifreli |
+| yerel YZ motoru | gömülü Python 3.12 + PyTorch CUDA + diffusers + onnxruntime-gpu | FLUX.2 klein, Qwen3-VL, ağır ONNX modelleri; sır/anahtar yok |
 | paketleme | electron-builder (NSIS) | Windows yükleyici |
 | testler | Vitest (motor/store) + Playwright Electron (e2e) | replica-test bunları kullanır |
 
@@ -57,7 +57,7 @@ EditDoc {
 RasterOp { id, type: 'liquify'|'erase'|'cutout'|'inpaint'|'upscale'|'style'|'gen', file: string, params: object, at: string }
 Layer    { id, type: 'text'|'sticker'|'shape'|'drawing'|'image', x,y,scale,rotation,opacity, z, props }
 Preset   { id, kind: 'filter'|'effect'|'makeup'|'recipe', name, category, params }   // uygulamayla gelir (resources/presets/*.json)
-Settings { language:'tr'|'en', theme, exportDefaults{format,quality,maxSide}, aiProvider:'local'|'gemini', geminiKey(enc), modelsDir }
+Settings { language:'tr'|'en', theme, exportDefaults{format,quality,maxSide}, genQuality:'fast'|'best', modelsDir }
 ```
 
 Kural: piksel işlemleri (rasterOps) her zaman ayar/filtre zincirinden ÖNCE, katmanlar (metin/çıkartma) SONRA uygulanır.
@@ -78,9 +78,10 @@ Böylece Hypic'teki "efekt uygulandıktan sonra metin düzenlenemez" kısıtı k
 | `export:save` | kaydet diyaloğu + yaz | renderer | {bytes, ext, suggestedName} | path | F01 |
 | `shell:reveal` | klasörde göster | renderer | path | — | S26 |
 | `settings:get/set` | tercihler | renderer | — | Settings | S28 |
-| `secret:setGemini/hasGemini` | anahtarı şifreli sakla | renderer | key | bool | S28 |
-| `gemini:edit` | görsel + prompt (+referanslar) → görsel | renderer | {image, prompt, refs[]} | image bytes | F12 |
-| `gemini:chat` | stilist sohbeti (metin+görsel) | renderer | {messages, image?} | text stream | Stilist |
+| `engine:status` / `engine:install` | motor ve model parçalarının durumu / kurulumu | renderer | part | status | S28 |
+| `engine:edit` | görsel + prompt (+referanslar, +maske) → görsel (FLUX.2 klein) | renderer | {image, prompt, refs[], mask?} | image bytes | F12 |
+| `engine:chat` | stilist sohbeti (Qwen3-VL, metin+görsel) | renderer | {messages, system} | text (akış `engine:progress`) | Stilist |
+| `onnx:run` | ağır ONNX modeli motorda CUDA ile | renderer | {file, feeds} | outputs | S13, S22 |
 | `models:status/download` | yerel model dosyaları (HF'den, sha256 kontrolü) | renderer | id | ilerleme olayları | S28 |
 | `sidecar:start/run` | Python üretken yan süreç (faz 3) | renderer | {task, image, mask, prompt} | image | F12 |
 
@@ -95,7 +96,7 @@ Webhook/arka plan işi yok. Tek "iş": model indirmeleri (sürdürülebilir, ipt
 - **Yüz şekillendirme kalitesi:** landmark üçgen ağıyla warp, kenarda arka plan bükülmesi → "arka planı koru" = kişi maskesiyle sınırlama.
 - **Model yükleme süresi:** ilk kullanımda indirme (yüzlerce MB), WebGPU yoksa WASM'a düş + kullanıcıya bildir. Oturumlar araç kapanınca bellekten atılır (6 GB VRAM).
 - **WebGPU ile WebGL aynı anda:** VRAM paylaşımı; ONNX çıkarımı sırasında önizleme sabitlenir.
-- **Gizlilik:** Gemini çağrısı öncesi tek seferlik onay diyaloğu; anahtar yalnızca main süreçte.
+- **Gizlilik:** hiçbir fotoğraf dışarı gönderilmez; internet yalnızca motor/model indirirken kullanılır.
 - **Silme:** proje silme = Geri Dönüşüm Kutusu (kalıcı silme yok).
 - **Lisanslar:** model lisansları Ayarlar → Lisanslar'da; ticari olmayanlar (RMBG-1.4, CodeFormer) kullanılmıyor.
 
@@ -107,5 +108,5 @@ Webhook/arka plan işi yok. Tek "iş": model indirmeleri (sürdürülebilir, ipt
 4. **Kesme ve temizleme (M4, must):** arka plan sil (BiRefNet/ MediaPipe), arka plan değiştir, sihirli silgi (LaMa), dokun-seç (MobileSAM), klonla, mozaik.
 5. **Katmanlar (M5, must/should):** metin (OFL fontlar), çıkartma, şekil, çizim/doodle.
 6. **Should:** kalite artır (Real-ESRGAN), relight (Depth Anything), kolaj/birleştir, toplu düzenleme, tarifler (şablonlar), yüz gizleme, saç rengi.
-7. **Üretken (M7):** Gemini (AI Editör, YZ efektleri, değiştir, ifade, stilist) + Python yan süreç (SD inpaint/img2img).
+7. **Üretken (M7):** yerel Python yan süreç: FLUX.2 klein 4B/9B (YZ Editör, YZ efektleri, değiştir, ifade) + Qwen3-VL 4B (stilist). Gemini planı 2026-10-13'te bırakıldı.
 8. **Fixes** from replica-entrepreneur.

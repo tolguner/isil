@@ -1,11 +1,11 @@
 import { useEffect, useRef, useState } from 'react'
-import { ImagePlus, Send, KeyRound } from 'lucide-react'
+import { ImagePlus, Send, Cpu } from 'lucide-react'
 import { useEditor } from '@/store/editor'
 import { useT, useLang } from '@/lib/i18n'
 import { platform } from '@/lib/platform'
-import { ensureCloud, geminiAvailable, geminiChat } from '@/ai/gemini'
+import { engineStatus, localChat, type ChatMsg } from '@/ai/generative'
 
-interface Msg { role: 'user' | 'bot'; text: string; img?: string }
+interface Msg { role: 'user' | 'bot'; text: string; img?: string; bm?: ImageBitmap | null }
 
 const SYSTEM_TR = 'Sen Işıl uygulamasının güzellik ve stil danışmanısın. Kısa, samimi ve somut öneriler ver: makyaj, saç, kıyafet renkleri, fotoğraf pozları ve Işıl’daki hangi aracın (Rötuş, Filtreler, Tarifler, Arka plan) kullanılacağı. Tıbbi tavsiye verme. Kullanıcı Türkçe yazıyorsa Türkçe yanıtla.'
 const SYSTEM_EN = 'You are the beauty and style advisor of the Işıl photo app. Give short, warm, concrete advice: makeup, hair, outfit colors, photo poses and which Işıl tool to use (Retouch, Looks, Recipes, Backdrop). No medical advice.'
@@ -25,30 +25,41 @@ export function Stylist() {
   const [text, setText] = useState('')
   const [img, setImg] = useState<{ url: string; bm: ImageBitmap } | null>(null)
   const [sending, setSending] = useState(false)
-  const prev = useRef<string | undefined>(undefined)
+  const [partial, setPartial] = useState('')
   const log = useRef<HTMLDivElement>(null)
   useEffect(() => {
-    geminiAvailable().then(setOk)
+    engineStatus().then((x) => setOk(x.available))
   }, [])
   useEffect(() => {
     log.current?.scrollTo({ top: log.current.scrollHeight, behavior: 'smooth' })
-  }, [msgs])
+  }, [msgs, partial])
 
   const send = async (t: string) => {
     if (!t.trim() || sending) return
-    if (!(await ensureCloud())) return
-    const userMsg: Msg = { role: 'user', text: t.trim(), img: img?.url }
-    setMsgs((m) => [...m, userMsg])
+    const userMsg: Msg = { role: 'user', text: t.trim(), img: img?.url, bm: img?.bm ?? null }
+    const history = [...msgs, userMsg]
+    setMsgs(history)
     setText('')
+    setImg(null)
     setSending(true)
+    setPartial('')
+    // yanıt yazıldıkça göster
+    const off = platform.onEngineProgress((p) => {
+      if (p.stage === 'chat' && p.text) setPartial(p.text)
+      if (p.stage === 'load') setPartial(tr('Model belleğe yükleniyor…', 'Loading the model…'))
+    })
     try {
-      const r = await geminiChat(t.trim(), img?.bm, prev.current, lang === 'en' ? SYSTEM_EN : SYSTEM_TR)
-      prev.current = r.id
-      setMsgs((m) => [...m, { role: 'bot', text: r.text || '…' }])
-      setImg(null)
+      // son 8 mesaj + yalnızca son görsel (bellek için)
+      const lastImg = [...history].reverse().find((m) => m.bm)
+      const conv: ChatMsg[] = history.slice(-8).map((m) => ({ role: m.role === 'bot' ? 'assistant' : 'user', text: m.text, image: m === lastImg ? m.bm : null }))
+      const r = await localChat(conv, lang === 'en' ? SYSTEM_EN : SYSTEM_TR)
+      if (r === null) setMsgs((m) => m.slice(0, -1))
+      else setMsgs((m) => [...m, { role: 'bot', text: r || '…' }])
     } catch (e) {
       setMsgs((m) => [...m, { role: 'bot', text: tr('Yanıt alınamadı: ', 'No answer: ') + (e as Error).message }])
     } finally {
+      off()
+      setPartial('')
       setSending(false)
     }
   }
@@ -61,13 +72,10 @@ export function Stylist() {
             <div style={{ textAlign: 'center', marginTop: 40 }}>
               <h1 style={{ fontFamily: 'Playfair Display', fontStyle: 'italic', fontWeight: 400, fontSize: 40, margin: 0 }}>{tr('Merhaba.', 'Hello.')}</h1>
               <p className="muted">{tr('Stil danışmanın. Bir fotoğraf ekle ve güzellik ya da stil hakkında sor.', 'Your style advisor. Add a photo and ask about beauty or style.')}</p>
-              {ok === false && (
-                <div className="card" style={{ maxWidth: 460, margin: '16px auto', textAlign: 'left' }}>
-                  <b><KeyRound size={14} /> {tr('Gemini anahtarı gerekli', 'Gemini key required')}</b>
-                  <p className="note">{tr('Sohbet, kendi Gemini anahtarınla çalışır. Metin modellerinde genellikle ücretsiz kota bulunur.', 'Chat uses your own Gemini key. Text models usually have a free quota.')}</p>
-                  <button className="btn sm primary" onClick={() => useEditor.getState().go('settings')}>{tr('Ayarlara git', 'Open Settings')}</button>
-                </div>
-              )}
+              <div className="card" style={{ maxWidth: 460, margin: '16px auto', textAlign: 'left' }}>
+                <b><Cpu size={14} /> {tr('Bilgisayarında çalışır', 'Runs on your computer')}</b>
+                <p className="note">{ok === false ? tr('Yerel YZ yalnızca masaüstü uygulamasında çalışır.', 'Local AI only runs in the desktop app.') : tr('Qwen3-VL 4B modeli ilk soruda bir kez indirilir (≈3,5 GB). Sohbetin ve fotoğrafların dışarı gönderilmez.', 'The Qwen3-VL 4B model downloads once on your first question (≈3.5 GB). Your chat and photos never leave your computer.')}</p>
+              </div>
               <div className="row wrap" style={{ justifyContent: 'center', marginTop: 16 }}>
                 {STARTERS.map(([a, b]) => (
                   <button key={a} className="btn sm" disabled={ok === false} onClick={() => send(lang === 'en' ? b : a)}>{lang === 'en' ? b : a}</button>
@@ -81,7 +89,7 @@ export function Stylist() {
               {m.text}
             </div>
           ))}
-          {sending && <div className="msg bot"><span className="spinner" style={{ width: 16, height: 16, margin: 0, display: 'inline-block' }} /></div>}
+          {sending && <div className="msg bot">{partial || <span className="spinner" style={{ width: 16, height: 16, margin: 0, display: 'inline-block' }} />}</div>}
         </div>
         <div className="chat-input">
           <button className="icon-btn" title={tr('Fotoğraf ekle', 'Add photo')} aria-label={tr('Fotoğraf ekle', 'Add photo')} onClick={async () => {

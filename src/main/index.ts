@@ -1,10 +1,10 @@
-import { app, BrowserWindow, dialog, ipcMain, net, protocol, safeStorage, shell } from 'electron'
+import { app, BrowserWindow, dialog, ipcMain, net, protocol, shell } from 'electron'
 import { createHash, randomUUID } from 'crypto'
 import { promises as fs, createWriteStream, existsSync, writeFileSync } from 'fs'
 import { join, extname, basename, dirname, normalize, sep } from 'path'
 import { pathToFileURL } from 'url'
 import { DEFAULT_SETTINGS, type Project, type ProjectMeta, type Settings } from '../shared/schema'
-import { registerAiHandlers } from './ai'
+import { registerEngineHandlers } from './engine'
 
 // Dizüstünde harici GPU (ör. RTX) tercih edilsin; WebGPU/WebGL performansı için.
 app.commandLine.appendSwitch('force_high_performance_gpu')
@@ -29,7 +29,6 @@ const root = () => app.getPath('userData')
 const projectsDir = () => join(root(), 'projects')
 const modelsDir = () => join(root(), 'models')
 const settingsFile = () => join(root(), 'settings.json')
-const secretFile = () => join(root(), 'secret.bin')
 
 const IMAGE_EXT = ['jpg', 'jpeg', 'png', 'webp', 'bmp', 'gif', 'avif']
 
@@ -121,7 +120,7 @@ app.whenReady().then(async () => {
   })
 
   registerIpc()
-  registerAiHandlers({ getSecret: readSecret, settings: loadSettings })
+  registerEngineHandlers({ root, onnxDir: modelsDir })
   await createWindow()
   app.on('activate', () => {
     if (BrowserWindow.getAllWindows().length === 0) void createWindow()
@@ -134,15 +133,6 @@ app.on('window-all-closed', () => {
 
 async function loadSettings(): Promise<Settings> {
   return { ...DEFAULT_SETTINGS, ...(await readJSON<Partial<Settings>>(settingsFile(), {})) }
-}
-
-async function readSecret(): Promise<string | null> {
-  try {
-    const buf = await fs.readFile(secretFile())
-    return safeStorage.isEncryptionAvailable() ? safeStorage.decryptString(buf) : null
-  } catch {
-    return null
-  }
 }
 
 function registerIpc() {
@@ -270,16 +260,6 @@ function registerIpc() {
     return next
   })
 
-  ipcMain.handle('secret:set', async (_e, key: string | null) => {
-    if (!key) {
-      await fs.rm(secretFile(), { force: true })
-      return false
-    }
-    if (!safeStorage.isEncryptionAvailable()) throw new Error('şifreleme kullanılamıyor')
-    await fs.writeFile(secretFile(), safeStorage.encryptString(key))
-    return true
-  })
-  ipcMain.handle('secret:has', async () => (await readSecret()) !== null)
 
   // Yerel model dosyaları: indir, doğrula, listele
   ipcMain.handle('models:status', async (_e, files: string[]) => {

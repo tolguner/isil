@@ -53,9 +53,6 @@
     "vitest": "^5.0.4",
     "zustand": "^5.0.15"
   },
-  "dependencies": {
-    "@google/genai": "^2.29.0"
-  },
   "build": {
     "appId": "me.tolguner.isil",
     "productName": "Işıl",
@@ -85,6 +82,15 @@
       "allowToChangeInstallationDirectory": true,
       "artifactName": "Isil-Setup-${version}.${ext}",
       "shortcutName": "Işıl"
-    }
+    },
+    "extraResources": [
+      {
+        "from": "engine",
+        "to": "engine",
+        "filter": [
+          "*.py"
+        ]
+      }
+    ]
   }
 }

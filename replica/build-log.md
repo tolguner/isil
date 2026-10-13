@@ -15,15 +15,15 @@
 | S15 Temizle (silgi, akıllı seçim, klon, mozaik, YZ ile değiştir) | 2026-10-13 | tamam | hazır kategori seçimi (insanlar, metin…) | LaMa büyük nesnelerde iz bırakabiliyor |
 | S16–S19 Metin, Çıkartma, Çizim, Şekiller | 2026-10-13 | tamam | metin fırçası | — |
 | S20 YZ genişlet | 2026-10-13 | kısmi | özel genişletme tuvali yok; YZ Editör komutuyla yapılıyor | — |
-| S21 YZ efektleri | 2026-10-13 | tamam (Gemini) + anime yerel | — | — |
-| S22 Kalite artır | 2026-10-13 | tamam (2×/4×) | yüz onarma (GFPGAN 340 MB) | — |
+| S21 YZ efektleri | 2026-10-13 | tamam (yerel FLUX.2 klein) + anime yerel | — | — |
+| S22 Kalite artır | 2026-10-13 | tamam (2×/4×, UltraSharp V2 + CodeFormer yüz onarma) | — | CodeFormer için 5 noktalı hizalama + ters dönüşümle geri yapıştırma |
 | S23 Tarifler | 2026-10-13 | tamam | topluluk akışı (kapsam dışı) | — |
 | S24 Kolaj / Birleştir | 2026-10-13 | tamam | kolaj şablonları (süslü çerçeveler) | — |
 | S25 Toplu düzenleme | 2026-10-13 | tamam | — | — |
 | S26 Dışa aktarma | 2026-10-13 | tamam | — | — |
 | S27 Projeler | 2026-10-13 | tamam | — | — |
-| S28 Ayarlar (model yöneticisi, Gemini anahtarı) | 2026-10-13 | tamam | — | — |
-| Stil danışmanı | 2026-10-13 | tamam (Gemini) | yerel LLM yedeği | — |
+| S28 Ayarlar (model yöneticisi, YZ motoru kurulumu) | 2026-10-13 | tamam | — | — |
+| Stil danışmanı | 2026-10-13 | tamam (yerel Qwen3-VL 4B, akışlı yanıt) | — | transformers 5.19 4-bit dosyadaki görsel kodlayıcıyı yanlış katmana çeviriyor; yüklemeden sonra bf16 ağırlıklarla düzeltiliyor |
 | Kamera | 2026-10-13 | tamam | — | — |
 | Paketleme | 2026-10-13 | tamam | kod imzalama sertifikası yok | renderer kütüphaneleri `dependencies`'deyken paket 225 MB'tı → 176 MB |
 
@@ -38,8 +38,8 @@
 
 ## Bilinen sınırlar
 
-- Üretken araçlar (YZ Editör, YZ efektleri, YZ ile değiştir, stil danışmanı) Gemini anahtarı ister; ücretsiz kota durumu Google tarafına bağlı.
-- Gemini akışı canlı anahtarla test edilmedi (anahtar yok); hata ve kota mesajları kodda ele alındı.
+- Üretken araçlar NVIDIA ekran kartı ister (CPU'da çalışır ama çok yavaş). 6 GB VRAM'de 4B rahat, 9B blok blok GPU'ya taşınarak çalışıyor.
+- YZ motoru ≈3 GB indirme (kurulu hali ≈5 GB), modeller ayrıca 3,5–12 GB.
 - Rötuş yüz koordinatları kaynak uzayında; kırpılmış fotoğrafta yüz gizleme çıkartmalarının konumu kayabilir.
 
 ## Masaüstünde elle test (2026-10-13 akşam)
@@ -47,3 +47,26 @@
 Gerçek pencere, gerçek dosya diyaloğu ve fareyle denendi: fotoğraf açma, akıllı seçimle kişi silme, dışa aktarma (Farklı Kaydet), tek tıkla arka plan kaldırma, kesim + Ctrl+Z, kaydırıcı sürükleme, yüz inceltme / göz büyütme, YZ Editör anahtarsız durum, model silme ve yeniden indirme, kolaj (3 foto, yerleşim, 1:1, hücre kaydırma, düzenleyiciye gönderme), kamera.
 
 Bulunup düzeltilen hatalar: dokun-seç GPU'da boş maske, kamera doku boyutu 0, ilk küçük resim eksik, hızlı kartta kesim kendiliğinden başlamıyordu, pencere ve son klasör hatırlanmıyordu, kolajda ekle düğmesi kayıyordu, editörden Ayarlar'a geçişte kayıt yapılmıyordu.
+
+## Yerel üretken YZ'ye geçiş (2026-10-13 gece)
+
+Gemini tamamen kaldırıldı; tüm üretken araçlar yerel modellerle çalışıyor.
+
+- **İlk plan (hazır CUDA motorları) olmadı:** stable-diffusion.cpp / llama.cpp Windows ikilileri imzasız; Windows Akıllı Uygulama Denetimi (açık) çalıştırmalarını engelliyor (`0xC0E90002`). python.org Python'u ve PyPI tekerlekleri (torch, bitsandbytes, tokenizers…) engellenmiyor → motor gömülü Python + PyTorch CUDA olarak yazıldı.
+- **DirectML denendi, bırakıldı:** onnxruntime-node DirectML varsayılan olarak Intel iGPU'yu seçiyor (UltraSharp V2 256 px karo: 63 sn); NVIDIA aygıt numarasıyla çalıştırma takıldı ve sürücüyü birkaç dakika kilitledi. Ağır ONNX modelleri motorda onnxruntime-gpu 1.23.2 (CUDA 12) ile çalışıyor; 1.31 CUDA 13 istiyor, torch cu128 ile uyumsuz.
+- **diffusers GGUF tuzakları:** GGUF içindeki BF16 tensörler (norm ölçekleri) ham bayt kalıyor → yüklemeden sonra açılıyor; transformer'ın `dtype`'ı uint8 göründüğü için boru hattı girdileri uint8'e çeviriyordu → `dtype` bf16 olarak sabitlendi.
+- **Inpaint:** referans görseli de verilince dizi 3 katına çıkıp adım 27 sn'ye çıktı; referanssız 5 sn/adım, kalite aynı.
+- **Windows stdin kilidi:** stdin'i ayrı iş parçacığında okurken torch içe aktarması kilitlendi (bekleyen okuma + GetFileType); iptal artık dosya bayrağıyla.
+
+### Ölçümler (RTX 3050 6 GB Laptop, `tests/e2e/ai-local.mjs`, 9/9)
+
+| işlem | süre |
+| --- | --- |
+| FLUX.2 klein 4B düzenleme (≈672×1008, 4 adım) | ilk 55 sn (yükleme dahil), sonra ≈25 sn; 4 GB VRAM |
+| FLUX.2 klein 4B inpaint | ≈25 sn |
+| FLUX.2 klein 9B düzenleme | ≈150 sn (yükleme dahil); 5,7 GB VRAM |
+| Qwen3-VL 4B yanıt | ≈15 sn (yükleme dahil) |
+| BiRefNet tam (1024) | 2,4 sn |
+| 4x-UltraSharp V2 | 2,4 sn / 256 px karo |
+| CodeFormer | 0,2 sn / yüz |
+| Depth Anything V2 Base | 0,04 sn |

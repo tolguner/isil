@@ -20,8 +20,6 @@ const api = {
   reveal: (p: string) => invoke('shell:reveal', p),
   getSettings: () => invoke('settings:get'),
   setSettings: (s: unknown) => invoke('settings:set', s),
-  setSecret: (k: string | null) => invoke('secret:set', k),
-  hasSecret: () => invoke('secret:has'),
   modelStatus: (files: string[]) => invoke('models:status', files),
   downloadModel: (a: unknown) => invoke('models:download', a),
   cancelModel: (f: string) => invoke('models:cancel', f),
@@ -31,8 +29,18 @@ const api = {
     ipcRenderer.on('models:progress', h)
     return () => ipcRenderer.removeListener('models:progress', h)
   },
-  geminiEdit: (a: unknown) => invoke('gemini:edit', a),
-  geminiChat: (a: unknown) => invoke('gemini:chat', a)
+  onnxRun: (a: unknown) => invoke('onnx:run', a),
+  onnxRelease: (f: string) => invoke('onnx:release', f),
+  engineStatus: () => invoke('engine:status'),
+  engineInstall: (part: string) => invoke('engine:install', part),
+  genEdit: (a: unknown) => invoke('engine:edit', a),
+  genCancel: () => invoke('engine:cancel'),
+  chat: (a: unknown) => invoke('engine:chat', a),
+  onEngineProgress: (cb: (p: unknown) => void) => {
+    const h = (_: unknown, p: unknown) => cb(p)
+    ipcRenderer.on('engine:progress', h)
+    return () => ipcRenderer.removeListener('engine:progress', h)
+  }
 }
 
 contextBridge.exposeInMainWorld('isil', api)

@@ -5,7 +5,7 @@ import { useT } from '@/lib/i18n'
 import { Slider, Segmented } from '@/components/ui'
 import { inpaint, toCanvas } from '@/ai/ops'
 import { tapSelect, resetTapSelect } from '@/ai/vision'
-import { ensureCloud, geminiMaskedEdit, grayToAlpha } from '@/ai/gemini'
+import { localMaskedEdit, grayToAlpha } from '@/ai/generative'
 import type { ToolDef, View } from './types'
 import { BrushOverlay, type BrushState } from './brush'
 import { WorkFooter, WorkOverlayImage, busy, fullMask, setWorkResult, useWork, useWorkLifecycle, work, workEmit } from './raster'
@@ -230,7 +230,7 @@ function ReplacePanel() {
   const [prompt, setPrompt] = useState('')
   return (
     <>
-      <p className="note">{tr('Değiştirmek istediğin yeri boya ve yerine ne geleceğini yaz. Bu araç kendi Gemini anahtarınla bulutta çalışır.', 'Paint what to change and describe the replacement. This tool runs in the cloud with your own Gemini key.')}</p>
+      <p className="note">{tr('Değiştirmek istediğin yeri boya ve yerine ne geleceğini yaz. FLUX.2 klein ile bilgisayarında çalışır (20–60 sn).', 'Paint what to change and describe the replacement. Runs on your computer with FLUX.2 klein (20–60 s).')}</p>
       <BrushControls />
       <label className="field">
         <span>{tr('Yerine ne gelsin?', 'Replace with')}</span>
@@ -241,9 +241,12 @@ function ReplacePanel() {
           useEditor.getState().toast('info', tr('Önce değiştirilecek alanı boya.', 'Paint the area to change first.'))
           return
         }
-        if (!(await ensureCloud())) return
-        const res = await busy(tr('Oluşturuluyor…', 'Generating…'), () => geminiMaskedEdit(work.full!, fullMask(), prompt.trim()))
-        if (res) setWorkResult(res)
+        try {
+          const res = await localMaskedEdit(work.full!, fullMask(), prompt.trim())
+          if (res) setWorkResult(res)
+        } catch (e) {
+          useEditor.getState().toast('error', String((e as Error).message))
+        }
       }}><WandSparkles size={16} /> {tr('Oluştur', 'Generate')}</button>
       <WorkFooter type="gen" params={{ prompt }} />
     </>

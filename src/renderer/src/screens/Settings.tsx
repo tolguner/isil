@@ -1,24 +1,28 @@
 import { useEffect, useState } from 'react'
-import { Download, Trash2, Check, KeyRound } from 'lucide-react'
+import { Download, Trash2, Check, Cpu } from 'lucide-react'
 import type { Settings } from '@shared/schema'
 import { useEditor } from '@/store/editor'
 import { platform } from '@/lib/platform'
 import { useT } from '@/lib/i18n'
 import { Segmented, Switch, confirmDialog } from '@/components/ui'
-import { MODELS, ensureModel, modelReady } from '@/ai/models'
+import { visibleModels, ensureModel, modelReady } from '@/ai/models'
+import { PARTS, engineStatus } from '@/ai/generative'
+import type { EngineStatus } from '@/lib/platform'
 
 export function SettingsPage() {
   const tr = useT()
   const s = useEditor((x) => x.settings)
   const set = async (p: Partial<Settings>) => useEditor.getState().setSettings(await platform.setSettings(p))
-  const [hasKey, setHasKey] = useState(false)
-  const [key, setKey] = useState('')
+  const [eng, setEng] = useState<EngineStatus | null>(null)
+  const [stepText, setStepText] = useState('')
+  const [installing, setInstalling] = useState<string | null>(null)
+  const [prog, setProg] = useState<number | null>(null)
   const [ready, setReady] = useState<Record<string, boolean>>({})
 
   const refresh = async () => {
-    setHasKey(await platform.hasSecret())
+    setEng(await engineStatus())
     const r: Record<string, boolean> = {}
-    for (const m of MODELS) r[m.id] = await modelReady(m.id)
+    for (const m of visibleModels()) r[m.id] = await modelReady(m.id)
     setReady(r)
   }
   useEffect(() => {
@@ -56,12 +60,12 @@ export function SettingsPage() {
 
         <section>
           <div className="group-label">{tr('Yerel yapay zekâ modelleri', 'Local AI models')}</div>
-          <p className="note">{tr('Bu modeller bir kez indirilir ve bilgisayarında çalışır; fotoğrafların dışarı gönderilmez. Yüz, vücut, saç ve dokun-seç modelleri uygulamayla birlikte gelir.', 'These download once and run on your computer; your photos never leave it. Face, body, hair and tap-select models ship with the app.')}</p>
-          {MODELS.map((m) => (
+          <p className="note">{tr('Bu modeller bir kez indirilir ve bilgisayarında çalışır; fotoğrafların dışarı gönderilmez. Yüz, vücut, saç ve dokun-seç modelleri uygulamayla birlikte gelir.', 'These download once and run on your computer; your photos never leave it. Face, body, hair and tap-select models ship with the app.')} {tr('YZ motoru kuruluysa güçlü modeller (BiRefNet, UltraSharp V2, CodeFormer, Depth V2 Base) kullanılır; değilse hafif sürümleri.', 'With the AI engine installed the strong models (BiRefNet, UltraSharp V2, CodeFormer, Depth V2 Base) are used; otherwise their light versions.')}</p>
+          {visibleModels().map((m) => (
             <div className="setting" key={m.id}>
               <div>
                 <b>{tr(m.task[0], m.task[1])}</b>
-                <span>{m.name[0]} · {Math.round((m.size + (m.extra?.size ?? 0)) / 1e6)} MB · {m.license}</span>
+                <span>{m.name[0]} · {Math.round((m.size + (m.extra?.size ?? 0)) / 1e6)} MB · {m.license}{m.native ? tr(' · YZ motoruyla GPU’da çalışır', ' · runs on the GPU with the AI engine') : ''}</span>
               </div>
               {ready[m.id] ? (
                 <div className="row">
@@ -84,46 +88,60 @@ export function SettingsPage() {
         </section>
 
         <section>
-          <div className="group-label">{tr('Bulut yapay zekâ (isteğe bağlı)', 'Cloud AI (optional)')}</div>
+          <div className="group-label">{tr('Yerel üretken yapay zekâ', 'Local generative AI')}</div>
           <p className="note">
             {tr(
-              'YZ Editör, YZ efektleri, YZ ile değiştir ve stil danışmanı kendi Google Gemini API anahtarınla çalışır. Anahtar bu bilgisayarda Windows şifrelemesiyle saklanır ve yalnızca Google’a gönderilir. Ücretsiz kotan olup olmadığını Google AI Studio’dan kontrol edebilirsin.',
-              'AI Editor, AI effects, AI replace and the style advisor use your own Google Gemini API key. The key is stored encrypted on this computer and is only sent to Google. Check your free quota in Google AI Studio.'
+              'YZ Editör, YZ efektleri, YZ ile değiştir ve stil danışmanı tamamen bilgisayarında çalışır: FLUX.2 klein (görsel düzenleme) ve Qwen3-VL (sohbet). Motor; Python, PyTorch (CUDA) ve diffusers’tan oluşur, NVIDIA ekran kartı önerilir. Ücret ve internet gerekmez; fotoğrafların dışarı gönderilmez.',
+              'AI Editor, AI effects, AI replace and the style advisor run entirely on your computer: FLUX.2 klein (image editing) and Qwen3-VL (chat). The engine is Python, PyTorch (CUDA) and diffusers; an NVIDIA GPU is recommended. No fees or internet; your photos never leave your computer.'
             )}
           </p>
-          <div className="setting">
-            <div><b><KeyRound size={14} /> Gemini API</b><span>{hasKey ? tr('Anahtar kayıtlı', 'Key saved') : tr('Anahtar yok', 'No key')}</span></div>
-            {hasKey ? (
-              <button className="btn sm danger" onClick={async () => { await platform.setSecret(null); void refresh() }}>{tr('Anahtarı kaldır', 'Remove key')}</button>
-            ) : (
-              <div className="row">
-                <input className="input" style={{ width: 260 }} type="password" placeholder="AIza…" value={key} onChange={(e) => setKey(e.target.value)} disabled={!platform.isElectron} aria-label="Gemini API key" />
-                <button className="btn sm primary" disabled={!key.trim() || !platform.isElectron} onClick={async () => {
-                  try {
-                    await platform.setSecret(key.trim())
-                    setKey('')
-                    useEditor.getState().toast('success', tr('Anahtar kaydedildi', 'Key saved'))
-                  } catch (e) {
-                    useEditor.getState().toast('error', String((e as Error).message))
-                  }
-                  void refresh()
-                }}>{tr('Kaydet', 'Save')}</button>
+          {eng && !eng.available && <div className="card"><b><Cpu size={14} /> {tr('Kullanılamıyor', 'Unavailable')}</b><p className="note">{eng.blocked ?? tr('Yerel motor yalnızca masaüstü uygulamasında çalışır.', 'The local engine only runs in the desktop app.')}</p></div>}
+          {eng?.available && (
+            <>
+              <div className="setting">
+                <div><b>{tr('Kalite', 'Quality')}</b><span>{tr('En iyi: 9B model; kimliği ve ayrıntıyı daha iyi korur ama yaklaşık 3 kat yavaş ve ≈12 GB ek indirme', 'Best: 9B model; keeps identity and detail better but about 3× slower and ≈12 GB extra download')}</span></div>
+                <div style={{ width: 220 }}><Segmented items={[{ id: 'fast', label: tr('Hızlı (4B)', 'Fast (4B)') }, { id: 'best', label: tr('En iyi (9B)', 'Best (9B)') }]} value={s.genQuality} onChange={(v) => set({ genQuality: v })} /></div>
               </div>
-            )}
-          </div>
-          {s.cloudConsent && (
-            <div className="setting">
-              <div><b>{tr('Bulut onayı verildi', 'Cloud consent given')}</b><span>{tr('Geri alırsan bir sonraki bulut işleminde yeniden sorulur.', 'If revoked, you will be asked again next time.')}</span></div>
-              <button className="btn sm ghost" onClick={() => set({ cloudConsent: false })}>{tr('Geri al', 'Revoke')}</button>
-            </div>
+              {Object.entries(PARTS).map(([id, p]) => (
+                <div className="setting" key={id}>
+                  <div><b>{tr(p.name[0], p.name[1])}</b><span>{p.size}{eng.device && id === 'runtime' ? ` · ${eng.device}` : ''}</span></div>
+                  {eng.installed[id] ? (
+                    <span className="muted"><Check size={14} /> {tr('Kurulu', 'Installed')}</span>
+                  ) : installing === id ? (
+                    <span className="muted" style={{ maxWidth: 220, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{prog !== null ? `%${Math.round(prog * 100)}` : stepText || tr('Kuruluyor…', 'Installing…')}</span>
+                  ) : (
+                    <button className="btn sm" disabled={!!installing} onClick={async () => {
+                      setInstalling(id)
+                      setProg(null)
+                      setStepText('')
+                      const off = platform.onEngineProgress((pp) => {
+                        if (pp.stage === 'download' && pp.total) setProg((pp.got ?? 0) / pp.total)
+                        else if (pp.text) {
+                          setProg(null)
+                          setStepText(pp.text)
+                        }
+                      })
+                      try {
+                        await platform.engineInstall(id)
+                      } catch (e) {
+                        useEditor.getState().toast('error', tr('Kurulum başarısız: ', 'Install failed: ') + (e as Error).message)
+                      } finally {
+                        off()
+                        setInstalling(null)
+                        void refresh()
+                      }
+                    }}><Download size={14} /> {tr('Kur', 'Install')}</button>
+                  )}
+                </div>
+              ))}
+            </>
           )}
-          {!platform.isElectron && <p className="note">{tr('Tarayıcı önizlemesinde bulut ve model indirme kapalıdır.', 'Cloud and model downloads are disabled in the browser preview.')}</p>}
         </section>
 
         <section>
           <div className="group-label">{tr('Hakkında', 'About')}</div>
           <p className="note">
-            Işıl 0.1 · {tr('Kişisel kullanım ve portfolyo projesi.', 'Personal and portfolio project.')} {tr('Açık kaynak bileşenler', 'Open-source components')}: Electron, React, MediaPipe (Apache-2.0), ONNX Runtime (MIT), BiRefNet (MIT), LaMa (Apache-2.0), Real-ESRGAN (BSD-3), Depth Anything V2 Small (Apache-2.0), AnimeGANv2, Lucide (ISC), Inter ve diğer yazı tipleri (OFL).
+            Işıl 0.1 · {tr('Kişisel kullanım ve portfolyo projesi.', 'Personal and portfolio project.')} {tr('Açık kaynak bileşenler', 'Open-source components')}: Electron, React, MediaPipe (Apache-2.0), ONNX Runtime (MIT), PyTorch (BSD-3), diffusers / transformers (Apache-2.0), FLUX.2 klein 4B (Apache-2.0) / 9B (FLUX Non-Commercial), Qwen3 / Qwen3-VL (Apache-2.0), BiRefNet (MIT), LaMa (Apache-2.0), Real-ESRGAN (BSD-3), 4x-UltraSharp V2 (CC BY-NC-SA 4.0), CodeFormer (S-Lab 1.0, ticari olmayan), Depth Anything V2 Small (Apache-2.0) / Base (CC BY-NC 4.0), AnimeGANv2, Lucide (ISC), Inter ve diğer yazı tipleri (OFL).
           </p>
         </section>
       </div>
