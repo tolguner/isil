@@ -41,3 +41,9 @@
 - Üretken araçlar (YZ Editör, YZ efektleri, YZ ile değiştir, stil danışmanı) Gemini anahtarı ister; ücretsiz kota durumu Google tarafına bağlı.
 - Gemini akışı canlı anahtarla test edilmedi (anahtar yok); hata ve kota mesajları kodda ele alındı.
 - Rötuş yüz koordinatları kaynak uzayında; kırpılmış fotoğrafta yüz gizleme çıkartmalarının konumu kayabilir.
+
+## Masaüstünde elle test (2026-10-13 akşam)
+
+Gerçek pencere, gerçek dosya diyaloğu ve fareyle denendi: fotoğraf açma, akıllı seçimle kişi silme, dışa aktarma (Farklı Kaydet), tek tıkla arka plan kaldırma, kesim + Ctrl+Z, kaydırıcı sürükleme, yüz inceltme / göz büyütme, YZ Editör anahtarsız durum, model silme ve yeniden indirme, kolaj (3 foto, yerleşim, 1:1, hücre kaydırma, düzenleyiciye gönderme), kamera.
+
+Bulunup düzeltilen hatalar: dokun-seç GPU'da boş maske, kamera doku boyutu 0, ilk küçük resim eksik, hızlı kartta kesim kendiliğinden başlamıyordu, pencere ve son klasör hatırlanmıyordu, kolajda ekle düğmesi kayıyordu, editörden Ayarlar'a geçişte kayıt yapılmıyordu.
