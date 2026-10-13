@@ -61,6 +61,7 @@ function createWindow() {
     minHeight: 700,
     backgroundColor: '#0e0f12',
     title: 'Işıl',
+    icon: join(__dirname, '../renderer/icon.png'),
     titleBarStyle: 'hidden',
     titleBarOverlay: { color: '#0e0f12', symbolColor: '#a3a9b4', height: 40 },
     show: false,

@@ -41,7 +41,7 @@ export function App() {
     <div className="app">
       <header className="titlebar">
         <div className="brand">
-          <span className="brand-dot" aria-hidden />
+          <img src="icon.png" alt="" width={20} height={20} style={{ borderRadius: 5 }} />
           <span>Işıl</span>
         </div>
         {screen !== 'home' && (

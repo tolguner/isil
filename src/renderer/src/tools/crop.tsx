@@ -161,5 +161,5 @@ export const CROP_TOOLS: ToolDef[] = [
 
 /** Kırpma aracı açıkken tuvalde tam (döndürülmüş) kare gösterilir. */
 export function cropViewDoc(d: EditDoc): EditDoc {
-  return { ...d, crop: { ...d.crop, x: 0, y: 0, w: 1, h: 1 }, background: { ...d.background, ratio: null }, effects: [] }
+  return { ...d, crop: { ...d.crop, x: 0, y: 0, w: 1, h: 1 }, background: { ...d.background, ratio: null }, effects: [], layers: [] }
 }

@@ -16,9 +16,10 @@ export function Editor() {
   const tabDef = TABS.find((t) => t.id === tab) ?? TABS[0]
   const toolDef = tabDef.tools.find((t) => t.id === tool) ?? null
 
+  // tek araçlı sekmeler sekmeye girince otomatik açılır (uygulandıktan sonra sonucu görmek için açılmaz)
   useEffect(() => {
-    if (tabDef.auto && !tool && tabDef.tools[0]) useEditor.getState().openTool(tabDef.tools[0].id)
-  }, [tab, tool])
+    if (tabDef.auto && !useEditor.getState().tool && tabDef.tools[0]) useEditor.getState().openTool(tabDef.tools[0].id)
+  }, [tab])
 
   // otomatik kayıt
   useEffect(() => useEditor.subscribe((s, p) => {
@@ -101,14 +102,17 @@ function Panel() {
         )}
         {toolDef && <toolDef.Panel key={toolDef.id} />}
         {!toolDef && !tabDef.auto && <p className="muted">{tr('Bir araç seç.', 'Pick a tool.')}</p>}
+        {!toolDef && tabDef.auto && tabDef.tools[0] && (
+          <div className="card" style={{ textAlign: 'center' }}>
+            <p className="muted">{tr('Değişiklikler uygulandı.', 'Changes applied.')}</p>
+            <button className="btn primary" onClick={() => useEditor.getState().openTool(tabDef.tools[0].id)}>{tr('Düzenlemeye devam et', 'Keep editing')}</button>
+          </div>
+        )}
       </div>
       {toolDef && !toolDef.noFooter && (
         <div className="panel-foot">
           <button className="btn ghost" onClick={() => useEditor.getState().closeTool(false)}>{tr('İptal', 'Cancel')}</button>
-          <button className="btn primary" onClick={() => {
-            useEditor.getState().closeTool(true)
-            if (tabDef.auto) useEditor.getState().openTool(tabDef.tools[0].id)
-          }}>{tr('Uygula', 'Apply')}</button>
+          <button className="btn primary" onClick={() => useEditor.getState().closeTool(true)}>{tr('Uygula', 'Apply')}</button>
         </div>
       )}
     </aside>
@@ -154,7 +158,7 @@ function Stage({ toolDef }: { toolDef: ToolDef | null }) {
           }
           const ctx = ov.getContext('2d')!
           ctx.clearRect(0, 0, o.w, o.h)
-          if (!src && !st.compare) drawLayers(ctx, st.doc.layers, o.w, o.h, () => schedule())
+          if (!src && !st.compare) drawLayers(ctx, vd.layers, o.w, o.h, () => schedule())
         }
       }
       setErr(null)

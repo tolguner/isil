@@ -1,85 +1,88 @@
 feature,area,priority,original,clone,notes
-Open photo from file dialog,home,must,yes,no,S01 S02; JPG PNG WebP
-Drag and drop photo onto window,home,must,no,no,desktop-only addition
-Recent projects grid on home,home,must,yes,no,S01 S27
-Editor canvas with zoom and pan,editor,must,yes,no,S03
-Undo and redo,editor,must,yes,no,S03 history
-Hold to compare with original,editor,must,yes,no,S03
-Non-destructive edit stack re-editable,editor,must,yes,no,EditStack
-Autosave project to disk,projects,must,yes,no,F08
-Brightness contrast exposure,adjust,must,yes,no,S04
-Highlights shadows,adjust,must,yes,no,S04
-Temperature tint,adjust,must,yes,no,S04
-Saturation vibrance,adjust,must,yes,no,S04
-Clarity sharpen,adjust,must,yes,no,S04
-Grain vignette fade,adjust,must,yes,no,S04
-HSL per colour,adjust,should,yes,no,S04
-Filter presets with intensity,filters,must,yes,no,S06; own LUTs not Hypic's
-Filter categories (film / clean / glow / digicam),filters,must,yes,no,S06 own names
-Quick adjust moods (flash glow / blue hour / golden / cinematic),quick adjust,should,yes,no,S05 9.x release notes
-AI Flash brighten dark photo,quick adjust,could,yes,no,8.8 notes; classic low-light curve first
-Crop with aspect ratio presets,crop,must,yes,no,S07
-Rotate dial and 90 degree rotate and flip,crop,must,yes,no,S07
-Perspective horizontal vertical,crop,should,yes,no,S07
-Face detection with multi-face picker,retouch,must,yes,no,S08 MediaPipe
-One-tap auto retouch,retouch,must,yes,no,S08
-Skin smoothing,retouch,must,yes,no,S08 frequency separation
-Blemish removal auto,retouch,must,yes,no,S08
-Under-eye dark circles,retouch,should,yes,no,S08
-Wrinkle reduction,retouch,should,yes,no,S08
-Teeth whitening,retouch,must,yes,no,S08 mouth mask from landmarks
-Eye brighten,retouch,should,yes,no,S08
-Skin tone / glow (AI Skin),retouch,could,yes,no,7.x notes
-Concealer pen brush,retouch,should,yes,no,S11 9.x notes
-Face shape sliders (slim / jaw / chin / forehead),face,must,yes,no,S09 landmark warp
-Eye size and position,face,must,yes,no,S09
-Nose width and length,face,must,yes,no,S09
-Lips size and smile,face,should,yes,no,S09
-Eyebrow shape,face,could,yes,no,S09
-Manual reshape liquify (push / bloat / pinch / twirl / restore),reshape,must,yes,no,S10
-Makeup presets (lipstick / blush / eyeshadow),makeup,should,yes,no,S12
-AI Hair fix,makeup,could,yes,skip,needs generative hair model; no reliable local model
-No-face effect,effects,could,yes,no,7.x notes; face blur/sticker over landmarks
-AI background removal,cutout,must,yes,no,S13 local RMBG/BiRefNet
-Manual mask refine brush and eraser,cutout,must,yes,no,S13 size hardness opacity
-Transparent PNG export,cutout,must,yes,no,F03
-Replace background colour / blur / gradient / image,background,must,yes,no,S14
-Magic eraser object removal,cleanup,must,yes,no,S15 LaMa
-Text layer with fonts styles colour size opacity,text,must,yes,no,S16 open-license fonts only
-Text stroke shadow alignment,text,should,yes,no,S16
-Text style presets,text,could,yes,no,S16
-Stickers with categories,stickers,should,yes,no,S17 own/CC0 set
-Import image as sticker,stickers,should,yes,no,S17
-Doodle brush,draw,should,yes,no,S18
-Shapes,shapes,could,yes,no,S19
-Layer move scale rotate delete reorder,layers,must,yes,no,S16-S19
-Export JPG PNG WebP with quality and size,export,must,yes,no,S26
-Saved toast and open folder,export,must,yes,no,S26
-Projects page with multi-select delete,projects,must,yes,no,S27
-Settings language theme export defaults,settings,must,yes,no,S28 TR + EN
-AI model manager (download / delete / size),settings,must,no,no,S28 local-AI addition
-GPU / CPU provider choice with fallback,settings,must,no,no,S28 CUDA DML CPU
-Upscale 2x 4x,enhance,should,yes,no,S22 Real-ESRGAN
-Face restoration,enhance,should,yes,no,S22 GFPGAN
-AI style / anime / cartoon,ai style,should,yes,no,S21 AnimeGAN
-AI expand outpainting,ai expand,should,yes,no,S20 hardest part
-AI expand with text prompt,ai expand,could,yes,no,S20 SD inpaint; 6 GB VRAM borderline
-AI image editor prompt (regenerate / replace),ai editor,could,yes,no,needs local SD img2img; heavy
-AI avatars from multiple selfies,ai style,could,yes,skip,needs per-user fine-tuning; not practical locally
-Collage layouts 2-9 photos,collage,should,yes,no,S24
-Stitch vertical horizontal,collage,should,yes,no,S24
-Batch edit copy-paste settings,batch,should,yes,no,S25
-Batch export to folder,batch,should,yes,no,S25
-Templates gallery with categories,templates,should,yes,no,S23 own small set
-Template preview and use,templates,should,yes,no,S23
-HEIC import,home,could,yes,no,iPhone photos
-Webcam camera with live filters,camera,could,yes,no,orig has camera; low value on desktop
-Digicam G7X2 camera look,filters,could,yes,no,as a filter preset not camera
+Open photo from file dialog,home,must,yes,yes,S01; JPG PNG WebP AVIF BMP
+Drag and drop photo onto window,home,must,no,yes,desktop addition
+Quick tiles (edit / AI editor / remove bg / eraser / collage / batch / stylist / camera),home,must,yes,yes,S01
+One-tap mood carousels on home,home,should,yes,yes,MOODS; own names
+Projects grid with select / duplicate / delete (to Recycle Bin),projects,must,yes,yes,S27
+Autosave project with thumbnail,projects,must,yes,yes,1 s debounce; Ctrl+S
+Editor canvas zoom / pan / fit,editor,must,yes,yes,wheel; Space+drag; F; 1
+Undo / redo,editor,must,yes,yes,Ctrl+Z / Ctrl+Y; 80 steps
+Hold to compare with original,editor,must,yes,yes,eye button or backslash
+Non-destructive edit stack re-editable,editor,must,yes,yes,text stays editable after effects (Hypic locks it)
+Exposure brightness contrast highlights shadows whites blacks,adjust,must,yes,yes,WebGL
+Temperature tint saturation vibrance brilliance,adjust,must,yes,yes,
+Sharpen clarity structure dehaze,adjust,must,yes,yes,
+Fade glow grain vignette,adjust,must,yes,yes,
+HSL per colour (8 bands),adjust,must,yes,yes,
+Tone curves RGB + channels,adjust,should,yes,yes,
+Smart adjust (auto / boost color / enhance / backlight / dehaze / soften / denoise),adjust,must,yes,yes,histogram based; local
+Flash / tyndall / ambient light / canvas texture,adjust,could,yes,partial,glow + flash/halation effects cover most
+Selective (point) adjust,adjust,could,yes,no,
+Filter presets with intensity and categories,filters,must,yes,yes,37 own looks in 8 categories; live thumbnails
+Quick moods (flash glow / blue hour / golden / cinematic / brighten dark / digicam),filters,should,yes,yes,
+Effects (blur / light leaks / retro / art / mirror),effects,must,yes,yes,31 shader effects; stackable
+Crop with aspect presets,crop,must,yes,yes,10 ratios + draggable frame
+Rotate 90 / straighten / flip,crop,must,yes,yes,auto zoom-to-fill on straighten
+Perspective H / V,crop,should,yes,yes,
+Face detection with multi-face picker,retouch,must,yes,yes,MediaPipe 478 points; up to 8 faces
+Face shape sliders (ratio / face / eyes / nose / brows / lips; ~50),retouch,must,yes,yes,landmark warp; left/right side
+One-tap beauty presets,retouch,must,yes,yes,local presets instead of cloud AI portrait
+Skin: smooth / blemish / pores / wrinkles / dark circles / detail / brighten,retouch,must,yes,yes,skin mask = landmarks x segmentation
+Teeth whitening / eye brighten,retouch,must,yes,yes,
+Makeup full looks + lipstick / blush / eyeshadow / brows,retouch,must,yes,yes,
+Contour / highlighter,retouch,should,yes,yes,
+Eyeliner / lashes / pupil light / mole,retouch,could,yes,no,
+Skin tone,retouch,should,yes,yes,
+AI skin presets (freckles / dewy / matte / tan),retouch,could,yes,partial,dewy + matte local; freckles/tan via AI editor (Gemini)
+Face lift / plump face,retouch,should,yes,yes,warp + light
+Hair color,retouch,should,yes,yes,segmentation recolor; local
+Hair texture / style (wavy / long / bangs),retouch,could,yes,partial,AI effects -> Gemini only
+Relight with draggable light,retouch,should,yes,yes,Depth Anything local
+Retouch brush (smooth / conceal / repair / fade / wrinkle / brighten / detail),retouch,must,yes,yes,
+Manual reshape (liquify push / twirl / pinch / bloat / restore + protect bg),reshape,must,yes,yes,
+Automatic body (presets / ratios / parts),body,should,yes,yes,MediaPipe pose warp
+Manual body stretch / slim band,body,should,yes,yes,
+Face hide (blur / pixel / bar / emoji),retouch,should,yes,yes,
+Change expression / open closed eyes,retouch,could,yes,partial,Gemini prompt presets
+Magic eraser (paint to remove),cleanup,must,yes,yes,LaMa local
+Smart select (tap object to remove),cleanup,should,yes,yes,MediaPipe interactive segmenter
+Smart select categories (people / text / reflections / poles),cleanup,could,yes,no,
+Clone stamp,cleanup,should,yes,yes,
+Mosaic brush,cleanup,should,yes,yes,
+AI replace (paint + prompt),cleanup,could,yes,yes,Gemini; masked composite keeps rest identical
+AI background removal,cutout,must,yes,yes,ISNet local; BiRefNet detailed
+Refine mask brush (restore / erase / hardness),cutout,must,yes,yes,
+Quick person cutout / tap select cutout,cutout,should,yes,yes,
+Save cutout as transparent PNG,cutout,must,yes,yes,
+Backdrop: color / gradient / blurred photo / image / transparent,background,must,yes,yes,
+Canvas ratio padding,background,must,yes,yes,
+Text with fonts / templates / styles,text,must,yes,yes,17 OFL fonts; 8 templates; 9 styles
+Text outline / shadow / background / spacing / slant,text,should,yes,yes,
+Stickers (categories + import image),stickers,should,yes,yes,emoji sets + PNG import
+Shapes with fill / stroke,shapes,should,yes,yes,8 shapes
+Doodle brush (pen / marker / neon / dashed / stamp / eraser),draw,should,yes,yes,
+Text brush (text along stroke),draw,could,yes,no,
+Layer move / rotate / scale / duplicate / delete / order,layers,must,yes,yes,
+Recipes (one-tap templates in editor),recipes,should,yes,yes,17 recipes in 4 groups
+Community template feed (creators / usage counts),templates,skip,yes,skip,their network
+AI editor (free prompt + reference images),ai,should,yes,yes,Gemini with own key
+AI effects (anime / 3D / plush / comic / cyberpunk / wardrobe / hair),ai,should,yes,yes,Gemini; anime also local AnimeGANv2
+Enhance quality 2x / 4x,ai,should,yes,yes,Real-ESRGAN local
+AI face restoration,ai,could,yes,no,GFPGAN 340 MB not bundled yet
+AI expand (outpaint),ai,could,yes,partial,via AI editor prompt; no dedicated canvas tool
+Style advisor chat,ai,could,yes,yes,Gemini text model
+Collage layouts 1-9 photos,collage,should,yes,yes,pan/zoom per cell; ratio; spacing; radius
+Stitch vertical / horizontal,collage,should,yes,yes,
+Batch edit (recipe / look / copy from project),batch,should,yes,yes,save to folder
+Camera with live looks + timer,camera,could,yes,yes,webcam
+Export JPG / PNG / WebP with quality and size,export,must,yes,yes,full resolution; PNG auto for transparency
+Saved toast + show in folder,export,must,yes,yes,
+Settings: language TR/EN / autosave / export defaults,settings,must,yes,yes,
+Local model manager (download / delete),settings,must,no,yes,
+Gemini key (encrypted) + cloud consent,settings,must,no,yes,safeStorage DPAPI
+Windows installer,distribution,must,no,yes,NSIS 176 MB
 Account sign in,account,skip,yes,skip,personal use
-HypicPro subscription and paywall,account,skip,yes,skip,personal use
-Trending discovery feed,templates,skip,yes,skip,their network and creators
-Share to TikTok,export,skip,yes,skip,partner integration; export file instead
-Hypic template and sticker library,templates,skip,yes,skip,licensed content they own
-Hypic filter LUTs and names,filters,skip,yes,skip,their assets; build own
-Onboarding survey and birthday,onboarding,skip,yes,skip,no value for personal app
-Cloud upload of photos,ai,skip,yes,skip,clone is fully local by decision
+HypicPro subscription and paywall,account,skip,yes,skip,everything free by decision
+Share to TikTok,export,skip,yes,skip,partner integration
+Hypic template / sticker / filter libraries,content,skip,yes,skip,their assets; own sets built
+Onboarding survey,onboarding,skip,yes,skip,
