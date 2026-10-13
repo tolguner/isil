@@ -3,6 +3,7 @@ import { resolve } from 'path'
 import { createReadStream, existsSync, statSync } from 'fs'
 import { defineConfig, type Plugin } from 'vite'
 import react from '@vitejs/plugin-react'
+import pkg from './package.json'
 
 // Büyük ONNX modelleri uygulama paketine girmesin diye dev-models/ altında; burada /models/ altında sunulur.
 const devModels = (): Plugin => ({
@@ -24,6 +25,7 @@ const devModels = (): Plugin => ({
 export default defineConfig({
   root: 'src/renderer',
   resolve: { alias: { '@': resolve(__dirname, 'src/renderer/src'), '@shared': resolve(__dirname, 'src/shared') } },
+  define: { __APP_VERSION__: JSON.stringify(pkg.version) },
   plugins: [react(), devModels()],
   optimizeDeps: { exclude: ['onnxruntime-web'] },
   server: { port: 5198, strictPort: true }
