@@ -184,9 +184,20 @@ def step_cb(steps):
     return cb
 
 
+def heavy_gpu():
+    """FLUX/sohbet öncesi: ONNX oturumlarını bırak; 6 GB'ta birkaç yüz MB bile belleği taşırıp 3 kat yavaşlatıyor."""
+    if ORT:
+        ORT.clear()
+        gc.collect()
+    if torch is not None and torch.cuda.is_available():
+        torch.cuda.empty_cache()
+
+
 def cmd_edit(a):
     t = lazy_torch()
     from PIL import Image
+
+    heavy_gpu()
 
     pipe = load_flux(a.get("model", "flux-fast"))
     w, h = int(a["width"]), int(a["height"])
@@ -223,8 +234,9 @@ def cmd_edit(a):
         out = offload_for(pipe)(image=[image] + refs, **common).images[0]
     out.save(a["out"])
     if t.cuda.is_available():
-        log("vram peak GB", round(t.cuda.max_memory_allocated() / 2**30, 2), "te device", next(pipe.text_encoder.parameters()).device)
+        log("vram peak GB", round(t.cuda.max_memory_allocated() / 2**30, 2))
         t.cuda.reset_peak_memory_stats()
+        t.cuda.empty_cache()  # PyTorch'un ayırdığı ama kullanmadığı belleği bırak
     return {"out": a["out"]}
 
 
@@ -278,6 +290,8 @@ def restore_unquantized(model, path):
 
 def cmd_chat(a):
     from PIL import Image
+
+    heavy_gpu()
     from transformers import StoppingCriteria, StoppingCriteriaList, TextIteratorStreamer
 
     model, proc = load_vlm()
@@ -339,14 +353,32 @@ def cmd_onnx(a):
         gc.collect()
         ort.set_default_logger_severity(3)
         # sezgisel cuDNN seçimi: ilk çalıştırmadaki uzun algoritma aramasını atlar
-        sess = ort.InferenceSession(path, providers=[("CUDAExecutionProvider", {"cudnn_conv_algo_search": "HEURISTIC"}), "CPUExecutionProvider"])
+        # arena isteğe göre büyüsün (2'nin katlarına şişmesin); bellek her çalıştırmadan sonra geri verilir (aşağıda)
+        cuda_opts = {"cudnn_conv_algo_search": "HEURISTIC", "arena_extend_strategy": "kSameAsRequested"}
+        sess = ort.InferenceSession(path, providers=[("CUDAExecutionProvider", cuda_opts), "CPUExecutionProvider"])
         ORT[path] = sess
-    feeds = {k: np.fromfile(v["path"], dtype=np.float32).reshape(v["dims"]) for k, v in a["feeds"].items()}
+    feeds = {k: np.fromfile(v["path"], dtype=np.float64 if v.get("dtype") == "float64" else np.float32).reshape(v["dims"]) for k, v in a["feeds"].items()}
     names = [o.name for o in sess.get_outputs()]
-    first = sess.run(names[:1], feeds)[0].astype(np.float32, copy=False)
+    # çalıştırmadan sonra GPU arenasını küçült: tarayıcıdaki WebGPU modelleri aynı 6 GB'ı paylaşıyor
+    ro = ort.RunOptions()
+    ro.add_run_config_entry("memory.enable_memory_arena_shrinkage", "gpu:0")
+    first = sess.run(names[:1], feeds, run_options=ro)[0].astype(np.float32, copy=False)
     out = a["out"]
     first.tofile(out)
     return {"outputs": {names[0]: {"path": out, "dims": list(first.shape)}}, "outputNames": names, "provider": "cuda" if "CUDA" in sess.get_providers()[0] else "cpu"}
+
+
+def cmd_free(_a):
+    """Arayüz GPU'yu kendi (WebGPU) modelleri için istiyor: sohbet modelini (≈3 GB) bırak.
+    ONNX oturumları her çalıştırmadan sonra arenasını küçülttüğü için kalır (yeniden yükleme 10–30 sn sürüyor);
+    FLUX ağırlıkları zaten CPU'da bekliyor."""
+    if state["kind"] == "vlm":
+        unload()
+    gc.collect()
+    if torch is not None and torch.cuda.is_available():
+        torch.cuda.empty_cache()
+        return {"vramUsedGB": round(torch.cuda.memory_reserved() / 2**30, 2)}
+    return {}
 
 
 def cmd_onnx_release(a):
@@ -366,7 +398,7 @@ def cmd_info(_a):
     }
 
 
-HANDLERS = {"edit": cmd_edit, "chat": cmd_chat, "onnx": cmd_onnx, "onnx_release": cmd_onnx_release, "info": cmd_info, "unload": lambda a: unload() or {}}
+HANDLERS = {"edit": cmd_edit, "chat": cmd_chat, "onnx": cmd_onnx, "onnx_release": cmd_onnx_release, "free": cmd_free, "info": cmd_info, "unload": lambda a: unload() or {}}
 CUR = {"id": None}
 
 

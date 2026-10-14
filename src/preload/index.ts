@@ -35,6 +35,7 @@ const api = {
   engineInstall: (part: string) => invoke('engine:install', part),
   genEdit: (a: unknown) => invoke('engine:edit', a),
   genCancel: () => invoke('engine:cancel'),
+  engineFree: () => invoke('engine:free'),
   chat: (a: unknown) => invoke('engine:chat', a),
   onEngineProgress: (cb: (p: unknown) => void) => {
     const h = (_: unknown, p: unknown) => cb(p)

@@ -324,17 +324,17 @@ export function registerEngineHandlers({ root, onnxDir }: { root: () => string; 
   })
 
   // Ağır ONNX modelleri motorda CUDA ile çalışır. Tensörler geçici .bin dosyalarıyla taşınır.
-  ipcMain.handle('onnx:run', async (_e, a: { file: string; feeds: Record<string, { data: Float32Array; dims: number[] }> }) => {
+  ipcMain.handle('onnx:run', async (_e, a: { file: string; feeds: Record<string, { data: Float32Array; dims: number[]; dtype?: string }> }) => {
     if (!runtimeOk()) throw new Error('ENGINE_RUNTIME_MISSING')
     await fs.mkdir(tmp(), { recursive: true })
     const files: string[] = []
     try {
-      const feeds: Record<string, { path: string; dims: number[] }> = {}
+      const feeds: Record<string, { path: string; dims: number[]; dtype?: string }> = {}
       for (const [k, v] of Object.entries(a.feeds)) {
         const f = join(tmp(), randomUUID() + '.bin')
         files.push(f)
         await fs.writeFile(f, Buffer.from(v.data.buffer, v.data.byteOffset, v.data.byteLength))
-        feeds[k] = { path: f, dims: v.dims }
+        feeds[k] = { path: f, dims: v.dims, dtype: v.dtype }
       }
       const out = join(tmp(), randomUUID() + '.bin')
       files.push(out)
@@ -348,6 +348,10 @@ export function registerEngineHandlers({ root, onnxDir }: { root: () => string; 
     } finally {
       for (const f of files) void fs.rm(f, { force: true })
     }
+  })
+  // arayüz GPU'yu WebGPU modelleri için istiyor: motor elindeki ONNX/sohbet belleğini bıraksın
+  ipcMain.handle('engine:free', async () => {
+    if (proc) await call('free', {}).catch(() => {})
   })
   ipcMain.handle('onnx:release', async (_e, file: string) => {
     if (proc) await call('onnx_release', { model: join(onnxDir(), file) }).catch(() => {})

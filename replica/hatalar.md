@@ -41,6 +41,29 @@ Yalnızca yeniden üretilen hatalar. Önem: S1 veri kaybı/çekirdek akış kili
 - Gerçekleşen: `session.reset()` önceki fotoğrafın W/H ve son çıktı bilgisini sıfırlamıyordu.
 - Durum: **düzeltildi**.
 
+### BUG-006: Araçlar arasında gidip gelince modeller yüklenemiyor, motor yavaşlıyor
+
+- Önem: S2 (özellik bozuk; yeniden başlatmadan düzelmiyor)
+- Bulunduğu yer: Aşama 2 ölçümü — tarayıcı modeli (ISNet) ve motor modeli (BiRefNet) arka arkaya
+- Adımlar: 1) Kesim → Otomatik. 2) Kesim → Detaylı (motor). 3) Birkaç fotoğrafta tekrarla. 4) Kalite artır.
+- Gerçekleşen: 3. turdan sonra her tarayıcı modeli "model yüklenemedi" (`failed to allocate a buffer of size 176149806`); motordaki BiRefNet 2,4 sn yerine 30 sn; bir ölçümde ekran belleği 5954/6144 MiB doldu.
+- Neden: (a) motorun CUDA arenası çalıştırmadan sonra belleği geri vermiyordu; (b) BiRefNet lite'ın başarısız WASM denemeleri tarayıcının WASM belleğini parçalıyordu; (c) ilk düzeltme denemesinde her geçişte oturumları boşaltıp yeniden yüklemek durumu kötüleştirdi.
+- Durum: **düzeltildi** — motor her ONNX çalıştırmasından sonra arenayı küçültüyor; tarayıcı modeli öncesi motor yalnız sohbet modelini bırakıyor; tarayıcı oturumları yalnız FLUX/sohbet öncesi bırakılıyor. `tests/e2e/gpu-switch.mjs`: 3 tur ISNet → BiRefNet → FLUX → ISNet, 12/12, ekran belleği ≤ 2 GB, BiRefNet ısınınca 1,5 sn.
+
+### BUG-007: Motor yokken "Detaylı" kesim sessizce standart kesim yapıyor
+
+- Önem: S3 (yanıltıcı)
+- Gerçekleşen: yedek model BiRefNet lite bu sınıf GPU'larda WebGPU'da çalışmıyor (16 depolama tamponu sınırı), WASM'da `std::bad_alloc`; kod sessizce ISNet'e düşüyordu. Kullanıcı "detaylı" seçip standart sonuç alıyordu.
+- Durum: **düzeltildi** — BiRefNet lite kaldırıldı; motor yoksa kullanıcıya "detaylı kesim YZ motoruyla çalışır, şimdilik standart kesim yapıldı" deniyor.
+
+### BUG-008: Küçük ve loş yüzler algılanmıyor (grup ve tüm vücut fotoğrafları)
+
+- Önem: S2 (grup fotoğrafında rötuş, makyaj, yüz şekli hiç çalışmıyor)
+- Kanıt: deneme setinde loş ışıklı 4–5 kişilik grup fotoğrafında 0 yüz, tüm vücut fotoğrafında 0 yüz; yakın planlı 15 yüzün 15'i bulundu.
+- Neden: MediaPipe Face Landmarker'ın içindeki BlazeFace kısa mesafe dedektörü; küçük yüzleri kaçırıyor.
+- Öneri (0.3.0): önce YuNet (MIT, ≈300 KB, 10 px'e kadar yüz) ile yüzleri bul, sonra her yüzün büyütülmüş kırpımında landmark çıkar ve koordinatları geri taşı.
+- Durum: açık.
+
 ## Hata olmayan ama karar isteyen bulgular
 
 | no | bulgu | neden önemli | öneri |

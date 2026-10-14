@@ -1,0 +1,45 @@
+özellik,alan,ışıl,facetune,faceapp,peachy,picsart,prequel,canva,capcut,not
+Cilt pürüzsüzleştirme / leke,rötuş,evet,evet,evet,evet,evet,?,hayır,?,
+Yüz şekli kaydırıcıları,rötuş,evet,evet,evet,evet,kısmi,?,hayır,?,Işıl ~50 kaydırıcı
+Makyaj,rötuş,evet,evet,evet,evet,?,?,hayır,?,
+Diş beyazlatma,rötuş,evet,evet,?,evet,?,?,hayır,?,
+Cilt dokusu (gözenek koruma),rötuş,kısmi,evet,?,evet,?,?,hayır,?,Facetune Skin 2.0; Peachy doku aracı
+Yeniden ışıklandırma,rötuş,evet,evet,evet,evet,?,?,hayır,?,Peachy serbest ışık kaynağı
+Saç rengi,rötuş,evet,?,evet,evet,evet,?,hayır,?,
+Saç modeli değiştirme (üretken),üretken,kısmi,evet,evet,evet,?,?,hayır,?,Işıl: YZ Editör komutu
+Sakal / bıyık ekleme,üretken,kısmi,evet,evet,?,?,?,hayır,?,Işıl: komutla
+Yaş / ifade dönüşümü,üretken,kısmi,?,evet,?,?,?,hayır,?,Işıl: hazır komutlar
+Kıyafet değiştirme,üretken,kısmi,evet,?,evet,evet,?,hayır,?,Facetune 12 sürüm bu alanda
+YZ vesikalık / profil fotoğrafı,üretken,kısmi,evet,?,?,evet,?,?,?,
+YZ karikatür / anime / avatar,üretken,evet,?,?,evet,evet,evet,?,?,
+Vücut şekillendirme,vücut,evet,evet,?,evet,?,?,hayır,?,
+Boy uzatma / bacak,vücut,kısmi,?,?,evet,?,?,hayır,?,Işıl: vücut kaydırıcıları içinde
+Kas / dövme ekleme,vücut,hayır,?,?,evet,?,?,hayır,?,
+Arka plan kaldırma,kesim,evet,evet,evet,evet,evet,?,evet,evet,
+Nesne silme (fırça),temizle,evet,evet,?,evet,evet,?,evet,?,
+Yoldan geçenleri otomatik bulup silme,temizle,hayır,evet,?,evet,?,?,?,?,Peachy 2.15
+YZ ile değiştir (fırça + komut),üretken,evet,?,?,?,evet,?,?,?,
+YZ genişlet (kadraj dışı),üretken,kısmi,?,?,?,evet,?,evet,?,Işıl: komutla; ayrı tuval yok
+Serbest komutla düzenleme,üretken,evet,?,?,?,evet,?,evet,?,Işıl yerel FLUX.2 klein
+Sohbetle düzenleme / danışman,üretken,kısmi,?,?,?,evet,?,?,?,Işıl danışman öneriyor ama uygulamıyor
+Kalite artırma / netleştirme,ai,evet,evet,?,evet,evet,?,?,?,
+Yüz onarma,ai,evet,?,?,evet,?,?,?,?,Işıl CodeFormer (kimlik sorunu — Aşama 2)
+Filtre sayısı,görünüm,37+31 efekt,?,60+,?,çok,800+,?,haftalık,
+Kamera taklidi filtreleri,görünüm,hayır,?,?,?,?,evet,?,?,Prequel GR III / Selfie Cam
+Seçmeli (bölgesel) ayar,ayar,hayır,?,?,evet,?,?,?,?,Peachy 2.13
+HSL / eğriler,ayar,evet,?,evet,evet,evet,evet,?,?,
+Metin + yazı tipleri,katman,evet (17),?,?,evet,evet (yüzlerce),evet (30+),evet,evet,
+Çıkartma,katman,evet,?,?,evet,evet (60 M+),evet,evet,evet,
+Çıkartma yapıcı (kendi kesiminden),katman,hayır,?,?,?,evet,?,?,?,
+Şablonlar (afiş/gönderi),tasarım,kısmi,?,?,?,evet,evet (video),evet,evet,Işıl: tarifler
+Kolaj,tasarım,evet,evet,?,?,evet,?,evet,?,
+Toplu düzenleme,iş akışı,evet,?,?,?,?,?,evet,?,
+Önce/sonra karşılaştırma,iş akışı,evet,?,evet (her adım),?,?,?,?,?,
+Araç arama,iş akışı,hayır,?,?,evet,?,?,evet,?,Peachy 2.12
+Video düzenleme,video,hayır,evet,hayır,?,evet,evet,evet,evet,kapsam dışı
+3B hareketli fotoğraf (paralaks),efekt,hayır,?,?,?,?,evet,?,?,Işıl derinlik haritası var
+Gerçek zamanlı güzellik kamerası,kamera,kısmi,?,?,evet,?,?,?,?,Işıl kamera var; canlı rötuş yok
+HEIC açma,dosya,hayır,evet,evet,evet,evet,evet,evet,evet,mobilde doğal; Işıl 0.3.0'da
+Çevrimdışı çalışma,gizlilik,evet,kısmi,hayır,?,kısmi,?,hayır,hayır,FaceApp bulutta işliyor
+İzleyici (Exodus),gizlilik,0,9,?,?,?,?,8,13,
+Ücret,ücret,ücretsiz,77.99$/yıl,10-100$,19.99$/yıl veya 49.99$ ömür,57-84$/yıl,14.99$/yıl,119.99$/yıl,89.99$/yıl,

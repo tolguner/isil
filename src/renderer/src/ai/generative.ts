@@ -5,6 +5,7 @@ import { useEditor } from '@/store/editor'
 import { tNow } from '@/lib/i18n'
 import { encodeCanvas } from '@/engine/session'
 import { toCanvas } from './ops'
+import { claimGpu } from './models'
 
 type Src = CanvasImageSource & { width: number; height: number }
 
@@ -100,8 +101,10 @@ export async function localEdit(src: Src, prompt: string, refs: Src[] = []): Pro
     const s = fluxSize(r.width, r.height, 768)
     return png(toCanvas(r, s.w, s.h))
   }))
-  const out = await withProgress(tNow('Yapay zekâ düzenliyor…', 'AI is editing…'), () =>
-    platform.genEdit({ image, prompt, refs: refBytes, width: w, height: h, quality })
+  const out = await withProgress(tNow('Yapay zekâ düzenliyor…', 'AI is editing…'), async () => {
+      await claimGpu('engine', true)
+      return platform.genEdit({ image, prompt, refs: refBytes, width: w, height: h, quality })
+    }
   )
   const bm = await createImageBitmap(new Blob([out as BlobPart], { type: 'image/png' }))
   const res = toCanvas(bm, src.width, src.height)
@@ -110,12 +113,13 @@ export async function localEdit(src: Src, prompt: string, refs: Src[] = []): Pro
 }
 
 /** Maskeli düzenleme (FLUX.2 klein inpaint): yalnız maskeli alan yeniden çizilir, dışı birebir korunur. */
-export async function localMaskedEdit(src: Src, mask: HTMLCanvasElement, what: string): Promise<HTMLCanvasElement | null> {
+export async function localMaskedEdit(src: Src, mask: HTMLCanvasElement, what: string, opts: { prefill?: Src } = {}): Promise<HTMLCanvasElement | null> {
   const quality = useEditor.getState().settings.genQuality
   const part = quality === 'best' ? 'flux-best' : 'flux-fast'
   if (!(await ensureEngine(['runtime', part]))) return null
   const { w, h } = fluxSize(src.width, src.height)
-  const image = await png(toCanvas(src, w, h))
+  // prefill: silmede nesne önce LaMa ile kabaca doldurulur; yoksa FLUX koşul görüntüsünde nesneyi görüp geri çiziyor
+  const image = await png(toCanvas(opts.prefill ?? src, w, h))
   // maskeyi biraz genişlet: kenar pikselleri de yeniden çizilsin, dikiş kalmasın
   const grow = document.createElement('canvas')
   grow.width = w
@@ -130,8 +134,10 @@ export async function localMaskedEdit(src: Src, mask: HTMLCanvasElement, what: s
   for (let i = 0; i < id.data.length; i += 4) id.data[i] = id.data[i + 1] = id.data[i + 2] = id.data[i] > 8 ? 255 : 0
   gc.putImageData(id, 0, 0)
   const maskPng = await png(grow)
-  const out = await withProgress(tNow('Yapay zekâ dolduruyor…', 'AI is filling…'), () =>
-    platform.genEdit({ image, prompt: what, mask: maskPng, width: w, height: h, quality })
+  const out = await withProgress(tNow('Yapay zekâ dolduruyor…', 'AI is filling…'), async () => {
+      await claimGpu('engine', true)
+      return platform.genEdit({ image, prompt: what, mask: maskPng, width: w, height: h, quality })
+    }
   )
   const bm = await createImageBitmap(new Blob([out as BlobPart], { type: 'image/png' }))
   const edited = toCanvas(bm, src.width, src.height)
@@ -174,5 +180,6 @@ export async function localChat(messages: ChatMsg[], system: string): Promise<st
     text: m.text,
     image: m.image ? await png(toCanvas(m.image, ...Object.values(fluxSize(m.image.width, m.image.height, 768)) as [number, number])) : undefined
   })))
+  await claimGpu('engine', true)
   return platform.chat({ messages: msgs, system })
 }

@@ -18,17 +18,27 @@ export interface ModelDef {
   /** YZ motorunda (Python + CUDA) çalışır; motor kurulu değilse yerine fallback (tarayıcıda çalışan model) kullanılır */
   native?: boolean
   fallback?: string
+  /** ayarlar listesinde gösterme (aynı dosyanın başka çalıştırma yolu) */
+  hidden?: boolean
 }
 
 const HF = 'https://huggingface.co'
 export const MODELS: ModelDef[] = [
   { id: 'isnet', name: ['ISNet', 'ISNet'], task: ['Arka plan kesme', 'Background removal'], file: 'isnet_general.onnx', url: `${HF}/imgly/isnet-general-onnx/resolve/main/onnx/model.onnx`, size: 176149806, license: 'MIT' },
-  { id: 'birefnet', name: ['BiRefNet', 'BiRefNet'], task: ['Detaylı kesim (saç teli)', 'Detailed cutout (hair)'], file: 'birefnet_fp16.onnx', url: `${HF}/onnx-community/BiRefNet-ONNX/resolve/main/onnx/model_fp16.onnx`, size: 489666272, license: 'MIT', native: true, fallback: 'birefnet-lite' },
-  { id: 'birefnet-lite', name: ['BiRefNet lite', 'BiRefNet lite'], task: ['Detaylı kesim (tarayıcı)', 'Detailed cutout (browser)'], file: 'birefnet_lite_fp16.onnx', url: `${HF}/onnx-community/BiRefNet_lite-ONNX/resolve/main/onnx/model_fp16.onnx`, size: 114538221, license: 'MIT' },
+  // BiRefNet lite tarayıcıda çalışmıyor (WebGPU 16 depolama tamponu sınırı, WASM'da bellek biter ve
+  // sonraki tüm modellerin yüklenmesini bozar); detaylı kesim yalnız YZ motoruyla.
+  { id: 'birefnet', name: ['BiRefNet', 'BiRefNet'], task: ['Detaylı kesim (saç teli)', 'Detailed cutout (hair)'], file: 'birefnet_fp16.onnx', url: `${HF}/onnx-community/BiRefNet-ONNX/resolve/main/onnx/model_fp16.onnx`, size: 489666272, license: 'MIT', native: true },
   { id: 'lama', name: ['LaMa', 'LaMa'], task: ['Nesne silme', 'Object removal'], file: 'lama_fp32.onnx', url: `${HF}/Carve/LaMa-ONNX/resolve/main/lama_fp32.onnx`, size: 208044816, license: 'Apache-2.0' },
+  // aynı dosya, motorda CUDA ile (tarayıcıda 15–35 sn, motorda < 1 sn); ayarlarda ayrı gösterilmez
+  { id: 'lama-gpu', name: ['LaMa (GPU)', 'LaMa (GPU)'], task: ['Nesne silme', 'Object removal'], file: 'lama_fp32.onnx', url: `${HF}/Carve/LaMa-ONNX/resolve/main/lama_fp32.onnx`, size: 208044816, license: 'Apache-2.0', native: true, fallback: 'lama', hidden: true },
   { id: 'ultrasharp', name: ['4x-UltraSharp V2', '4x-UltraSharp V2'], task: ['Kalite artırma (4×)', 'Upscale (4×)'], file: 'ultrasharp_v2.onnx', url: `${HF}/Eric111/huggingworld_onnx-image-models/resolve/main/4x-UltraSharpV2_fp32_op17.onnx`, size: 51800517, license: 'CC BY-NC-SA 4.0 (kişisel / personal)', native: true, fallback: 'esrgan' },
   { id: 'esrgan', name: ['Real-ESRGAN', 'Real-ESRGAN'], task: ['Kalite artırma (tarayıcı)', 'Upscale (browser)'], file: 'realesrgan_x4.onnx', url: `${HF}/TheGuy444/Real-ESRGAN-ONNX/resolve/main/onnx/model.onnx`, size: 42443, license: 'BSD-3-Clause', extra: { file: 'model.data', url: `${HF}/TheGuy444/Real-ESRGAN-ONNX/resolve/main/onnx/model.data`, size: 4836096 } },
   { id: 'codeformer', name: ['CodeFormer', 'CodeFormer'], task: ['Yüz onarma', 'Face restoration'], file: 'codeformer.onnx', url: `${HF}/yuvraj108c/codeformer-onnx/resolve/main/codeformer.onnx`, size: 337171345, license: 'S-Lab 1.0 (kişisel / personal)', native: true },
+  // yüz onarma adayları (Aşama 2 ölçümü; FaceFusion model deposu) — ayarlarda gösterilmez
+  { id: 'codeformer-w', name: ['CodeFormer (sadakat ayarlı)', 'CodeFormer (fidelity)'], task: ['Yüz onarma', 'Face restoration'], file: 'codeformer_w.onnx', url: `${HF}/facefusion/models-3.0.0/resolve/main/codeformer.onnx`, size: 376951650, license: 'S-Lab 1.0 (kişisel / personal)', native: true, hidden: true },
+  { id: 'gfpgan', name: ['GFPGAN 1.4', 'GFPGAN 1.4'], task: ['Yüz onarma', 'Face restoration'], file: 'gfpgan_1.4.onnx', url: `${HF}/facefusion/models-3.0.0/resolve/main/gfpgan_1.4.onnx`, size: 340299087, license: 'Apache-2.0 (+ NVIDIA StyleGAN2 bileşenleri)', native: true, hidden: true },
+  { id: 'gpen', name: ['GPEN-BFR 512', 'GPEN-BFR 512'], task: ['Yüz onarma', 'Face restoration'], file: 'gpen_bfr_512.onnx', url: `${HF}/facefusion/models-3.0.0/resolve/main/gpen_bfr_512.onnx`, size: 284340240, license: 'kişisel / personal', native: true, hidden: true },
+  { id: 'restoreformer', name: ['RestoreFormer++', 'RestoreFormer++'], task: ['Yüz onarma', 'Face restoration'], file: 'restoreformer_plus_plus.onnx', url: `${HF}/facefusion/models-3.0.0/resolve/main/restoreformer_plus_plus.onnx`, size: 294264232, license: 'Apache-2.0', native: true, hidden: true },
   { id: 'depth', name: ['Depth Anything V2 Base', 'Depth Anything V2 Base'], task: ['Derinlik (ışık, odak)', 'Depth (relight, focus)'], file: 'depth_anything_v2_base_fp16.onnx', url: `${HF}/onnx-community/depth-anything-v2-base/resolve/main/onnx/model_fp16.onnx`, size: 194570657, license: 'CC BY-NC 4.0 (kişisel / personal)', native: true, fallback: 'depth-small' },
   { id: 'depth-small', name: ['Depth Anything V2 Small', 'Depth Anything V2 Small'], task: ['Derinlik (tarayıcı)', 'Depth (browser)'], file: 'depth_anything_v2_small_fp16.onnx', url: `${HF}/onnx-community/depth-anything-v2-small/resolve/main/onnx/model_fp16.onnx`, size: 49642442, license: 'Apache-2.0' },
   { id: 'anime', name: ['AnimeGANv2 (yüz boyama)', 'AnimeGANv2 (face paint)'], task: ['Anime/çizim stili', 'Anime/paint style'], file: 'animegan_face_paint_v2.onnx', url: `${HF}/akhaliq/AnimeGANv2-ONNX/resolve/main/face_paint_512_v2_0.onnx`, size: 8594990, license: 'Kişisel kullanım / personal use' }
@@ -50,7 +60,7 @@ export async function pickModel(id: string): Promise<string> {
   return m.native && m.fallback && !(await nativeReady()) ? m.fallback : id
 }
 /** Ayarlar ekranında gösterilecekler (tarayıcı modunda motor modelleri gizli). */
-export const visibleModels = () => MODELS.filter((m) => isDesktop || !m.native)
+export const visibleModels = () => MODELS.filter((m) => !m.hidden && (isDesktop || !m.native))
 
 export const modelById = (id: string) => MODELS.find((m) => m.id === id)!
 
@@ -110,6 +120,29 @@ export async function ensureModel(id: string, ask = true): Promise<boolean> {
 }
 
 const sessions = new Map<string, Promise<ort.InferenceSession>>()
+
+// ---------- GPU paylaşımı ----------
+// 6 GB'lık kartta tarayıcıdaki WebGPU modelleri ile YZ motoru (CUDA) aynı belleği paylaşıyor; ikisi birden
+// dolu kalınca ikisi de yavaşlıyor ya da modeller yüklenemiyor. GPU'yu sırayla kullanırlar.
+// Motor ONNX oturumlarının arenasını her çalıştırmadan sonra küçültüyor; asıl yer kaplayanlar motorun sohbet
+// modeli (≈3 GB) ve FLUX'un çalışırkenki belleği. Bu yüzden: tarayıcı modeli öncesi motordan sohbet modelini
+// bırakmasını iste; FLUX/sohbet öncesi tarayıcı oturumlarını bırak (heavy). Sık bırak-yükle döngüsü WASM
+// belleğini parçaladığı için hafif motor işlerinde tarayıcı oturumlarına dokunulmaz.
+let engineHeavy = false
+let browserLoaded = false
+export async function claimGpu(who: 'browser' | 'engine', heavy = false) {
+  if (who === 'browser') {
+    if (engineHeavy) await platform.engineFree().catch(() => {})
+    engineHeavy = false
+    browserLoaded = true
+  } else {
+    if (heavy && browserLoaded) await Promise.all([...sessions.keys()].map((id) => releaseSession(id)))
+    if (heavy) {
+      engineHeavy = true
+      browserLoaded = false
+    }
+  }
+}
 const wasmOnly = new Set<string>()
 export let lastProvider = ''
 
@@ -143,14 +176,16 @@ export async function getSession(id: string): Promise<ort.InferenceSession> {
 export async function runModel(id: string, feeds: Record<string, ort.Tensor>): Promise<{ out: ort.InferenceSession.OnnxValueMapType; sess: Pick<ort.InferenceSession, 'outputNames'> }> {
   const def = modelById(id)
   if (def.native) {
-    const raw: Record<string, { data: Float32Array; dims: number[] }> = {}
-    for (const [k, t] of Object.entries(feeds)) raw[k] = { data: t.data as Float32Array, dims: [...t.dims] }
+    await claimGpu('engine')
+    const raw: Record<string, { data: Float32Array; dims: number[]; dtype?: string }> = {}
+    for (const [k, t] of Object.entries(feeds)) raw[k] = { data: t.data as Float32Array, dims: [...t.dims], dtype: t.type }
     const r = await platform.onnxRun({ file: def.file, feeds: raw })
     lastProvider = r.provider ?? 'native'
     const out: Record<string, ort.Tensor> = {}
     for (const [k, v] of Object.entries(r.outputs)) out[k] = new ort.Tensor('float32', v.data, v.dims)
     return { out, sess: { outputNames: r.outputNames } }
   }
+  await claimGpu('browser')
   let sess = await getSession(id)
   try {
     return { out: await sess.run(feeds), sess }

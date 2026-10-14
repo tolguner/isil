@@ -1,6 +1,6 @@
 # Plan: doğrulama, kalite ölçümü ve rekabet analizi → Işıl 0.3.0
 
-Hazırlandı: 2026-10-14 · Durum: **Aşama 1 bitti (14.10), Tolga'nın kararı bekleniyor** · Şu anki sürüm: 0.2.0
+Hazırlandı: 2026-10-14 · Durum: **Aşama 2–4 bitti (14.10); Tolga'nın puanlaması, Aşama 5 kurulumu ve puanlama kuralı onayı bekleniyor** · Şu anki sürüm: 0.2.0
 
 ## Neden
 
@@ -36,17 +36,18 @@ Amaç: Bugünkü Işıl'da neyin gerçekten doğru çalıştığını bilmek.
 - [x] Bulunan hataları önem derecesi, adımlar ve kanıtla `replica/hatalar.md`'ye yaz; kritik/yüksek olanları hemen düzelt. (5 hata, hepsi düzeltildi; 3 karar maddesi)
 
 Çıktı: `replica/test-plani.md`, `replica/hatalar.md`, genişlemiş e2e testleri.
+**Karar (Tolga, 14.10):** K-1 HEIC desteği, K-2 önizlemeli ön ayarlar, K-3 GIF bilgi notu → 0.3.0 kapsamında.
 Onay noktası: düzeltilen ve ertelenen hatalar listesi.
 
 ### Aşama 2 — Yapay zekâ kalite ölçümü
 
 Amaç: "Modeller yeterince iyi mi?" sorusuna fotoğraflarla ve sayılarla cevap.
 
-- [ ] **Deneme seti (25–30 foto)**, zor durumlar ağırlıklı: tek portre, grup, profil, gözlük, sakal, koyu/açık ten, çocuk, yaşlı, düşük ışık, arka ışık, gürültülü telefon fotoğrafı, saç teli/kıvırcık saç, evcil hayvan, ürün, manzara, metinli görsel, eski/bulanık fotoğraf. Kaynak: serbest lisanslı görseller (lisansı not edilerek) ve isteğe bağlı Tolga'nın kendi fotoğrafları.
-- [ ] **Her araç için ölçüm:** arka plan kesme (ISNet / BiRefNet lite / BiRefNet), nesne silme (LaMa / FLUX inpaint), YZ Editör (4B / 9B), YZ efektleri, kalite artırma (Real-ESRGAN / UltraSharp V2), yüz onarma (CodeFormer, farklı karışım oranları), derinlik, stil danışmanı (yanıt doğruluğu).
-- [ ] **Ölçütler:** süre (ilk/sonraki), VRAM, başarısızlık oranı; yüz araçlarında kimlik benzerliği (yüz gömme vektörü benzerliği); kesimde kenar kalitesi; ve en önemlisi Tolga'nın 1–5 puanı.
-- [ ] Sonuçları yan yana gösteren, Tolga'nın puan verebildiği **karşılaştırma sayfası** (yerel HTML).
-- [ ] Zayıf çıkanlar için **alternatif aday modeller** araştır (ör. silme için daha yeni inpaint modelleri, yüz onarmada kimliği daha iyi koruyan seçenekler); lisans ve 6 GB VRAM uyumuyla birlikte.
+- [x] **Deneme seti (25–30 foto)**, zor durumlar ağırlıklı: tek portre, grup, profil, gözlük, sakal, koyu/açık ten, çocuk, yaşlı, düşük ışık, arka ışık, gürültülü telefon fotoğrafı, saç teli/kıvırcık saç, evcil hayvan, ürün, manzara, metinli görsel, eski/bulanık fotoğraf. Kaynak: serbest lisanslı görseller (lisansı not edilerek) ve isteğe bağlı Tolga'nın kendi fotoğrafları.
+- [x] **Her araç için ölçüm:** arka plan kesme (ISNet / BiRefNet lite / BiRefNet), nesne silme (LaMa / FLUX inpaint), YZ Editör (4B / 9B), YZ efektleri, kalite artırma (Real-ESRGAN / UltraSharp V2), yüz onarma (CodeFormer, farklı karışım oranları), derinlik, stil danışmanı (yanıt doğruluğu).
+- [x] **Ölçütler:** süre (ilk/sonraki), VRAM, başarısızlık oranı; yüz araçlarında kimlik benzerliği (yüz gömme vektörü benzerliği); kesimde kenar kalitesi; ve en önemlisi Tolga'nın 1–5 puanı.
+- [x] Sonuçları yan yana gösteren, Tolga'nın puan verebildiği **karşılaştırma sayfası** (yerel HTML).
+- [x] Zayıf çıkanlar için **alternatif aday modeller** araştır (ör. silme için daha yeni inpaint modelleri, yüz onarmada kimliği daha iyi koruyan seçenekler); lisans ve 6 GB VRAM uyumuyla birlikte.
 
 Çıktı: `replica/kalite-olcumu.md`, karşılaştırma sayfası, aday model listesi.
 Onay noktası: hangi model kalır, hangisi değişir, hangi ayar (karışım oranı, adım sayısı) seçilir.
@@ -67,8 +68,8 @@ Amaç: Her rakibin ne sunduğunu, neyi ücretli kilitlediğini ve öne çıkan �
 
 Masaüstü alışkanlıkları için ek referans (hafif bakış): Lightroom, Luminar Neo, Photoshop Express — kısayollar, sürükle-bırak, toplu iş, önce/sonra karşılaştırma, büyük ekran yerleşimi.
 
-- [ ] Her uygulama için: konum/vaat, platformlar, ücretli plan ve fiyat, ücretsiz ↔ ücretli sınırı, özellik listesi, YZ özellikleri, öne çıkan 3 özellik, son 6 aydaki sürüm notları.
-- [ ] Tek bir **özellik matrisi**: satırlar özellikler, sütunlar uygulamalar + Işıl.
+- [x] Her uygulama için: konum/vaat, platformlar, ücretli plan ve fiyat, ücretsiz ↔ ücretli sınırı, özellik listesi, YZ özellikleri, öne çıkan 3 özellik, son 6 aydaki sürüm notları.
+- [x] Tek bir **özellik matrisi**: satırlar özellikler, sütunlar uygulamalar + Işıl.
 
 Çıktı: `replica/rekabet/<uygulama>.md` (7 dosya), `replica/rekabet/matris.csv`.
 
@@ -76,9 +77,9 @@ Masaüstü alışkanlıkları için ek referans (hafif bakış): Lightroom, Lumi
 
 Amaç: Kullanıcıların gerçekte neyi sevdiğini, neden kızdığını ve ne istediğini bilmek.
 
-- [ ] App Store, Google Play, Reddit (ve varsa uygulamanın öneri panosu) yorumları; her uygulama için yeterli örnek.
-- [ ] Temalara ayır: sevilen, nefret edilen (ör. abonelik baskısı, filigran, gizlilik, bulut zorunluluğu, yavaşlık), istenen ama olmayan.
-- [ ] Her tema: sıklık, örnek kısa alıntı + bağlantı, Işıl için anlamı (zaten var / eksik / avantajımız).
+- [x] App Store, Google Play, Reddit (ve varsa uygulamanın öneri panosu) yorumları; her uygulama için yeterli örnek.
+- [x] Temalara ayır: sevilen, nefret edilen (ör. abonelik baskısı, filigran, gizlilik, bulut zorunluluğu, yavaşlık), istenen ama olmayan.
+- [x] Her tema: sıklık, örnek kısa alıntı + bağlantı, Işıl için anlamı (zaten var / eksik / avantajımız).
 
 Çıktı: `replica/rekabet/yorumlar.md`.
 Onay noktası (Aşama 3 + 4 birlikte): bulguların özeti; Tolga hangi alanlara derin bakılacağını seçer.
@@ -99,8 +100,8 @@ Tolga'nın isteği (14.10): uygulamalar yüzeysel değil, gerçekten çözümlen
 
 - [ ] **Aynı-fotoğraf testi:** deneme setinden seçilen fotoğraflar rakiplerin ücretsiz araçlarından ve Işıl'dan geçirilir; çıktı farkları (kesim kenarı, cilt dokusu, bükülme alanı, renk eğrisi) piksel düzeyinde karşılaştırılır. Bükülme araçlarında kare ızgara fotoğrafla deformasyon alanı, filtrelerde renk tablosu (gri tonlama/renk çizelgesi) fotoğrafıyla filtre eğrisi çıkarılır.
 - [ ] **Cihazda mı bulutta mı:** uçak modunda hangi araçların çalıştığı, işlem süreleri, çözünürlük sınırları.
-- [ ] **Herkese açık teknik kaynaklar:** şirketlerin araştırma makaleleri (ör. Lightricks, PicsArt AI Research), patentler, mühendislik blogları, iş ilanlarındaki teknoloji yığını, konferans konuşmaları.
-- [ ] **Bağımsız APK raporları:** Exodus Privacy gibi kuruluşların yayımladığı izin/SDK/izleyici raporları; mağaza sayfasındaki izinler ve veri güvenliği beyanları.
+- [x] **Herkese açık teknik kaynaklar:** şirketlerin araştırma makaleleri (ör. Lightricks, PicsArt AI Research), patentler, mühendislik blogları, iş ilanlarındaki teknoloji yığını, konferans konuşmaları.
+- [x] **Bağımsız APK raporları:** Exodus Privacy gibi kuruluşların yayımladığı izin/SDK/izleyici raporları; mağaza sayfasındaki izinler ve veri güvenliği beyanları.
 - [ ] **Yapılmayacaklar:** APK/kod çözme, uygulama içinden model dosyası çıkarma, ağ trafiğini dinleme, ücretli kilidi aşma (kullanım şartları yasaklıyor; Işıl'ı hukuken riskli yapar).
 
 Çıktı: her uygulama dosyasına "nasıl çalışıyor" bölümü + `replica/rekabet/ayni-foto-testi.md`.

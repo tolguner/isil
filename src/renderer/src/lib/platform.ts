@@ -36,12 +36,14 @@ export interface Platform {
   cancelModel(file: string): Promise<void>
   deleteModel(file: string): Promise<void>
   onModelProgress(cb: (p: ModelProgress) => void): () => void
-  onnxRun(a: { file: string; feeds: Record<string, { data: Float32Array; dims: number[] }> }): Promise<{ outputs: Record<string, { data: Float32Array; dims: number[] }>; outputNames: string[]; provider?: string }>
+  onnxRun(a: { file: string; feeds: Record<string, { data: Float32Array; dims: number[]; dtype?: string }> }): Promise<{ outputs: Record<string, { data: Float32Array; dims: number[] }>; outputNames: string[]; provider?: string }>
   onnxRelease(file: string): Promise<void>
   engineStatus(): Promise<EngineStatus>
   engineInstall(part: string): Promise<void>
   genEdit(a: GenEditArgs): Promise<Uint8Array>
   genCancel(): Promise<void>
+  /** motor GPU belleğini bıraksın (tarayıcı modelleri çalışmadan önce) */
+  engineFree(): Promise<void>
   chat(a: { messages: { role: 'user' | 'assistant'; text: string; image?: Uint8Array }[]; system: string }): Promise<string>
   onEngineProgress(cb: (p: EngineProgress) => void): () => void
 }
@@ -88,6 +90,7 @@ function electronPlatform(): Platform {
     engineInstall: (part) => api.engineInstall(part),
     genEdit: (a) => api.genEdit(a),
     genCancel: () => api.genCancel(),
+    engineFree: () => api.engineFree(),
     chat: (a) => api.chat(a),
     onEngineProgress: (cb) => api.onEngineProgress(cb)
   }
@@ -251,6 +254,7 @@ function webPlatform(): Platform {
       throw new Error('Tarayıcı modunda yerel motor yok')
     },
     genCancel: async () => {},
+    engineFree: async () => {},
     chat: async () => {
       throw new Error('Tarayıcı modunda yerel motor yok')
     },

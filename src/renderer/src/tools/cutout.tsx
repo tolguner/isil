@@ -5,6 +5,7 @@ import { useEditor } from '@/store/editor'
 import { useT } from '@/lib/i18n'
 import { ColorRow, Preset, Segmented, Slider, Switch } from '@/components/ui'
 import { session, encodeCanvas } from '@/engine/session'
+import { nativeReady } from '@/ai/models'
 import { removeBackground, toCanvas } from '@/ai/ops'
 import { segmentPerson, maskToCanvas, tapSelect } from '@/ai/vision'
 import { commitMask, putImageAsset } from '@/lib/projects'
@@ -52,6 +53,10 @@ function setMaskFrom(src: CanvasImageSource) {
 async function autoCut(detailed = false) {
   const pv = session.preview
   if (!pv) return
+  if (detailed && !(await nativeReady())) {
+    const en = useEditor.getState().settings.language === 'en'
+    useEditor.getState().toast('info', en ? 'Detailed cutout needs the AI engine (Settings → Local generative AI); using the standard cutout for now.' : 'Detaylı kesim YZ motoruyla çalışır (Ayarlar → Yerel üretken yapay zekâ); şimdilik standart kesim yapıldı.')
+  }
   const m = await busy(useEditor.getState().settings.language === 'en' ? 'Removing background…' : 'Arka plan kaldırılıyor…', () => removeBackground(pv, detailed))
   if (m) setMaskFrom(m)
 }

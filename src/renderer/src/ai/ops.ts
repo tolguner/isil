@@ -64,9 +64,10 @@ function grayCanvas(values: Float32Array, n: number, map: (v: number) => number)
 }
 
 /** Konu maskesi (0..1), kaynak boyutunda gri tuval. detailed: BiRefNet (saç teli), olmazsa ISNet. */
-export async function removeBackground(src: Src, detailed = false): Promise<HTMLCanvasElement | null> {
-  if (detailed) {
-    const id = await pickModel('birefnet')
+export async function removeBackground(src: Src, detailed = false, model?: string): Promise<HTMLCanvasElement | null> {
+  const { nativeReady } = await import('./models')
+  if (model === 'birefnet' || (detailed && (await nativeReady()))) {
+    const id = 'birefnet'
     if (!(await ensureModel(id))) return null
     try {
       const { out, sess } = await runModel(id, { input_image: tensorFrom(toCanvas(src, 1024, 1024), imagenet) })
@@ -87,7 +88,8 @@ export async function removeBackground(src: Src, detailed = false): Promise<HTML
  * Maskenin sınırlayıcı kutusu etrafında kare bir bölge 512'ye ölçeklenir, sonuç yumuşak maskeyle geri yapıştırılır.
  */
 export async function inpaint(src: Src, mask: HTMLCanvasElement): Promise<HTMLCanvasElement | null> {
-  if (!(await ensureModel('lama'))) return null
+  const lamaId = await pickModel('lama-gpu') // motor kuruluysa CUDA, değilse tarayıcı
+  if (!(await ensureModel(lamaId))) return null
   const W = src.width, H = src.height
   const md = mask.getContext('2d', { willReadFrequently: true })!.getImageData(0, 0, W, H).data
   let x0 = W, y0 = H, x1 = 0, y1 = 0
@@ -133,7 +135,7 @@ export async function inpaint(src: Src, mask: HTMLCanvasElement): Promise<HTMLCa
     }
   }
   const img = tensorFrom(crop, (v) => v)
-  const { out, sess } = await runModel('lama', { image: img, mask: new ort.Tensor('float32', dil, [1, 1, 512, 512]) })
+  const { out, sess } = await runModel(lamaId, { image: img, mask: new ort.Tensor('float32', dil, [1, 1, 512, 512]) })
   const o = out[sess.outputNames[0]]
   const od = o.data as Float32Array
   let mx = 0
@@ -172,8 +174,8 @@ export async function inpaint(src: Src, mask: HTMLCanvasElement): Promise<HTMLCa
 }
 
 /** Süper çözünürlük (4×, kenar örtüşmeli karolar). Masaüstünde 4x-UltraSharp V2 (GPU), tarayıcıda Real-ESRGAN. */
-export async function upscale(src: Src, onProgress?: (p: number) => void, signal?: { cancelled: boolean }): Promise<HTMLCanvasElement | null> {
-  const id = await pickModel('ultrasharp')
+export async function upscale(src: Src, onProgress?: (p: number) => void, signal?: { cancelled: boolean }, model?: string): Promise<HTMLCanvasElement | null> {
+  const id = model ?? (await pickModel('ultrasharp'))
   if (!(await ensureModel(id))) return null
   const native = id === 'ultrasharp'
   const W = src.width, H = src.height
@@ -218,8 +220,8 @@ export async function upscale(src: Src, onProgress?: (p: number) => void, signal
 }
 
 /** Göreli derinlik (yakın = 1). Küçük çözünürlükte gri tuval. */
-export async function depthMap(src: Src): Promise<HTMLCanvasElement | null> {
-  const mid = await pickModel('depth')
+export async function depthMap(src: Src, model?: string): Promise<HTMLCanvasElement | null> {
+  const mid = model ?? (await pickModel('depth'))
   if (!(await ensureModel(mid))) return null
   const s = 518 / Math.max(src.width, src.height)
   const w = Math.max(14, Math.round((src.width * s) / 14) * 14)
@@ -285,7 +287,7 @@ function similarity(src: [number, number][], dst: [number, number][]) {
  * Yüzleri CodeFormer ile onarır: her yüz 512'ye hizalanır, onarılır, yumuşak kenarlı maskeyle geri yapıştırılır.
  * Yüz yoksa null döner.
  */
-export async function restoreFaces(src: Src, onProgress?: (p: number) => void): Promise<HTMLCanvasElement | null> {
+export async function restoreFaces(src: Src, onProgress?: (p: number) => void, blend = 0.8, model = 'codeformer', fidelity = 0.7): Promise<HTMLCanvasElement | null> {
   const { detectFaces } = await import('./vision')
   const W = src.width, H = src.height
   const probe = toCanvas(src, ...((): [number, number] => { const k = Math.min(1, 1280 / Math.max(W, H)); return [W * k, H * k] })())
@@ -296,7 +298,7 @@ export async function restoreFaces(src: Src, onProgress?: (p: number) => void): 
     const { ensureEngine } = await import('./generative')
     if (!(await ensureEngine(['runtime']))) return null
   }
-  if (!(await ensureModel('codeformer'))) return null
+  if (!(await ensureModel(model))) return null
   const out = toCanvas(src)
   const octx = out.getContext('2d')!
   // kenarları yumuşatılmış 512 maske (şablon alanı)
@@ -327,7 +329,9 @@ export async function restoreFaces(src: Src, onProgress?: (p: number) => void): 
     cctx.setTransform(T.a, T.b, -T.b, T.a, T.tx, T.ty)
     cctx.drawImage(src, 0, 0)
     cctx.setTransform(1, 0, 0, 1, 0, 0)
-    const { out: r, sess } = await runModel('codeformer', { input: tensorFrom(crop, (v) => (v - 0.5) / 0.5) })
+    const feeds: Record<string, ort.Tensor> = { input: tensorFrom(crop, (v) => (v - 0.5) / 0.5) }
+    if (model === 'codeformer-w') feeds.weight = new ort.Tensor('float64', new Float64Array([fidelity]), [])
+    const { out: r, sess } = await runModel(model, feeds)
     const o = r[sess.outputNames[0]]
     const restored = canvasFromCHW(o.data as Float32Array, 512, 512, (v) => clamp255((v + 1) * 127.5))
     const rctx = restored.getContext('2d')!
@@ -339,7 +343,7 @@ export async function restoreFaces(src: Src, onProgress?: (p: number) => void): 
     const itx = -(ia * T.tx - ib * T.ty), ity = -(ib * T.tx + ia * T.ty)
     octx.save()
     octx.imageSmoothingQuality = 'high'
-    octx.globalAlpha = 0.8 // asıl yüzden biraz bırak: kimlik (göz rengi, ifade) korunur
+    octx.globalAlpha = blend // asıl yüzden biraz bırak: kimlik (göz rengi, ifade) korunur
     octx.setTransform(ia, ib, -ib, ia, itx, ity)
     octx.drawImage(restored, 0, 0)
     octx.restore()
