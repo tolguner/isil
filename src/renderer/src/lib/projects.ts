@@ -30,7 +30,7 @@ export async function startEditing(file: PickedFile) {
     st.openProject(p)
   } catch (e) {
     console.error(e)
-    st.toast('error', tNow('Bu dosya açılamadı. Desteklenen biçimler: JPG, PNG, WebP.', 'Could not open this file. Supported: JPG, PNG, WebP.'))
+    st.toast('error', tNow('Bu dosya açılamadı. Desteklenen biçimler: JPG, PNG, WebP, AVIF, BMP, GIF.', 'Could not open this file. Supported: JPG, PNG, WebP, AVIF, BMP, GIF.'))
   } finally {
     useEditor.getState().setBusy(null)
   }

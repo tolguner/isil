@@ -87,6 +87,8 @@ class Session {
     this.preview?.close()
     this.preview = null
     this.baseBlob = null
+    this.W = this.H = 0
+    this.lastOut = null
     this.faces = this.pose = null
     this.seg = null
     this.masks = null

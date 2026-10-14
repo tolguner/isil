@@ -25,6 +25,7 @@ import { useT } from '@/lib/i18n'
 import { ColorRow, Slider, Tabs, Segmented, Switch } from '@/components/ui'
 import { layerSize, type DrawingProps, type ShapeProps, type StickerProps, type Stroke, type TextProps } from '@/engine/layers'
 import { platform } from '@/lib/platform'
+import { session } from '@/engine/session'
 import type { ToolDef, View } from './types'
 
 // ---------- seçim ----------
@@ -54,6 +55,15 @@ function updLayer(id: string, fn: (l: Layer) => void) {
     const l = d.layers.find((x) => x.id === id)
     if (l) fn(l)
   })
+}
+/** Yazarken metin tuval genişliğini aşarsa katmanı orantılı küçült (yalnız küçültür; elle büyütmeye karışmaz). */
+function fitText(l: Layer) {
+  const W = session.lastOut?.w || session.W
+  const H = session.lastOut?.h || session.H
+  if (l.type !== 'text' || !W || !H) return
+  const { w } = layerSize(l, W, H)
+  const max = W * 0.92
+  if (w * l.scale > max) l.scale = max / w
 }
 function addLayer(l: Omit<Layer, 'id'>) {
   const id = crypto.randomUUID()
@@ -173,7 +183,8 @@ const TEXT_TEMPLATES: { id: string; text: string; font: string; weight: number; 
   { id: 't8', text: 'tatlı tatlı', font: 'Lobster', weight: 400, style: 'soft', size: 0.08 }
 ]
 
-function defaultText(tpl?: (typeof TEXT_TEMPLATES)[number]): TextProps {
+export { fitText }
+export function defaultText(tpl?: (typeof TEXT_TEMPLATES)[number]): TextProps {
   const style = TEXT_STYLES.find((s) => s.id === (tpl?.style ?? 'plain'))!.p
   return {
     text: tpl?.text ?? 'Metin', font: tpl?.font ?? 'Inter', weight: tpl?.weight ?? 700, size: tpl?.size ?? 0.07,
@@ -187,7 +198,10 @@ function TextPanel() {
   const [l, p] = useLayer<TextProps>()
   const [tab, setTab] = useState<'tpl' | 'font' | 'style'>('tpl')
   const isText = l?.type === 'text'
-  const set = (fn: (p: TextProps) => void) => l && updLayer(l.id, (x) => fn(x.props as unknown as TextProps))
+  const set = (fn: (p: TextProps) => void) => l && updLayer(l.id, (x) => {
+    fn(x.props as unknown as TextProps)
+    fitText(x)
+  })
   return (
     <>
       <button className="btn primary block" onClick={() => addLayer({ type: 'text', x: 0.5, y: 0.5, scale: 1, rotation: 0, opacity: 1, props: defaultText() as unknown as Record<string, unknown> })}><Plus size={16} /> {tr('Metin ekle', 'Add text')}</button>
@@ -203,7 +217,7 @@ function TextPanel() {
           {TEXT_TEMPLATES.map((t) => (
             <button key={t.id} className="preset" onClick={() => {
               const props = defaultText(t)
-              if (isText && l) updLayer(l.id, (x) => void (x.props = { ...(x.props as object), ...props, text: (x.props as unknown as TextProps).text } as unknown as Record<string, unknown>))
+              if (isText && l) updLayer(l.id, (x) => { x.props = { ...(x.props as object), ...props, text: (x.props as unknown as TextProps).text } as unknown as Record<string, unknown>; fitText(x) })
               else addLayer({ type: 'text', x: 0.5, y: 0.5, scale: 1, rotation: 0, opacity: 1, props: props as unknown as Record<string, unknown> })
             }}>
               <span className="pv" style={{ fontFamily: t.font, fontWeight: t.weight, fontSize: 14, color: '#fff', background: 'var(--c-surface-2)', fontStyle: t.italic ? 'italic' : undefined, textAlign: 'center', padding: 4 }}>{t.text}</span>

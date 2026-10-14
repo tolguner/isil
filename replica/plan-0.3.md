@@ -1,6 +1,6 @@
 # Plan: doğrulama, kalite ölçümü ve rekabet analizi → Işıl 0.3.0
 
-Hazırlandı: 2026-10-14 · Durum: **onay bekliyor** · Şu anki sürüm: 0.2.0
+Hazırlandı: 2026-10-14 · Durum: **Aşama 1 bitti (14.10), Tolga'nın kararı bekleniyor** · Şu anki sürüm: 0.2.0
 
 ## Neden
 
@@ -30,10 +30,10 @@ Her aşama bir oturumda (ya da birkaçında) biter, sonunda Tolga'ya kısa bir �
 
 Amaç: Bugünkü Işıl'da neyin gerçekten doğru çalıştığını bilmek.
 
-- [ ] `recon.md`'deki akışlardan bir test planı çıkar: her akış için mutlu yol + kenar durumları (çok büyük foto, şeffaf PNG, yan yatmış EXIF, yüz yok, 6 yüz, çok küçük foto, uzun proje adı, geri al/ileri al zinciri).
-- [ ] Otomatik olarak sınanabilenleri Playwright testine ekle; kalanları uygulamada elle tıklayarak dene.
-- [ ] Her aracın **çıktısını gözle** kontrol et (yalnızca "hata vermedi" değil).
-- [ ] Bulunan hataları önem derecesi, adımlar ve kanıtla `replica/hatalar.md`'ye yaz; kritik/yüksek olanları hemen düzelt.
+- [x] `recon.md`'deki akışlardan bir test planı çıkar: her akış için mutlu yol + kenar durumları (çok büyük foto, şeffaf PNG, yan yatmış EXIF, yüz yok, 6 yüz, çok küçük foto, uzun proje adı, geri al/ileri al zinciri).
+- [x] Otomatik olarak sınanabilenleri Playwright testine ekle (audit 35, ui-sweep 36); kalanları uygulamada elle tıklayarak dene.
+- [x] Her aracın **çıktısını gözle** kontrol et (yalnızca "hata vermedi" değil).
+- [x] Bulunan hataları önem derecesi, adımlar ve kanıtla `replica/hatalar.md`'ye yaz; kritik/yüksek olanları hemen düzelt. (5 hata, hepsi düzeltildi; 3 karar maddesi)
 
 Çıktı: `replica/test-plani.md`, `replica/hatalar.md`, genişlemiş e2e testleri.
 Onay noktası: düzeltilen ve ertelenen hatalar listesi.
@@ -92,6 +92,18 @@ Amaç: Seçilen özelliklerin gerçek kullanım akışını görmek.
 - [ ] Hypic incelemesindeki gibi notlar ve referans ekran görüntüleri (git dışı).
 
 Çıktı: `replica/rekabet/inceleme-notlari.md`.
+
+### Rakipleri tersine mühendislikle inceleme (Aşama 3–5'e yayılır)
+
+Tolga'nın isteği (14.10): uygulamalar yüzeysel değil, gerçekten çözümlenecek. Yöntem **kara kutu**: içeri bakmadan, girdi-çıktı ve herkese açık bilgiyle.
+
+- [ ] **Aynı-fotoğraf testi:** deneme setinden seçilen fotoğraflar rakiplerin ücretsiz araçlarından ve Işıl'dan geçirilir; çıktı farkları (kesim kenarı, cilt dokusu, bükülme alanı, renk eğrisi) piksel düzeyinde karşılaştırılır. Bükülme araçlarında kare ızgara fotoğrafla deformasyon alanı, filtrelerde renk tablosu (gri tonlama/renk çizelgesi) fotoğrafıyla filtre eğrisi çıkarılır.
+- [ ] **Cihazda mı bulutta mı:** uçak modunda hangi araçların çalıştığı, işlem süreleri, çözünürlük sınırları.
+- [ ] **Herkese açık teknik kaynaklar:** şirketlerin araştırma makaleleri (ör. Lightricks, PicsArt AI Research), patentler, mühendislik blogları, iş ilanlarındaki teknoloji yığını, konferans konuşmaları.
+- [ ] **Bağımsız APK raporları:** Exodus Privacy gibi kuruluşların yayımladığı izin/SDK/izleyici raporları; mağaza sayfasındaki izinler ve veri güvenliği beyanları.
+- [ ] **Yapılmayacaklar:** APK/kod çözme, uygulama içinden model dosyası çıkarma, ağ trafiğini dinleme, ücretli kilidi aşma (kullanım şartları yasaklıyor; Işıl'ı hukuken riskli yapar).
+
+Çıktı: her uygulama dosyasına "nasıl çalışıyor" bölümü + `replica/rekabet/ayni-foto-testi.md`.
 
 ### Aşama 6 — Fark analizi ve önceliklendirme
 

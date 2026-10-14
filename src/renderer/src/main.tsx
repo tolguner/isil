@@ -18,8 +18,12 @@ void (import.meta.env.DEV ? Promise.resolve(true) : (w0.isil?.testMode?.() ?? Pr
         const bytes = new Uint8Array(await (await fetch(url)).arrayBuffer())
         await m.startEditing({ name: url.split('/').pop()!, bytes })
       },
+      // testler: verilen adla aç (Türkçe/emoji ad, uzantı, bozuk dosya denemeleri)
+      openFile: async (name: string, b64: string) => {
+        await m.startEditing({ name, bytes: Uint8Array.from(atob(b64), (c) => c.charCodeAt(0)) })
+      },
       store: () => import('./store/editor').then((s) => s.useEditor),
-      mod: (name: string) => ({ session: () => import('./engine/session'), ops: () => import('./ai/ops'), models: () => import('./ai/models'), vision: () => import('./ai/vision'), generative: () => import('./ai/generative'), platform: () => import('./lib/platform') } as Record<string, () => Promise<unknown>>)[name]()
+      mod: (name: string) => ({ session: () => import('./engine/session'), ops: () => import('./ai/ops'), models: () => import('./ai/models'), vision: () => import('./ai/vision'), generative: () => import('./ai/generative'), platform: () => import('./lib/platform'), projects: () => import('./lib/projects'), layers: () => import('./tools/layers'), tools: () => import('./tools/index') } as Record<string, () => Promise<unknown>>)[name]()
     }
   })
 })

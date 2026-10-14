@@ -63,7 +63,7 @@ export function Batch() {
           bm.close()
           const out = r.render(doc, {})
           const c = imageDataToCanvas(r.read(out.target))
-          const b = await encodeCanvas(c, fmt === 'png' ? 'image/png' : 'image/jpeg', 0.92)
+          const b = await encodeCanvas(c, fmt === 'png' ? 'image/png' : 'image/jpeg', useEditor.getState().settings.exportQuality / 100)
           await platform.exportSave({ bytes: new Uint8Array(await b.arrayBuffer()), ext: fmt === 'png' ? 'png' : 'jpg', suggestedName: items[i].name.replace(/\.[^.]+$/, '') + '-isil', dir })
           ok++
           setItems((xs) => xs.map((x, k) => (k === i ? { ...x, status: 'done' } : x)))

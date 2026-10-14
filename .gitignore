@@ -13,3 +13,5 @@ src/renderer/public/ort/
 src/renderer/public/test/
 dev-models/
 replica/ai-results/
+tests/fixtures/out/
+replica/audit/

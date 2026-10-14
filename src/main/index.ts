@@ -230,7 +230,9 @@ function registerIpc() {
   ipcMain.handle('export:save', async (e, a: { bytes: Uint8Array; ext: string; suggestedName: string; dir?: string }) => {
     let target: string
     if (a.dir) {
+      // klasöre doğrudan yazarken var olan dosyanın üstüne yazma: "ad (2).jpg", "ad (3).jpg"…
       target = join(a.dir, a.suggestedName + '.' + a.ext)
+      for (let n = 2; existsSync(target); n++) target = join(a.dir, `${a.suggestedName} (${n}).${a.ext}`)
     } else {
       const win = BrowserWindow.fromWebContents(e.sender)!
       const r = await dialog.showSaveDialog(win, {
