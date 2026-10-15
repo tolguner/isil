@@ -1,7 +1,7 @@
 {
   "name": "isil",
   "productName": "Işıl",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "Masaüstü fotoğraf düzenleyici (Hypic özelliklerinin temiz-oda yeniden yapımı)",
   "main": "./out/main/index.js",
   "author": "Tolga Olguner",

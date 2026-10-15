@@ -8,12 +8,12 @@ Her şey ücretsiz ve yerel: yapay zekâ araçları bilgisayarında, internetsiz
 
 - **Ayarla:** pozlama, kontrast, vurgular/gölgeler, sıcaklık, HSL, ton eğrileri, netlik, pus giderme, gren, vinyet, akıllı otomatik ayar
 - **Filtreler ve efektler:** 37 filtre, 31 efekt, tek dokunuş tarifleri
-- **Rötuş:** çoklu yüz algılama, ~50 yüz şekli kaydırıcısı, cilt pürüzsüzleştirme, leke/göz altı, diş beyazlatma, makyaj, ten tonu, saç rengi, ışıklandırma, vücut şekillendirme, rötuş fırçası, yüz gizleme
+- **Rötuş:** çoklu yüz algılama (MediaPipe + YuNet, grup fotoğrafları dahil), ~50 yüz şekli kaydırıcısı, cilt pürüzsüzleştirme, leke/göz altı, diş beyazlatma, makyaj, ten tonu, saç rengi, ışıklandırma, vücut şekillendirme, rötuş fırçası, yüz gizleme
 - **Temizle:** sihirli silgi (LaMa), dokun-seç, klonlama, mozaik, YZ ile değiştir (FLUX.2 klein inpaint)
 - **Kesim ve arka plan:** yapay zekâyla arka plan kaldırma (ISNet / BiRefNet), maske fırçası, renk/degrade/bulanık/görsel zemin, tuval oranı
 - **Katmanlar:** metin (17 açık lisanslı yazı tipi), çıkartma, şekil, çizim
-- **Üretken YZ (yerel):** YZ Editör ve YZ efektleri (FLUX.2 klein 4B / 9B), stil danışmanı (Qwen3-VL 4B), yüz onarma (CodeFormer)
-- **Diğer:** kırpma/döndürme/perspektif, liquify, 4× kalite artırma (4x-UltraSharp V2 / Real-ESRGAN), kolaj ve birleştirme, toplu düzenleme, kamera, projeler ve otomatik kayıt, Türkçe/İngilizce
+- **Üretken YZ (yerel):** YZ Editör ve YZ efektleri (FLUX.2 klein 4B / 9B), stil danışmanı (Qwen3-VL 4B), yüz onarma (GFPGAN 1.4)
+- **Diğer:** kırpma/döndürme/perspektif, liquify, 4× kalite artırma (4x-UltraSharp V2 / Real-ESRGAN), kolaj ve birleştirme, toplu düzenleme, kamera, projeler ve otomatik kayıt, HEIC açma, ayarları kopyala/yapıştır, araç arama (Ctrl+K), Türkçe/İngilizce
 
 ## Geliştirme
 
@@ -58,6 +58,6 @@ node tests/e2e/engine-install.mjs                     # boş klasöre gerçek mo
 
 ## Lisanslar
 
-Model ve kütüphane lisansları uygulamada **Ayarlar → Hakkında** bölümünde listelenir: MediaPipe (Apache-2.0), ONNX Runtime (MIT), PyTorch (BSD-3), diffusers / transformers (Apache-2.0), FLUX.2 klein 4B (Apache-2.0), Qwen3 / Qwen3-VL (Apache-2.0), ISNet (MIT), BiRefNet (MIT), LaMa (Apache-2.0), Real-ESRGAN (BSD-3), Depth Anything V2 Small (Apache-2.0), Lucide (ISC), yazı tipleri (OFL).
+Model ve kütüphane lisansları uygulamada **Ayarlar → Hakkında** bölümünde listelenir: MediaPipe (Apache-2.0), YuNet (MIT), ONNX Runtime (MIT), libheif (LGPL-3.0, WebAssembly), PyTorch (BSD-3), diffusers / transformers (Apache-2.0), FLUX.2 klein 4B (Apache-2.0), Qwen3 / Qwen3-VL (Apache-2.0), ISNet (MIT), BiRefNet (MIT), LaMa (Apache-2.0), Real-ESRGAN (BSD-3), GFPGAN 1.4 (Apache-2.0), Depth Anything V2 Small (Apache-2.0), Lucide (ISC), yazı tipleri (OFL).
 
-Bazı modeller yalnızca **ticari olmayan / kişisel kullanım** içindir: FLUX.2 klein 9B (FLUX Non-Commercial), 4x-UltraSharp V2 (CC BY-NC-SA 4.0), CodeFormer (S-Lab 1.0), Depth Anything V2 Base (CC BY-NC 4.0), AnimeGANv2. Işıl kişisel ve portfolyo projesidir; bu modeller ticari bir dağıtımda kullanılmamalı.
+Bazı modeller yalnızca **ticari olmayan / kişisel kullanım** içindir: FLUX.2 klein 9B (FLUX Non-Commercial), 4x-UltraSharp V2 (CC BY-NC-SA 4.0), Depth Anything V2 Base (CC BY-NC 4.0), AnimeGANv2. Işıl kişisel ve portfolyo projesidir; bu modeller ticari bir dağıtımda kullanılmamalı.

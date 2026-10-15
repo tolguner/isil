@@ -110,24 +110,24 @@ Tolga'nın isteği (14.10): uygulamalar yüzeysel değil, gerçekten çözümlen
 
 Amaç: Neyin ekleneceğine ve sırasına karar vermek.
 
-- [ ] Fark listesi: rakiplerde olan + kullanıcıların istediği + Işıl'da olmayan ya da zayıf olan.
-- [ ] Her madde için: kullanıcı değeri, kaç rakipte var, yorumlarda ne sıklıkla geçiyor, geliştirme zahmeti, yerel YZ ile yapılabilirlik (6 GB VRAM), lisans riski.
-- [ ] **Puanlama kuralı önce Tolga'ya gösterilir**, onaylanınca liste sıralanır.
-- [ ] Şimdi / Sonra / Belki diye üç gruplu yol haritası; Tolga 0.3.0 kapsamını seçer.
+- [x] Fark listesi: rakiplerde olan + kullanıcıların istediği + Işıl'da olmayan ya da zayıf olan.
+- [x] Her madde için: kullanıcı değeri, kaç rakipte var, yorumlarda ne sıklıkla geçiyor, geliştirme zahmeti, yerel YZ ile yapılabilirlik (6 GB VRAM), lisans riski.
+- [x] **Puanlama kuralı önce Tolga'ya gösterilir**, onaylanınca liste sıralanır.
+- [x] Şimdi / Sonra / Belki diye üç gruplu yol haritası; Tolga 0.3.0 kapsamını seçer.
 
 Çıktı: `replica/yol-haritasi.md`, `features.csv`'ye yeni satırlar.
 Onay noktası: 0.3.0 kapsamı.
 
 ### Aşama 7 — Geliştirme (0.3.0)
 
-- [ ] Kapsamdaki maddeler önem sırasıyla; her biri: kod → otomatik test → uygulamada elle kontrol → gerekiyorsa kalite setinde ölçüm.
-- [ ] Aşama 2'de seçilen model değişiklikleri.
-- [ ] Sürüm 0.3.0, `CHANGELOG.md`, yükleyici, bilgisayara kurulum.
+- [x] Kapsamdaki maddeler önem sırasıyla; her biri: kod → otomatik test → uygulamada elle kontrol → gerekiyorsa kalite setinde ölçüm.
+- [x] Aşama 2'de seçilen model değişiklikleri.
+- [x] Sürüm 0.3.0, `CHANGELOG.md`, yükleyici, bilgisayara kurulum.
 
 ### Aşama 8 — Son doğrulama
 
 - [ ] Aşama 1 test planı ve Aşama 2 kalite seti yeniden çalıştırılır; 0.2.0 ile 0.3.0 yan yana.
-- [ ] `features.csv`, `build-log.md`, README güncellenir.
+- [x] `features.csv`, `build-log.md`, README güncellenir.
 
 ## Tolga'dan beklenenler
 

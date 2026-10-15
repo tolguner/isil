@@ -2,6 +2,23 @@
 
 Her büyük güncellemede sürüm numarası artırılır (`npm version <x.y.z> --no-git-tag-version`), uygulama Ayarlar → Hakkında'da sürümü gösterir.
 
+## 0.3.0 — 2026-10-16
+
+Rakip araştırması, kullanıcı yorumları ve görsel eleştirmen ajanının puanlarına göre seçilen 11 madde (`replica/yol-haritasi.md`).
+
+- Yüz algılama: YuNet ön algılaması; grup ve tüm vücut fotoğraflarında küçük/loş yüzler bulunuyor (loş grupta 0 → 4 yüz)
+- Yüz onarma: CodeFormer yerine GFPGAN 1.4; renk koruma (siyah-beyaz/sepya fotoğrafa renk sızmıyor), yumuşak yapıştırma, "Onarım gücü" kaydırıcısı
+- Kesim: motor kuruluysa otomatik olarak BiRefNet; belirgin konu yoksa uyarı; "Detaylı" düğmesi kaldırıldı
+- YZ Editör: "Kişileri koru" (yalnız arka plan değişir, yüz piksel piksel aynı), siyah-beyaz fotoğraf siyah-beyaz kalır, çözünürlük ekran belleğine göre
+- Stil danışmanı: kısa yanıt, tekrar yok, yalnız Işıl'daki gerçek araçlar
+- Silgi: "Gölge ve yansımayı da sil" seçeneği
+- HEIC/HEIF (iPhone) fotoğrafları açılıyor (libheif WebAssembly)
+- Önizlemeler: tek dokunuş rötuş kartları seçili yüzü, YZ efekt kartları örnek görseli gösteriyor
+- Hareketli GIF açılınca "yalnız ilk kare düzenlenir" notu
+- Ayarları kopyala / yapıştır (Ctrl+Shift+C / Ctrl+Shift+V)
+- Araç arama paleti (Ctrl+K)
+- Düzeltmeler: klasöre dışa aktarmada üzerine yazma, uzun metin taşması, toplu düzenlemede kalite ayarı, araç geçişlerinde ekran belleği tükenmesi (BUG-001…008)
+
 ## 0.2.0 — 2026-10-13
 
 - Gemini kaldırıldı; tüm üretken YZ yerel ve ücretsiz: YZ Editör / YZ efektleri / YZ ile değiştir (FLUX.2 klein 4B ve 9B), stil danışmanı (Qwen3-VL 4B, akışlı yanıt)

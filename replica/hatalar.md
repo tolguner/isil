@@ -62,7 +62,7 @@ Yalnızca yeniden üretilen hatalar. Önem: S1 veri kaybı/çekirdek akış kili
 - Kanıt: deneme setinde loş ışıklı 4–5 kişilik grup fotoğrafında 0 yüz, tüm vücut fotoğrafında 0 yüz; yakın planlı 15 yüzün 15'i bulundu.
 - Neden: MediaPipe Face Landmarker'ın içindeki BlazeFace kısa mesafe dedektörü; küçük yüzleri kaçırıyor.
 - Öneri (0.3.0): önce YuNet (MIT, ≈300 KB, 10 px'e kadar yüz) ile yüzleri bul, sonra her yüzün büyütülmüş kırpımında landmark çıkar ve koordinatları geri taşı.
-- Durum: açık.
+- Durum: **düzeltildi (0.3.0)** — YuNet (OpenCV Zoo, MIT) tüm görüntüde + büyük görsellerde döşemelerle kutu buluyor; MediaPipe'ın kaçırdıkları 2,4× kırpımda (gerekirse aydınlatılarak) landmark'a gidiyor. Loş grup 0 → 4 yüz, ≈200 ms.
 
 ## Hata olmayan ama karar isteyen bulgular
 

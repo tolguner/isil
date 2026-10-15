@@ -68,7 +68,7 @@ Community template feed (creators / usage counts),templates,skip,yes,skip,their 
 AI editor (free prompt + reference images),ai,should,yes,yes,local FLUX.2 klein 4B (fast) / 9B (best); no key; no cloud
 AI effects (anime / 3D / plush / comic / cyberpunk / wardrobe / hair),ai,should,yes,yes,local FLUX.2 klein; anime also AnimeGANv2
 Enhance quality 2x / 4x,ai,should,yes,yes,4x-UltraSharp V2 (CUDA via AI engine) or Real-ESRGAN
-AI face restoration,ai,could,yes,yes,CodeFormer (CUDA via AI engine); MediaPipe 5-point alignment + feathered paste-back
+AI face restoration,ai,could,yes,yes,GFPGAN 1.4 (CUDA via AI engine) + input colour keep + strength slider; YuNet/MediaPipe alignment + feathered paste-back (0.3.0)
 AI expand (outpaint),ai,could,yes,partial,via AI editor prompt; no dedicated canvas tool
 Style advisor chat,ai,could,yes,yes,local Qwen3-VL 4B (4-bit); streamed answer
 Collage layouts 1-9 photos,collage,should,yes,yes,pan/zoom per cell; ratio; spacing; radius
@@ -86,3 +86,8 @@ HypicPro subscription and paywall,account,skip,yes,skip,everything free by decis
 Share to TikTok,export,skip,yes,skip,partner integration
 Hypic template / sticker / filter libraries,content,skip,yes,skip,their assets; own sets built
 Onboarding survey,onboarding,skip,yes,skip,
+HEIC/HEIF import,files,should,yes,yes,libheif WebAssembly; converted to JPEG on open (0.3.0)
+Copy / paste edits,editor,should,yes,yes,Ctrl+Shift+C/V: light colour filter effects (0.3.0)
+Tool search palette,editor,could,no,yes,Ctrl+K; Turkish-folded search over tools and actions (0.3.0)
+Keep people in AI edit,ai,should,no,yes,BiRefNet matte + masked FLUX repaint + soft composite (0.3.0)
+Small/dim face detection,retouch,must,yes,yes,YuNet pre-detection + crop landmarks (0.3.0)

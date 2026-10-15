@@ -70,3 +70,14 @@ Gemini tamamen kaldırıldı; tüm üretken araçlar yerel modellerle çalışı
 | 4x-UltraSharp V2 | 2,4 sn / 256 px karo |
 | CodeFormer | 0,2 sn / yüz |
 | Depth Anything V2 Base | 0,04 sn |
+
+## 0.3.0 — 2026-10-16
+
+Kapsam `replica/yol-haritasi.md` (Aşama 6 puanlaması + görsel eleştirmen ajanının önerileri). 11 maddenin hepsi tamam.
+
+- **YuNet:** MediaPipe'ın kısa mesafe dedektörünün kaçırdığı yüzler YuNet kutusundan 2,4× kırpılıp landmark çıkarılıyor; karanlık kırpım aydınlatılıyor. Loş grup 0 → 4 yüz, ≈200 ms (WASM, GPU'yu motorla paylaşmaz).
+- **GFPGAN 1.4:** CodeFormer kimliği değiştiriyordu (ajan 1–2 puan). GFPGAN + YCbCr parlaklık aktarımıyla renk koruma; ArcFace kimlik benzerliği hafif bozulmada 0,875, ağırda 0,786.
+- **Kişileri koru:** ilk deneme sert maske kenarında hale bırakıyordu; BiRefNet yumuşak matı ile bindirince yüz farkı 0, arka plan farkı 97.
+- **Zor çıkan:** kil stili komutu yüzde kırmızı leke üretiyordu (önizleme üretirken fark edildi), komut değişti. Üretken silme (FLUX inpaint) nesneyi geri çiziyordu; 0.3.0'dan çıkarıldı, 0.4 adayı.
+- **HEIC:** pillow_heif DLL'i Akıllı Uygulama Denetimi'ne takıldı; tarayıcıda libheif WebAssembly kullanıldı.
+- Testler: smoke 11/11, audit 41/41, ui-sweep 36/36, ai-local 11/11, gpu-switch 12/12.
