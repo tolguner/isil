@@ -52,5 +52,22 @@ LaMa ile doldurup FLUX'la rötuş: büyük grubu siliyor ama dikiş izi bırakı
 - LaMa motor kuruluysa artık GPU'da: 15–37 sn → **0,4 sn**.
 - FLUX/sohbet öncesi motor ONNX belleğini bırakıyor (6 GB'ta taşmayı azaltır).
 
+## Görsel eleştirmen ajanının puanları (2026-10-15)
+
+Ajan: `.claude/agents/gorsel-elestirmen.md` — her sonucu asılla aynı bölgeden 2–5 kat yakınlaştırıp yan yana inceleyerek 1–5 puanlar; kimlik değişimi en ağır kusur. 6 bölüm paralel, 326 puan, her biri gerekçeli (`dev-models/eval/out/ajan/*.json`).
+
+| araç | ajanın ortalaması | ajanın vardığı sonuç |
+| --- | --- | --- |
+| Kesim | BiRefNet 3,5 · ISNet 2,25 | BiRefNet varsayılan olsun; ISNet koyu ten/örgü/arka ışık/grupta çöküyor; BiRefNet'in zayıfı "neyin konu olduğu" (eller, tabak) → fırçayla ekle/çıkar + "konu bulunamadı" uyarısı |
+| Kalite artırma | UltraSharp 3,5 · ESRGAN 1,8 | ESRGAN kişiyi değiştiriyor (yaşlıyı gençleştiriyor, koyu tende göz bozuluyor) → kaldırılsın; UltraSharp yazı uyduruyor → yazılı görselde uyarı |
+| Derinlik | Base 4,0 · Small 3,9 | ikisi de iyi; Base ince ayrıntıda önde |
+| Yüz onarma, hafif | GFPGAN 3,17 · RestoreFormer++ 3,17 · CodeFormer w0,9 3,08 · GPEN 3,00 · CodeFormer w0,5 2,33 · **şu anki CodeFormer 1,92** | şu anki model en kötü; karışım oranı çözmüyor, sadakat ayarı çözüyor |
+| Yüz onarma, ağır | GPEN 3,08 · RestoreFormer++ 3,00 · CodeFormer w0,5 2,83 · GFPGAN 2,75 · CodeFormer w0,9 2,67 · **şu anki CodeFormer 2,25** | ağırda hiçbiri güvenilir değil; koyu tenli kadında hiçbiri 2'yi geçmedi (dövme/piercing kayboluyor) |
+| YZ Editör | 4B 39 · 9B 37 (toplam) | arka plan değişiminde 4B, stüdyo komutunda 9B önde; stüdyo komutu iki modelde de yüzü değiştiriyor → yüzü maskeyle koru; siyah-beyaz girdi renkleniyor |
+| Stil danışmanı | — | kısa sorularda doğru; uzun yanıtta tekrar ve kesilme, olmayan menü uydurma → tekrar cezası, token sınırı, gerçek araç adları |
+| Silme | LaMa en iyi 4 (yazı), kalabalıkta 2–3; FLUX silmiyor; LaMa+FLUX 1–3 | kişi silmede maskeyi yansıma/gölgeyi kapsayacak şekilde genişlet; üretken silmede kenar yumuşatma + renk eşleme |
+
+**Ajanın her bölümde ayrıca bulduğu ortak sorunlar:** siyah-beyaz/sepya girdiye renk sızması (FLUX, CodeFormer, RestoreFormer++); yaşlı yüzleri gençleştirme; koyu tende ve ayırt edici izlerde (dövme, piercing, ben, tek katlı göz kapağı) kayıp. Bunlar 0.3.0 adaylarına "çeşitlilik ve sadakat" başlığıyla eklenmeli.
+
 ## Tolga'dan beklenen
 `dev-models/eval/out/index.html` sayfasında puanlama. Tümü gerekmez; öncelik: **Yüz onarma adayları**, **YZ Editör 4B/9B**, **Üretken silme**.

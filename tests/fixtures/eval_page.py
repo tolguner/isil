@@ -16,8 +16,27 @@ def esc(s):
     return html.escape(str(s))
 
 
+# görsel eleştirmen ajanının puanları (dev-models/eval/out/ajan/<bölüm>.json)
+AGENT, AGENT_SUM = {}, {}
+AJ = os.path.join(OUT, 'ajan')
+if os.path.isdir(AJ):
+    for f in sorted(os.listdir(AJ)):
+        if f.endswith('.json') and not f.startswith('gorev-'):
+            try:
+                d = json.load(open(os.path.join(AJ, f), encoding='utf-8'))
+            except Exception:
+                continue
+            AGENT.update(d.get('puanlar', {}))
+            AGENT_SUM[d.get('bolum', f[:-5])] = d.get('ozet', '')
+
+
 def rate(key):
-    return f'<div class="rate" data-k="{esc(key)}">' + ''.join(f'<button data-v="{i}">{i}</button>' for i in range(1, 6)) + '</div>'
+    a = AGENT.get(key) or {}
+    ap, an = a.get('puan'), a.get('not', '')
+    badge = f'<span class="ai" title="{esc(an)}">ajan {ap if ap is not None else "–"}</span>' if a else '<span class="ai none">ajan –</span>'
+    note = f'<span class="ainote">{esc(an)}</span>' if an else ''
+    return (f'<div class="rate" data-k="{esc(key)}" data-ai="{ap if ap is not None else ""}">{badge}'
+            + ''.join(f'<button data-v="{i}">{i}</button>' for i in range(1, 6)) + f'</div>{note}')
 
 
 def why(id_):
@@ -136,7 +155,11 @@ sections.append(('sohbet', 'Stil danışmanı (Qwen3-VL 4B)', 'Fotoğrafı doğr
 credits = ''.join(f'<li>{esc(m["id"])}: <a href="{esc(m["page"])}">{esc(m.get("title", ""))}</a> — {esc(m["artist"])} · {esc(m["license"])}</li>' for m in SET.values() if m.get('page'))
 
 nav = ''.join(f'<a href="#{k}">{esc(t)} <small>({len(c)})</small></a>' for k, t, _, c in sections)
-body = ''.join(f'<section id="{k}"><h2>{esc(t)}</h2><p class="hint">{esc(h)}</p>{"".join(c) or "<p>sonuç yok</p>"}</section>' for k, t, h, c in sections)
+SUMMAP = {'kesim': ['kesim'], 'kalite': ['kalite-derinlik'], 'derinlik': ['kalite-derinlik'], 'yuz': ['yuz-hafif'], 'yuz2': ['yuz-hafif', 'yuz-agir'], 'silme': ['silme'], 'silme2': ['silme'], 'flux': ['flux-sohbet'], 'sohbet': ['flux-sohbet']}
+def summ(k):
+    parts = [AGENT_SUM[b] for b in SUMMAP.get(k, []) if AGENT_SUM.get(b)]
+    return ''.join(f'<div class="aisum"><b>Ajanın özeti:</b> {esc(x)}</div>' for x in dict.fromkeys(parts))
+body = ''.join(f'<section id="{k}"><h2>{esc(t)}</h2><p class="hint">{esc(h)}</p>{summ(k)}{"".join(c) or "<p>sonuç yok</p>"}</section>' for k, t, h, c in sections)
 
 page = f'''<!doctype html><html lang="tr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Işıl YZ kalite ölçümü</title>
@@ -157,13 +180,18 @@ figcaption, .cap {{ color:var(--m); font-size:12px; margin:6px 0 }}
 .row2 {{ display:flex; gap:10px; align-items:center; flex-wrap:wrap }} .row2 span {{ color:var(--m); font-size:12px; min-width:70px }}
 .rate {{ display:inline-flex; gap:4px }} .rate button {{ width:30px; height:28px; border-radius:6px; border:1px solid #333842; background:var(--s2); color:var(--t); cursor:pointer }}
 .rate button.on {{ background:var(--a); color:#111; border-color:var(--a); font-weight:700 }}
+.ai {{ font-size:12px; padding:3px 8px; border-radius:6px; background:#2a3550; color:#cfe0ff; margin-right:6px; white-space:nowrap }} .ai.none {{ opacity:.4 }}
+.rate button.aipick {{ box-shadow: inset 0 0 0 2px #6fa3ff }}
+.ainote {{ display:block; color:#b9c6e4; font-size:12px; margin:4px 0 8px }}
+.aisum {{ background:#1b2233; border-left:3px solid #6fa3ff; padding:8px 12px; border-radius:6px; margin:0 0 12px; color:#d6e2ff }}
+body.lowonly article {{ display:none }} body.lowonly article.low {{ display:block }}
 .miss {{ height:200px; display:grid; place-items:center; background:#000; color:var(--m); border-radius:6px }}
 .chat {{ display:grid; grid-template-columns:220px 1fr; gap:14px }} .chat img {{ width:100%; border-radius:6px }} .q {{ font-weight:600 }} .a {{ white-space:pre-wrap }}
 footer {{ color:var(--m); font-size:12px; padding:20px 16px 60px; max-width:1500px; margin:0 auto }} footer a {{ color:var(--m) }}
 @media (max-width:700px) {{ .chat {{ grid-template-columns:1fr }} }}
 </style></head><body>
-<header><b>Işıl · YZ kalite ölçümü</b>{nav}<span id="done"></span><button class="copy" id="copy">Puanları kopyala</button></header>
-<main><p class="hint">Her sonucu 1 (kötü) – 5 (çok iyi) arası puanlayın. Puanlar bu tarayıcıda saklanır; bitince Claude'a "puanlama bitti" demeniz yeterli.</p>{body}</main>
+<header><b>Işıl · YZ kalite ölçümü</b>{nav}<span id="done"></span><label style="color:var(--m)"><input type="checkbox" id="lowonly"> yalnız ajanın ≤2 verdikleri</label><button class="copy" id="copy">Puanları kopyala</button></header>
+<main><p class="hint">Mavi "ajan" etiketi ve mavi çerçeveli düğme görsel eleştirmen ajanının puanı; altındaki not gerekçesi. Katılmıyorsan kendi puanına bas (turuncu) — senin puanın ajanınkini geçersiz kılar, tekrar basınca kalkar. Bitince "Puanları kopyala" ile buraya yapıştır.</p>{body}</main>
 <footer><b>Deneme seti kaynakları</b> (Wikimedia Commons; yalnız ölçüm için, uygulamaya girmez)<ul>{credits}</ul></footer>
 <script>
 const K = 'isil-eval'
@@ -172,11 +200,15 @@ const save = (s) => {{ try {{ localStorage.setItem(K, JSON.stringify(s)) }} catc
 const st = load()
 const all = document.querySelectorAll('.rate')
 const paint = () => {{
-  all.forEach((r) => r.querySelectorAll('button').forEach((b) => b.classList.toggle('on', st[r.dataset.k] === +b.dataset.v)))
-  document.getElementById('done').textContent = Object.keys(st).length + ' / ' + all.length + ' puanlandı'
+  all.forEach((r) => r.querySelectorAll('button').forEach((b) => {{ b.classList.toggle('on', st[r.dataset.k] === +b.dataset.v); b.classList.toggle('aipick', r.dataset.ai !== '' && +r.dataset.ai === +b.dataset.v) }}))
+  const ai = [...all].filter((r) => r.dataset.ai !== '').length
+  const diff = Object.keys(st).filter((k) => {{ const r = document.querySelector(`.rate[data-k="${{CSS.escape(k)}}"]`); return r && r.dataset.ai !== '' && +r.dataset.ai !== st[k] }}).length
+  document.getElementById('done').textContent = `ajan ${{ai}}/${{all.length}} · sen ${{Object.keys(st).length}} (${{diff}} farklı)`
 }}
+document.querySelectorAll('article').forEach((a) => {{ if ([...a.querySelectorAll('.rate')].some((r) => r.dataset.ai !== '' && +r.dataset.ai <= 2)) a.classList.add('low') }})
+document.getElementById('lowonly').onchange = (e) => document.body.classList.toggle('lowonly', e.target.checked)
 all.forEach((r) => r.addEventListener('click', (e) => {{ const v = +e.target.dataset.v; if (!v) return; if (st[r.dataset.k] === v) delete st[r.dataset.k]; else st[r.dataset.k] = v; save(st); paint() }}))
-document.getElementById('copy').onclick = async () => {{ const t = JSON.stringify(st, null, 1); try {{ await navigator.clipboard.writeText(t); alert('Kopyalandı (' + Object.keys(st).length + ' puan)') }} catch {{ prompt('Kopyalayın:', t) }} }}
+document.getElementById('copy').onclick = async () => {{ const t = JSON.stringify(Object.fromEntries([...all].map((r) => [r.dataset.k, {{ ajan: r.dataset.ai === '' ? null : +r.dataset.ai, tolga: st[r.dataset.k] ?? null }}]).filter(([, v]) => v.tolga !== null)), null, 1); try {{ await navigator.clipboard.writeText(t); alert('Kopyalandı (' + Object.keys(st).length + ' puan)') }} catch {{ prompt('Kopyalayın:', t) }} }}
 window.__ratings = () => st
 paint()
 </script></body></html>'''
