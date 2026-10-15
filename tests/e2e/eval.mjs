@@ -151,7 +151,19 @@ if (only.includes('faces') || only.includes('arc')) {
 const EXPECT_FACES = { 'portre-gunbatimi': 1, 'sakal-turban': 1, 'gozluk-gunes': 1, 'gozluk-yasli': 1, 'yasli-adam': 1, 'koyu-ten-orgu': 1, 'cocuk-portre': 1, 'cocuk-gulen': 1, profil: 1, 'arka-isik': 1, 'karanlik-telefon': 1, 'grup-karanlik': 4, 'grup-iki-cocuk': 2, 'kivircik-sac': 1, 'tum-vucut': 1, 'eski-foto-kadin': 1, 'eski-foto-adam': 1 }
 if (only.includes('faces')) {
   for (const m of SET) {
-    const r = await win.evaluate(async (b) => { const im = await window.__img(b); const t = performance.now(); const f = await window.__faces(im); return { n: f.length, ms: Math.round(performance.now() - t) } }, b64(m.id))
+    const r = await win.evaluate(async (b) => {
+      const im = await window.__img(b)
+      const t = performance.now()
+      const f = await window.__faces(im)
+      const ms = Math.round(performance.now() - t)
+      // yüz noktalarını çiz (gözle kontrol)
+      const c = window.__fit(im, 1280)
+      const x = c.getContext('2d')
+      x.fillStyle = '#00ff88'
+      for (const face of f) for (const p of face) x.fillRect(p.x * c.width - 1, p.y * c.height - 1, 2, 2)
+      return { n: f.length, ms, jpg: f.length ? await window.__jpg(c) : null }
+    }, b64(m.id))
+    if (r.jpg) save('faces', `${m.id}.jpg`, r.jpg)
     record('faces', { id: m.id, expected: EXPECT_FACES[m.id] ?? 0, found: r.n, ms: r.ms })
   }
 }
@@ -312,7 +324,8 @@ if (only.includes('erase')) {
 
 // ---------- yüz onarma adayları: hafif / ağır bozulma ----------
 if (only.includes('restore2')) {
-  const VARIANTS = [['codeformer', 1], ['codeformer-w', 0.5], ['codeformer-w', 0.9], ['gfpgan', 1], ['gpen', 1], ['restoreformer', 1]]
+  // [model, sadakat, renk koruma]; 'gfpgan+renk' 0.3.0 varsayılanı (güç 1 ile karşılaştırma için)
+  const VARIANTS = [['codeformer-w', 0.9, false], ['gfpgan', 0, false], ['gfpgan', 0, true], ['gpen', 0, false], ['restoreformer', 0, false]]
   for (const id of FACE_IDS) {
     for (const [deg, k, q] of [['hafif', 2.5, 0.35], ['agir', 4, 0.25]]) {
       const r = await win.evaluate(async ({ b, VARIANTS, k, q }) => {
@@ -325,11 +338,11 @@ if (only.includes('restore2')) {
         const ops = await window.__isil.mod('ops')
         const res = { bozuk: { sim: await window.__idsim(clean, deg), psnr: window.__psnr(clean, deg) } }
         const outs = [clean, deg]
-        for (const [model, fid] of VARIANTS) {
+        for (const [model, fid, keep] of VARIANTS) {
           const t = performance.now()
-          const o = await ops.restoreFaces(deg, undefined, 1, model, fid)
+          const o = await ops.restoreFaces(deg, undefined, 1, model, fid, keep)
           const c = o ?? deg
-          res[model + (model === 'codeformer-w' ? '@' + fid : '')] = { ok: !!o, ms: Math.round(performance.now() - t), sim: await window.__idsim(clean, c), psnr: window.__psnr(clean, c) }
+          res[model + (model === 'codeformer-w' ? '@' + fid : '') + (keep ? '+renk' : '')] = { ok: !!o, ms: Math.round(performance.now() - t), sim: await window.__idsim(clean, c), psnr: window.__psnr(clean, c) }
           outs.push(c)
         }
         const strip = document.createElement('canvas')

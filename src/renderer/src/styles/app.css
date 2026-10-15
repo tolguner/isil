@@ -251,3 +251,11 @@ button, input, select, textarea { font: inherit; color: inherit; }
 .collage-grid { position: relative; background: #fff; }
 .stack { display: flex; flex-direction: column; gap: var(--sp-2); }
 kbd { background: var(--c-surface-3); border-radius: 4px; padding: 1px 5px; font-size: var(--fs-2xs); font-family: var(--font-mono); }
+
+/* komut paleti (Ctrl+K) */
+.dialog.palette { width: min(560px, 92vw); padding: var(--sp-3); align-self: start; margin-top: 12vh; }
+.palette-input { display: flex; align-items: center; gap: var(--sp-2); padding: 0 var(--sp-2); }
+.palette-input .input { flex: 1; border: 0; background: transparent; }
+.palette-list { list-style: none; margin: var(--sp-2) 0 0; padding: 0; max-height: 50vh; overflow: auto; }
+.palette-list li { display: flex; justify-content: space-between; gap: var(--sp-3); padding: var(--sp-2) var(--sp-3); border-radius: var(--r-md); cursor: pointer; }
+.palette-list li.on { background: var(--c-surface-2); }

@@ -50,15 +50,57 @@ function setMaskFrom(src: CanvasImageSource) {
   emit()
 }
 
-async function autoCut(detailed = false) {
+/**
+ * Maske değerlendirmesi: konu çok küçük ya da çok parçalıysa (manzara, kalabalık) "belirgin konu yok" de.
+ * 64×64'te 0,5 eşikli bağlı bileşenler.
+ */
+function subjectProblem(mask: HTMLCanvasElement): boolean {
+  const N = 64
+  const c = document.createElement('canvas')
+  c.width = c.height = N
+  const x = c.getContext('2d', { willReadFrequently: true })!
+  x.drawImage(mask, 0, 0, N, N)
+  const d = x.getImageData(0, 0, N, N).data
+  const on = new Uint8Array(N * N)
+  let area = 0
+  for (let i = 0; i < N * N; i++) if (d[i * 4] > 127) { on[i] = 1; area++ }
+  if (area < N * N * 0.01) return true
+  const seen = new Uint8Array(N * N)
+  const sizes: number[] = []
+  for (let i = 0; i < N * N; i++) {
+    if (!on[i] || seen[i]) continue
+    let n = 0
+    const st = [i]
+    seen[i] = 1
+    while (st.length) {
+      const k = st.pop()!
+      n++
+      const kx = k % N, ky = (k / N) | 0
+      for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) {
+        const nx = kx + dx, ny = ky + dy
+        if (nx < 0 || ny < 0 || nx >= N || ny >= N) continue
+        const j = ny * N + nx
+        if (on[j] && !seen[j]) { seen[j] = 1; st.push(j) }
+      }
+    }
+    sizes.push(n)
+  }
+  const big = sizes.filter((n) => n > area * 0.05).length
+  return Math.max(...sizes) < area * 0.4 && big >= 4
+}
+
+/** Otomatik kesim: YZ motoru kuruluysa BiRefNet (saç teli, koyu ten, grup), değilse ISNet. */
+async function autoCut() {
   const pv = session.preview
   if (!pv) return
-  if (detailed && !(await nativeReady())) {
-    const en = useEditor.getState().settings.language === 'en'
-    useEditor.getState().toast('info', en ? 'Detailed cutout needs the AI engine (Settings → Local generative AI); using the standard cutout for now.' : 'Detaylı kesim YZ motoruyla çalışır (Ayarlar → Yerel üretken yapay zekâ); şimdilik standart kesim yapıldı.')
+  const en = useEditor.getState().settings.language === 'en'
+  const strong = await nativeReady()
+  const m = await busy(en ? 'Removing background…' : 'Arka plan kaldırılıyor…', () => removeBackground(pv, strong))
+  if (!m) return
+  setMaskFrom(m)
+  if (subjectProblem(m)) {
+    useEditor.getState().toast('info', en ? 'No clear subject found. Mark it with the brush or use tap-select.' : 'Belirgin bir konu bulunamadı. Konuyu fırçayla işaretle ya da dokun-seç kullan.')
   }
-  const m = await busy(useEditor.getState().settings.language === 'en' ? 'Removing background…' : 'Arka plan kaldırılıyor…', () => removeBackground(pv, detailed))
-  if (m) setMaskFrom(m)
 }
 async function personCut() {
   const pv = session.preview
@@ -114,7 +156,7 @@ function CutoutPanel() {
       if (cutRequest.auto) {
         cutRequest.auto = false
         for (let i = 0; i < 50 && !session.preview; i++) await new Promise((r) => setTimeout(r, 100))
-        await autoCut(false)
+        await autoCut()
       }
     })()
     return () => {
@@ -151,8 +193,7 @@ function CutoutPanel() {
     <>
       <p className="note">{tr('Konuyu yapay zekâyla ayır, sonra fırçayla düzelt. Kesilmiş fotoğrafa Arka plan sekmesinden yeni zemin ekleyebilirsin.', 'Separate the subject with AI, then refine with the brush. Add a new backdrop from the Backdrop tab.')}</p>
       <div className="presets">
-        <button className="btn sm primary" onClick={() => autoCut(false)}>{tr('Otomatik', 'Auto')}</button>
-        <button className="btn sm" onClick={() => autoCut(true)}>{tr('Detaylı', 'Detailed')}</button>
+        <button className="btn sm primary" onClick={() => autoCut()}>{tr('Otomatik', 'Auto')}</button>
         <button className="btn sm" onClick={personCut}>{tr('Kişi (hızlı)', 'Person (fast)')}</button>
         <button className={'btn sm' + (c.mode === 'tap' ? ' primary' : '')} onClick={() => { cut.mode = cut.mode === 'tap' ? 'brush' : 'tap'; emit() }}>{tr('Dokun-seç', 'Tap select')}</button>
       </div>

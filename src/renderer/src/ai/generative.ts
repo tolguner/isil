@@ -90,6 +90,26 @@ async function png(c: HTMLCanvasElement) {
   return new Uint8Array(await (await encodeCanvas(c, 'image/png')).arrayBuffer())
 }
 
+/** Görsel neredeyse renksiz mi (siyah-beyaz / hafif ton)? 64×64 örnekte renk sapması. */
+export function isGrayscale(src: Src): boolean {
+  const c = toCanvas(src, 64, 64)
+  const d = c.getContext('2d', { willReadFrequently: true })!.getImageData(0, 0, 64, 64).data
+  let dev = 0
+  for (let i = 0; i < d.length; i += 4) dev += (Math.abs(d[i] - d[i + 1]) + Math.abs(d[i + 1] - d[i + 2]) + Math.abs(d[i + 2] - d[i])) / 3
+  return dev / (d.length / 4) < 5
+}
+
+function toGray(c: HTMLCanvasElement) {
+  const x = c.getContext('2d', { willReadFrequently: true })!
+  const id = x.getImageData(0, 0, c.width, c.height)
+  const d = id.data
+  for (let i = 0; i < d.length; i += 4) d[i] = d[i + 1] = d[i + 2] = Math.round(0.299 * d[i] + 0.587 * d[i + 1] + 0.114 * d[i + 2])
+  x.putImageData(id, 0, 0)
+}
+
+/** Siyah-beyaz girdi, komut açıkça renk istemedikçe siyah-beyaz kalır (FLUX renk ekliyordu). */
+const wantsColor = (p: string) => /colou?ri[sz]|renklendir|renkli|in color/i.test(p)
+
 /** Görseli yazılı komutla düzenle; sonuç kaynak boyutuna ölçeklenir. */
 export async function localEdit(src: Src, prompt: string, refs: Src[] = []): Promise<HTMLCanvasElement | null> {
   const quality = useEditor.getState().settings.genQuality
@@ -109,11 +129,43 @@ export async function localEdit(src: Src, prompt: string, refs: Src[] = []): Pro
   const bm = await createImageBitmap(new Blob([out as BlobPart], { type: 'image/png' }))
   const res = toCanvas(bm, src.width, src.height)
   bm.close()
+  if (isGrayscale(src) && !wantsColor(prompt)) toGray(res)
   return res
 }
 
+/**
+ * Kişileri koruyarak düzenle: konu (kişi/nesne) BiRefNet ya da ISNet ile ayrılır, FLUX yalnız arka planı yeniden çizer.
+ * Yüz ve kıyafet piksel piksel korunur (ajan: "stüdyo" komutu yüzü değiştiriyordu).
+ */
+export async function localEditKeepPeople(src: Src, prompt: string): Promise<HTMLCanvasElement | null> {
+  const { removeBackground } = await import('./ops')
+  const { nativeReady } = await import('./models')
+  const subj = await removeBackground(src, await nativeReady()) // yumuşak konu maskesi (saç teli yarı saydam)
+  if (!subj) return localEdit(src, prompt)
+  const W = src.width, H = src.height
+  // FLUX'un yeniden çizeceği alan: konunun tam opak çekirdeği dışındaki her yer — saçın yarı saydam kenarının
+  // arkası da yeni arka planla dolsun; aksi halde kenarda eski fon hale gibi kalıyor
+  const m = toCanvas(subj, W, H)
+  const mx = m.getContext('2d', { willReadFrequently: true })!
+  const id = mx.getImageData(0, 0, W, H)
+  const d = id.data
+  for (let i = 0; i < d.length; i += 4) d[i] = d[i + 1] = d[i + 2] = d[i] > 230 ? 0 : 255
+  mx.putImageData(id, 0, 0)
+  const bg = await localMaskedEdit(src, m, `${prompt}. Keep the people and the main subject exactly as they are.`, { raw: true })
+  if (!bg) return null
+  // kişiyi yumuşak alfa ile yeni arka planın üstüne koy: yüz ve kıyafet piksel piksel aynı, saç kenarı doğal
+  const fg = toCanvas(src)
+  const fx = fg.getContext('2d')!
+  fx.globalCompositeOperation = 'destination-in'
+  fx.drawImage(grayToAlpha(subj, W, H), 0, 0)
+  const out = toCanvas(bg, W, H)
+  out.getContext('2d')!.drawImage(fg, 0, 0)
+  if (isGrayscale(src) && !wantsColor(prompt)) toGray(out)
+  return out
+}
+
 /** Maskeli düzenleme (FLUX.2 klein inpaint): yalnız maskeli alan yeniden çizilir, dışı birebir korunur. */
-export async function localMaskedEdit(src: Src, mask: HTMLCanvasElement, what: string, opts: { prefill?: Src } = {}): Promise<HTMLCanvasElement | null> {
+export async function localMaskedEdit(src: Src, mask: HTMLCanvasElement, what: string, opts: { prefill?: Src; raw?: boolean } = {}): Promise<HTMLCanvasElement | null> {
   const quality = useEditor.getState().settings.genQuality
   const part = quality === 'best' ? 'flux-best' : 'flux-fast'
   if (!(await ensureEngine(['runtime', part]))) return null
@@ -142,6 +194,7 @@ export async function localMaskedEdit(src: Src, mask: HTMLCanvasElement, what: s
   const bm = await createImageBitmap(new Blob([out as BlobPart], { type: 'image/png' }))
   const edited = toCanvas(bm, src.width, src.height)
   bm.close()
+  if (opts.raw) return edited
   // sonucu yumuşak kenarlı maskeyle asıl görselin üstüne koy
   const alpha = grayToAlpha(mask, src.width, src.height)
   const res = toCanvas(src)
@@ -155,6 +208,7 @@ export async function localMaskedEdit(src: Src, mask: HTMLCanvasElement, what: s
   pc.globalCompositeOperation = 'destination-in'
   pc.drawImage(soft, 0, 0)
   res.getContext('2d')!.drawImage(edited, 0, 0)
+  if (isGrayscale(src) && !wantsColor(what)) toGray(res)
   return res
 }
 

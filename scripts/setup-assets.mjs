@@ -10,7 +10,9 @@ const files = {
   'pose_landmarker_lite.task': `${base}/pose_landmarker/pose_landmarker_lite/float16/1/pose_landmarker_lite.task`,
   'selfie_multiclass_256x256.tflite': `${base}/image_segmenter/selfie_multiclass_256x256/float32/latest/selfie_multiclass_256x256.tflite`,
   'magic_touch.tflite': `${base}/interactive_segmenter/magic_touch/float32/1/magic_touch.tflite`,
-  'interactive_segmentation.task': `${base}/interactive_segmenter_v2/magic_touch/int8/latest/interactive_segmentation.task`
+  'interactive_segmentation.task': `${base}/interactive_segmenter_v2/magic_touch/int8/latest/interactive_segmentation.task`,
+  // YuNet yüz dedektörü (OpenCV Zoo, MIT) — küçük/loş yüzler için
+  'face_detection_yunet_2023mar.onnx': 'https://huggingface.co/opencv/face_detection_yunet/resolve/main/face_detection_yunet_2023mar.onnx'
 }
 for (const [name, url] of Object.entries(files)) {
   const out = `${pub}/models/${name}`

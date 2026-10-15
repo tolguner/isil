@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useEditor } from '@/store/editor'
 import { useT } from '@/lib/i18n'
-import { Segmented } from '@/components/ui'
+import { Segmented, Slider } from '@/components/ui'
 import { session } from '@/engine/session'
 import { upscale, restoreFaces, toCanvas } from '@/ai/ops'
 import { isDesktop } from '@/lib/platform'
@@ -13,6 +13,7 @@ export function EnhanceTool() {
   const tr = useT()
   const [scale, setScale] = useState<'2' | '4'>('2')
   const [faces, setFaces] = useState(isDesktop)
+  const [power, setPower] = useState(70)
   const W = session.W, H = session.H
   const k = Number(scale)
   const pre = Math.min(1, MAX_OUT / (Math.max(W, H) * k))
@@ -28,7 +29,7 @@ export function EnhanceTool() {
       full.close()
       if (faces) {
         st.setBusy({ text: tr('Yüzler onarılıyor…', 'Restoring faces…') })
-        src = (await restoreFaces(src)) ?? src
+        src = (await restoreFaces(src, undefined, power / 100)) ?? src
       }
       const up = await upscale(src, (p) => useEditor.getState().setBusy({ text: tr('Kalite artırılıyor…', 'Enhancing…'), progress: p, cancel: () => (signal.cancelled = true) }), signal)
       if (!up) return
@@ -52,9 +53,10 @@ export function EnhanceTool() {
       {isDesktop && (
         <label className="row" style={{ gap: 8, cursor: 'pointer' }}>
           <input type="checkbox" checked={faces} onChange={(e) => setFaces(e.target.checked)} />
-          <span>{tr('Yüzleri de onar (CodeFormer)', 'Also restore faces (CodeFormer)')}</span>
+          <span>{tr('Yüzleri de onar (GFPGAN)', 'Also restore faces (GFPGAN)')}</span>
         </label>
       )}
+      {isDesktop && faces && <Slider label={tr('Onarım gücü', 'Restore strength')} value={power} onChange={setPower} min={20} max={100} />}
       <div className="card">
         <div className="muted">{tr('Şimdi', 'Now')}: {W}×{H}</div>
         <div><b>{tr('Sonra', 'After')}: {outW}×{outH}</b></div>

@@ -3,6 +3,7 @@ import {
   FaceLandmarker, InteractiveSegmenterLegacy, FilesetResolver, ImageSegmenter, InteractiveSegmenter, PoseLandmarker,
   type NormalizedLandmark, type BrushMode
 } from '@mediapipe/tasks-vision'
+import { detectFaceBoxes, boxIoU, type FaceBox } from './yunet'
 
 // BrushMode çalışma zamanında dışa aktarılmıyor; sayısal değerler (d.ts ile aynı).
 const POSITIVE = 1 as BrushMode
@@ -33,8 +34,7 @@ let inter: Promise<InteractiveSegmenter> | null = null
 
 export type Pt = { x: number; y: number; z: number }
 
-/** Görüntüdeki tüm yüzler: 478 nokta, normalize (0..1, v=0 üst). Soldan sağa sıralı. */
-export async function detectFaces(img: TexImageSource): Promise<Pt[][]> {
+function landmarker() {
   face ??= getFileset().then((fs) =>
     withDelegate((delegate) =>
       FaceLandmarker.createFromOptions(fs, {
@@ -46,8 +46,86 @@ export async function detectFaces(img: TexImageSource): Promise<Pt[][]> {
       })
     )
   )
-  const r = (await face).detect(img as HTMLCanvasElement)
-  const faces = r.faceLandmarks.map((l: NormalizedLandmark[]) => l.map((p) => ({ x: p.x, y: p.y, z: p.z })))
+  return face
+}
+
+const dims = (img: TexImageSource) => {
+  const o = img as { width?: number; height?: number; naturalWidth?: number; naturalHeight?: number; videoWidth?: number; videoHeight?: number }
+  return { W: o.videoWidth || o.naturalWidth || o.width || 0, H: o.videoHeight || o.naturalHeight || o.height || 0 }
+}
+
+/** Noktaların piksel kutusu. */
+function ptsBox(f: Pt[], W: number, H: number): FaceBox {
+  let x0 = 1, y0 = 1, x1 = 0, y1 = 0
+  for (const p of f) {
+    if (p.x < x0) x0 = p.x
+    if (p.x > x1) x1 = p.x
+    if (p.y < y0) y0 = p.y
+    if (p.y > y1) y1 = p.y
+  }
+  return { x: x0 * W, y: y0 * H, w: (x1 - x0) * W, h: (y1 - y0) * H, score: 1 }
+}
+
+/** YuNet kutusunun büyütülmüş kırpımında 478 nokta; loşsa aydınlatarak. Koordinatlar kaynağa geri taşınır. */
+async function landmarksInCrop(lm: FaceLandmarker, img: TexImageSource, b: FaceBox, W: number, H: number): Promise<Pt[] | null> {
+  const side = Math.max(b.w, b.h) * 2.4
+  const cx0 = b.x + b.w / 2 - side / 2, cy0 = b.y + b.h / 2 - side / 2
+  const N = 384
+  const c = document.createElement('canvas')
+  c.width = c.height = N
+  const ctx = c.getContext('2d', { willReadFrequently: true })!
+  ctx.fillStyle = '#000'
+  ctx.fillRect(0, 0, N, N)
+  ctx.imageSmoothingQuality = 'high'
+  ctx.drawImage(img as CanvasImageSource, cx0, cy0, side, side, 0, 0, N, N)
+  // yüz bölgesinin parlaklığı düşükse aydınlat (loş grup fotoğrafları)
+  const m = Math.round(N * 0.3)
+  const d = ctx.getImageData(m, m, N - 2 * m, N - 2 * m).data
+  let sum = 0
+  for (let i = 0; i < d.length; i += 4) sum += 0.299 * d[i] + 0.587 * d[i + 1] + 0.114 * d[i + 2]
+  const mean = sum / (d.length / 4)
+  if (mean < 90) {
+    const t = document.createElement('canvas')
+    t.width = t.height = N
+    const tc = t.getContext('2d')!
+    tc.filter = `brightness(${Math.min(3, 110 / Math.max(mean, 20)).toFixed(2)}) contrast(1.1)`
+    tc.drawImage(c, 0, 0)
+    ctx.drawImage(t, 0, 0)
+  }
+  const r = lm.detect(c)
+  if (!r.faceLandmarks.length) return null
+  // kırpımın ortasına en yakın yüz
+  const best = r.faceLandmarks.map((l: NormalizedLandmark[]) => ({ l, d: Math.hypot(l[1].x - 0.5, l[1].y - 0.5) })).sort((p, q) => p.d - q.d)[0]
+  if (best.d > 0.25) return null
+  return best.l.map((p) => ({ x: (cx0 + p.x * side) / W, y: (cy0 + p.y * side) / H, z: (p.z * side) / W }))
+}
+
+/**
+ * Görüntüdeki tüm yüzler: 478 nokta, normalize (0..1, v=0 üst). Soldan sağa sıralı.
+ * MediaPipe'ın dedektörü küçük/loş yüzleri kaçırdığı için YuNet'in bulduğu ama eşleşmeyen her yüz
+ * büyütülmüş kırpımda yeniden aranır (BUG-008).
+ */
+export async function detectFaces(img: TexImageSource): Promise<Pt[][]> {
+  const lm = await landmarker()
+  const faces: Pt[][] = lm.detect(img as HTMLCanvasElement).faceLandmarks.map((l: NormalizedLandmark[]) => l.map((p) => ({ x: p.x, y: p.y, z: p.z })))
+  const { W, H } = dims(img)
+  if (W && H) {
+    try {
+      const known = faces.map((f) => ptsBox(f, W, H))
+      for (const b of await detectFaceBoxes(img as CanvasImageSource & { width: number; height: number })) {
+        const cx = b.x + b.w / 2, cy = b.y + b.h / 2
+        if (known.some((k) => boxIoU(k, b) > 0.2 || (cx > k.x && cx < k.x + k.w && cy > k.y && cy < k.y + k.h))) continue
+        const f = await landmarksInCrop(lm, img, b, W, H)
+        if (f) {
+          faces.push(f)
+          known.push(ptsBox(f, W, H))
+        }
+        if (faces.length >= 20) break
+      }
+    } catch (e) {
+      console.warn('YuNet çalışmadı; yalnız MediaPipe sonuçları', e)
+    }
+  }
   return faces.sort((a, b) => a[1].x - b[1].x)
 }
 

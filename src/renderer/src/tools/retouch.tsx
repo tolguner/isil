@@ -124,25 +124,64 @@ const BEAUTY: { id: string; label: [string, string]; skin: Record<string, number
   { id: 'baby', label: ['Bebek yüz', 'Baby face'], skin: { smooth: 55, whiten: 20, plumpLight: 40 }, shape: { eyeSize: 20, smallFace: 15, noseSize: -15, chin: -10 } }
 ]
 
+/** Tek dokunuş ön ayarını belgedeki bir yüze uygular (hem panel hem önizleme kullanır). */
+function applyBeauty(d: EditDoc, idx: number, id: string, a: number) {
+  const p = BEAUTY.find((b) => b.id === id)!
+  editFace(d, idx, (f) => {
+    f.skin = Object.fromEntries(Object.entries(p.skin).map(([k, v]) => [k, Math.round((v * a) / 100)]))
+    f.shape = Object.fromEntries(Object.entries(p.shape).map(([k, v]) => [k, Math.round((v * a) / 100)]))
+    f.makeup = { ...f.makeup, lip: undefined as never, blush: undefined as never }
+    delete f.makeup.lip
+    delete f.makeup.blush
+    for (const [k, m] of Object.entries(p.makeup ?? {})) f.makeup[k] = { preset: id, amount: Math.round((m.amount * a) / 100), color: m.color }
+  })
+}
+
+/** Ön ayar kartları için seçili yüzün önizlemeleri (gerçek fotoğraf üzerinde, yüz kırpımı). */
+function useBeautyPreviews(idx: number) {
+  const [pv, setPv] = useState<Record<string, string>>({})
+  const revision = useEditor((s) => s.revision)
+  useEffect(() => {
+    let live = true
+    setPv({})
+    void (async () => {
+      const faces = await session.ensureFaces()
+      const f = faces[idx]
+      if (!f) return
+      const base = JSON.parse(JSON.stringify(useEditor.getState().toolSnapshot ?? useEditor.getState().doc)) as EditDoc
+      for (const b of BEAUTY) {
+        if (!live) return
+        const d = JSON.parse(JSON.stringify(base)) as EditDoc
+        applyBeauty(d, idx, b.id, 80)
+        const c = await session.renderPreview(d, 1000)
+        if (!c || !live) return
+        // yüz kutusu (normalize noktalar → önizleme pikseli), biraz genişletilmiş kare
+        let x0 = 1, y0 = 1, x1 = 0, y1 = 0
+        for (const p of f) { x0 = Math.min(x0, p.x); y0 = Math.min(y0, p.y); x1 = Math.max(x1, p.x); y1 = Math.max(y1, p.y) }
+        const side = Math.max((x1 - x0) * c.width, (y1 - y0) * c.height) * 1.35
+        const cx = ((x0 + x1) / 2) * c.width, cy = ((y0 + y1) / 2) * c.height
+        const t = document.createElement('canvas')
+        t.width = t.height = 112
+        t.getContext('2d')!.drawImage(c, cx - side / 2, cy - side / 2, side, side, 0, 0, 112, 112)
+        const url = t.toDataURL('image/jpeg', 0.85)
+        setPv((m) => ({ ...m, [b.id]: url }))
+      }
+    })()
+    return () => {
+      live = false
+    }
+  }, [idx, revision])
+  return pv
+}
+
 function BeautyPanel() {
   const tr = useT()
   const idx = useEditor((s) => s.selectedFace)
   const update = useEditor((s) => s.update)
   const [sel, setSel] = useState<string | null>(null)
   const [amt, setAmt] = useState(80)
-  const apply = (id: string, a: number) => {
-    const p = BEAUTY.find((b) => b.id === id)!
-    update((d) =>
-      editFace(d, idx, (f) => {
-        f.skin = Object.fromEntries(Object.entries(p.skin).map(([k, v]) => [k, Math.round((v * a) / 100)]))
-        f.shape = Object.fromEntries(Object.entries(p.shape).map(([k, v]) => [k, Math.round((v * a) / 100)]))
-        f.makeup = { ...f.makeup, lip: undefined as never, blush: undefined as never }
-        delete f.makeup.lip
-        delete f.makeup.blush
-        for (const [k, m] of Object.entries(p.makeup ?? {})) f.makeup[k] = { preset: id, amount: Math.round((m.amount * a) / 100), color: m.color }
-      })
-    )
-  }
+  const pv = useBeautyPreviews(idx)
+  const apply = (id: string, a: number) => update((d) => applyBeauty(d, idx, id, a))
   return (
     <>
       <NoFace />
@@ -150,7 +189,7 @@ function BeautyPanel() {
       <div className="presets">
         {BEAUTY.map((b) => (
           <Preset key={b.id} label={tr(b.label[0], b.label[1])} on={sel === b.id} onClick={() => { setSel(b.id); apply(b.id, amt) }}>
-            <Sparkles size={22} color={sel === b.id ? 'var(--c-accent)' : 'var(--c-text-faint)'} />
+            {pv[b.id] ? <img src={pv[b.id]} alt="" draggable={false} /> : <Sparkles size={22} color={sel === b.id ? 'var(--c-accent)' : 'var(--c-text-faint)'} />}
           </Preset>
         ))}
       </div>

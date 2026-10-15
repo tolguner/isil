@@ -1,8 +1,8 @@
-# Yol haritası taslağı — 0.3.0 (Aşama 6)
+# Yol haritası — 0.3.0 (Aşama 6)
 
-Durum: **taslak; puanlama kuralı Tolga'nın onayını bekliyor.** Kaynaklar: `hatalar.md`, `rekabet/*.md`, `rekabet/yorumlar.md`, Aşama 2 ölçümleri.
+Durum: **kesinleşti (15.10)** — Tolga ajanın önerilerine katıldı ve kararları bana bıraktı; puanlama kuralı uygulandı. Kaynaklar: `hatalar.md`, `rekabet/*.md`, `rekabet/yorumlar.md`, Aşama 2 ölçümleri.
 
-## Önerilen puanlama kuralı (onay bekliyor)
+## Puanlama kuralı (uygulandı)
 
 Her aday için dört değer:
 
@@ -43,4 +43,34 @@ Her aday için dört değer:
 | 22 | FLUX: bellek sınırına göre çözünürlük | kalite | 3 | 1 | 1 | 7 | büyük görselde 27 → 90 sn |
 | 23 | Koyu tende kimlik kaybı (FLUX "stüdyo" komutu) | kalite | 3 | 2 | 2 | 4 | 4B'de 0,53; 9B sonucu bekleniyor |
 
-*Değerler taslaktır; kural onaylanınca Aşama 2 sonuçlarıyla güncellenecek.*
+*Değerler Aşama 2 ve ajan puanlarıyla kesinleşti; kararlar aşağıda.*
+
+## Kararlar (2026-10-15)
+
+| konu | karar | gerekçe |
+| --- | --- | --- |
+| Yüz onarma | **GFPGAN 1.4** varsayılan; CodeFormer kaldırılır. Siyah-beyaz/sepya girdide renk girdiden korunur; yüz yumuşak maskeyle ve renk eşlenerek yapıştırılır; "onarım gücü" kaydırıcısı (varsayılan %70) | ajan: hafif bozulmada en tutarlı (hiç 1 almadı); Apache-2.0; şu anki CodeFormer her iki düzeyde son |
+| Kalite artırma | UltraSharp V2 (motor) kalır; Real-ESRGAN yalnız motor yokken yedek | ajan 3,5 vs 1,8 |
+| Kesim | Motor varsa **BiRefNet varsayılan** (Otomatik dahil); ISNet yalnız yedek; maske çok küçük/parçalıysa "belirgin konu bulunamadı" uyarısı | ajan 3,5 vs 2,25 |
+| Derinlik | Base kalır | ajan 4,0 vs 3,9 |
+| YZ Editör | 4B varsayılan kalır; **"Kişiyi koru"** seçeneği (arka plan değişikliklerinde yalnız kişi dışını yeniden çizer); siyah-beyaz girdi siyah-beyaz kalır; bellek sınırına göre çözünürlük | ajan: stüdyo komutunda yüz değişiyor, SB renkleniyor; büyük görselde 27 → 90 sn |
+| Stil danışmanı | tekrar cezası, kısa yanıt sınırı, Işıl'ın gerçek araç adları sistem talimatında | ajan: uzun yanıtta tekrar ve menü uydurma |
+| Nesne silme | LaMa kalır; maske kenarlardan ve aşağıya doğru biraz genişletilir (yansıma/gölge) | ajan: yansıma kalıyor |
+| Üretken silme | 0.3.0'a girmez; 0.4 adayı | ajan 1–3 |
+| Yüz algılama | YuNet ile ön algılama (BUG-008) | grup ve tüm vücutta 0 yüz |
+
+## 0.3.0 kapsamı (sırayla)
+
+1. YuNet ile küçük/loş yüz algılama (BUG-008)
+2. Yüz onarma: GFPGAN + renk koruma + yumuşak yapıştırma + güç
+3. Kesim: BiRefNet varsayılan + konu uyarısı
+4. YZ Editör: kişiyi koru, siyah-beyaz koruma, bellek sınırına göre çözünürlük
+5. Stil danışmanı düzeltmeleri
+6. Silme maskesi genişletme
+7. HEIC açma (K-1)
+8. Ön ayar önizlemeleri (K-2)
+9. GIF bilgi notu (K-3)
+10. Ayarları kopyala / yapıştır
+11. Araç arama (Ctrl+K)
+
+Sonra: 0.4 adayları — seçmeli ayar, YZ Genişlet tuvali, yoldan geçenleri otomatik silme, saç/kıyafet hazır akışları, üretken silme, çıkartma yapıcı. Aşama 5 (BlueStacks incelemesi) Tolga uygulamaları kurduğunda yapılacak.

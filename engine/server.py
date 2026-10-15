@@ -201,8 +201,21 @@ def cmd_edit(a):
 
     pipe = load_flux(a.get("model", "flux-fast"))
     w, h = int(a["width"]), int(a["height"])
-    image = Image.open(a["image"]).convert("RGB")
-    refs = [Image.open(p).convert("RGB") for p in a.get("refs") or []]
+    # 6 GB'lık kartta 4B ~0,75 MP üstünde belleği taşırıp 3 kat yavaşlıyor (27 → 90 sn); 9B için daha sıkı.
+    # Sonuç arayüzde asıl boyuta ölçekleniyor, bu yüzden burada küçültmek güvenli.
+    if t.cuda.is_available():
+        vram = t.cuda.get_device_properties(0).total_memory / 2**30
+        cap = 1.1e6 if vram >= 11 else (0.75e6 if a.get("model", "flux-fast") == "flux-fast" else 0.6e6)
+        if w * h > cap:
+            k = (cap / (w * h)) ** 0.5
+            w, h = max(256, int(w * k) // 16 * 16), max(256, int(h * k) // 16 * 16)
+    image = Image.open(a["image"]).convert("RGB").resize((w, h), Image.LANCZOS)
+    # referanslar da aynı bütçede (her referans ek token demek)
+    refs = []
+    for p in a.get("refs") or []:
+        r = Image.open(p).convert("RGB")
+        k = min(1.0, (w * h * 0.6 / (r.width * r.height)) ** 0.5)
+        refs.append(r.resize((max(64, int(r.width * k)), max(64, int(r.height * k))), Image.LANCZOS))
     steps = int(a.get("steps", 4))
     seed = a.get("seed")
     gen = t.Generator("cpu").manual_seed(int(seed) if seed is not None else int.from_bytes(os.urandom(4), "little"))
@@ -224,7 +237,7 @@ def cmd_edit(a):
             state["inpaint"] = Flux2KleinInpaintPipeline(**pipe.components)
         mask = Image.open(a["mask"]).convert("L")
         out = offload_for(state["inpaint"])(
-            image=image.resize((w, h)),
+            image=image,
             mask_image=mask.resize((w, h)),
             image_reference=refs or None,
             strength=float(a.get("strength", 1.0)),
@@ -313,7 +326,8 @@ def cmd_chat(a):
 
     def run():
         try:
-            model.generate(**inputs, max_new_tokens=700, do_sample=True, temperature=0.7, top_p=0.8, streamer=streamer, stopping_criteria=StoppingCriteriaList([Stop()]))
+            # kısa ve tekrarsız: uzun yanıtlarda aynı satırı döndürüp kesiliyordu (görsel eleştirmen bulgusu)
+            model.generate(**inputs, max_new_tokens=360, do_sample=True, temperature=0.6, top_p=0.8, repetition_penalty=1.15, no_repeat_ngram_size=4, streamer=streamer, stopping_criteria=StoppingCriteriaList([Stop()]))
         except Exception as e:  # noqa: BLE001
             err["e"] = e
             streamer.end()

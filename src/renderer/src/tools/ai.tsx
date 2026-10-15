@@ -2,10 +2,10 @@ import { useEffect, useState } from 'react'
 import { Wand2, Bot, Send, ImagePlus, X, Cpu } from 'lucide-react'
 import { useEditor } from '@/store/editor'
 import { useT, useLang } from '@/lib/i18n'
-import { Tabs, Preset } from '@/components/ui'
+import { Tabs, Preset, Switch } from '@/components/ui'
 import { session } from '@/engine/session'
 import { animeStyle, toCanvas } from '@/ai/ops'
-import { engineStatus, localEdit } from '@/ai/generative'
+import { engineStatus, localEdit, localEditKeepPeople } from '@/ai/generative'
 import { platform } from '@/lib/platform'
 import { goSettings } from '@/lib/projects'
 import type { ToolDef, View } from './types'
@@ -34,17 +34,18 @@ function EngineCard() {
   )
 }
 
-const QUICK: [string, string, string][] = [
-  ['Arka planı gün batımında bir plaja çevir', 'Change the background to a beach at sunset', '🏖️'],
+// 4. alan: kişileri koru (yalnız arka plan değişir)
+const QUICK: [string, string, string, boolean?][] = [
+  ['Arka planı gün batımında bir plaja çevir', 'Change the background to a beach at sunset', '🏖️', true],
   ['Kişiyi doğal biçimde gülümset', 'Make the person smile naturally', '😊'],
   ['Kapalı gözleri doğal biçimde aç', 'Open closed eyes naturally', '👁️'],
   ['Arkadaki yabancı insanları kaldır', 'Remove the strangers in the background', '🚶'],
   ['Polaroid anlık fotoğraf gibi göster', 'Make it look like an instant Polaroid photo', '📷'],
   ['Sinematik, dramatik bir ışık ekle', 'Add cinematic, dramatic lighting', '🎬'],
-  ['Manzarayı karlı bir kış gününe çevir', 'Turn the scene into a snowy winter day', '❄️'],
+  ['Manzarayı karlı bir kış gününe çevir', 'Turn the scene into a snowy winter day', '❄️', true],
   ['Kıyafeti şık siyah bir takım elbiseye çevir', 'Change the outfit to an elegant black suit', '🧥'],
   ['Saçı uzun ve dalgalı yap', 'Make the hair long and wavy', '💇'],
-  ['Profesyonel stüdyo portresi gibi yap, gri fon', 'Make it a professional studio portrait, grey backdrop', '🖼️'],
+  ['Arkaya profesyonel stüdyo fonu koy (açık gri, yumuşak ışık)', 'Put a professional studio backdrop behind (light grey, soft light)', '🖼️', true],
   ['Flaşla çekilmiş gece fotoğrafı gibi yap', 'Make it look like a flash photo at night', '⚡'],
   ['Fotoğrafı eski, hasarlı bir fotoğraftan onarılmış gibi temizle ve renklendir', 'Restore and colorize as if repairing an old damaged photo', '🧽']
 ]
@@ -58,10 +59,13 @@ function AiEditorPanel() {
   const [prompt, setPrompt] = useState('')
   const [refs, setRefs] = useState<{ url: string; bm: ImageBitmap }[]>([])
   const [history, setHistory] = useState<string[]>([])
-  const run = async (text: string) => {
+  const [keep, setKeep] = useState(false)
+  const run = async (text: string, keepPeople = keep) => {
     if (!text.trim() || !work.full) return
     try {
-      const res = await localEdit(work.full, `${text.trim()}. Keep the person's identity, the composition and everything not mentioned unchanged. Photorealistic.`, refs.map((r) => r.bm))
+      const res = keepPeople
+        ? await localEditKeepPeople(work.full, text.trim())
+        : await localEdit(work.full, `${text.trim()}. Keep the person's identity, the composition and everything not mentioned unchanged. Photorealistic.`, refs.map((r) => r.bm))
       if (res) {
         setWorkResult(res)
         setHistory((h) => [text.trim(), ...h].slice(0, 6))
@@ -77,6 +81,10 @@ function AiEditorPanel() {
         <span>{tr('Ne yapmak istersin?', 'What should change?')}</span>
         <textarea className="textarea" value={prompt} placeholder={tr('Örn: arka plana sakura ağaçları ekle', 'e.g. add cherry blossom trees to the background')} onChange={(e) => setPrompt(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) void run(prompt) }} />
       </label>
+      <div className="setting" style={{ padding: '4px 0' }}>
+        <div><b>{tr('Kişileri koru', 'Keep people')}</b><span>{tr('Yalnız arka plan değişir; yüz ve kıyafet aynen kalır', 'Only the background changes; faces and clothes stay as they are')}</span></div>
+        <Switch on={keep} onChange={setKeep} label={tr('Kişileri koru', 'Keep people')} />
+      </div>
       <div className="row wrap">
         {refs.map((r, i) => (
           <span key={r.url} style={{ position: 'relative' }}>
@@ -94,8 +102,8 @@ function AiEditorPanel() {
       </div>
       <div className="group-label">{tr('Hazır komutlar', 'Quick prompts')}</div>
       <div className="stack">
-        {QUICK.map(([a, b, e]) => (
-          <button key={a} className="btn sm" style={{ justifyContent: 'flex-start' }} disabled={!ok} onClick={() => { const t = lang === 'en' ? b : a; setPrompt(t); void run(t) }}>{e} {lang === 'en' ? b : a}</button>
+        {QUICK.map(([a, b, e, protect]) => (
+          <button key={a} className="btn sm" style={{ justifyContent: 'flex-start' }} disabled={!ok} onClick={() => { const t = lang === 'en' ? b : a; setPrompt(t); setKeep(!!protect); void run(t, !!protect) }}>{e} {lang === 'en' ? b : a}</button>
         ))}
       </div>
       {!!history.length && (
@@ -110,12 +118,12 @@ function AiEditorPanel() {
   )
 }
 
-const STYLES: { id: string; cat: string; label: [string, string]; prompt: string; local?: 'anime' }[] = [
+export const STYLES: { id: string; cat: string; label: [string, string]; prompt: string; local?: 'anime' }[] = [
   { id: 'anime-local', cat: 'trend', label: ['Anime (yerel)', 'Anime (local)'], prompt: '', local: 'anime' },
   { id: 'anime', cat: 'trend', label: ['Anime', 'Anime'], prompt: 'Redraw this photo as a high quality modern anime illustration, clean line art, soft cel shading, keep the same pose, outfit and composition.' },
   { id: 'figure', cat: 'trend', label: ['3B figür', '3D figure'], prompt: 'Turn the person into a cute collectible 3D vinyl figure on a desk, glossy plastic, studio lighting, keep their outfit and hairstyle.' },
   { id: 'plush', cat: 'trend', label: ['Peluş', 'Plush'], prompt: 'Turn the subject into a soft knitted plush toy version, fuzzy yarn texture, same colors and pose.' },
-  { id: 'clay', cat: 'trend', label: ['Kil animasyon', 'Claymation'], prompt: 'Restyle the whole image as stop-motion claymation, visible fingerprints in clay, warm lighting.' },
+  { id: 'clay', cat: 'trend', label: ['Kil animasyon', 'Claymation'], prompt: 'Restyle the whole image as stop-motion claymation: smooth matte plasticine figures with subtle handmade texture, warm studio lighting, keep the same pose and colors.' },
   { id: 'comic', cat: 'art', label: ['Çizgi roman', 'Comic'], prompt: 'Redraw as a bold comic book panel with ink outlines, halftone dots and vivid flat colors.' },
   { id: 'oil', cat: 'art', label: ['Yağlı boya', 'Oil painting'], prompt: 'Repaint as a classical oil painting with visible brush strokes and rich impasto texture.' },
   { id: 'water', cat: 'art', label: ['Suluboya', 'Watercolor'], prompt: 'Repaint as a delicate watercolor illustration with soft bleeding edges on textured paper.' },
@@ -136,6 +144,17 @@ const STYLES: { id: string; cat: string; label: [string, string]; prompt: string
   { id: 'hair-curly', cat: 'hair', label: ['Kıvırcık', 'Curly'], prompt: 'Make the hair voluminous and curly, keep color and face unchanged.' }
 ]
 const STYLE_CATS: [string, string, string][] = [['trend', 'Öne çıkan', 'Trending'], ['art', 'Sanat', 'Art'], ['world', 'Dünyalar', 'Worlds'], ['retro', 'Retro', 'Retro'], ['wardrobe', 'Gardırop', 'Wardrobe'], ['hair', 'Saç', 'Hair']]
+
+/** Stil kartı örneği: aynı kamu malı portreden önceden üretilmiş küçük görsel (public/style-previews). */
+function StyleSample({ id, mark }: { id: string; mark: string }) {
+  const [ok, setOk] = useState(true)
+  return ok ? (
+    <span style={{ position: 'relative', width: '100%', height: '100%', display: 'block' }}>
+      <img src={`style-previews/${id}.jpg`} alt="" draggable={false} onError={() => setOk(false)} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+      <span style={{ position: 'absolute', right: 4, bottom: 2, fontSize: 12, textShadow: '0 1px 2px #000' }}>{mark}</span>
+    </span>
+  ) : <>{mark}</>
+}
 
 function AiFxPanel() {
   const tr = useT()
@@ -170,7 +189,7 @@ function AiFxPanel() {
       <div className="presets">
         {STYLES.filter((s) => s.cat === cat).map((s) => (
           <Preset key={s.id} label={tr(s.label[0], s.label[1])} on={sel === s.id} onClick={() => run(s.id)} bg={s.local ? 'linear-gradient(160deg,#3a2a5a,#ffb547)' : 'linear-gradient(160deg,#2a2e36,#5a4a7a)'}>
-            {s.local ? '⚡' : '✦'}
+            <StyleSample id={s.id} mark={s.local ? '⚡' : '✦'} />
           </Preset>
         ))}
       </div>

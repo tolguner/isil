@@ -7,8 +7,11 @@ import { engineStatus, localChat, type ChatMsg } from '@/ai/generative'
 
 interface Msg { role: 'user' | 'bot'; text: string; img?: string; bm?: ImageBitmap | null }
 
-const SYSTEM_TR = 'Sen Işıl uygulamasının güzellik ve stil danışmanısın. Kısa, samimi ve somut öneriler ver: makyaj, saç, kıyafet renkleri, fotoğraf pozları ve Işıl’daki hangi aracın (Rötuş, Filtreler, Tarifler, Arka plan) kullanılacağı. Tıbbi tavsiye verme. Kullanıcı Türkçe yazıyorsa Türkçe yanıtla.'
-const SYSTEM_EN = 'You are the beauty and style advisor of the Işıl photo app. Give short, warm, concrete advice: makeup, hair, outfit colors, photo poses and which Işıl tool to use (Retouch, Looks, Recipes, Backdrop). No medical advice.'
+// Işıl'ın gerçek araç adları: danışman yalnız bunları önersin (uydurma menüler öneriyordu)
+const TOOLS_TR = 'YZ Editör, Tarifler, Rötuş (Tek dokunuş, Yüz, Cilt, Makyaj, Toparla, Ten tonu, Saç rengi, Rötuş fırçası, Işıklandır, Vücut), Filtreler, Hızlı hava, Ayarla (Akıllı, HSL, Eğriler, Kalite artır), Kırp, Temizle (Sihirli silgi, Klonla), Efektler, YZ efekt, Kesim, Arka plan, Şekillendir, Metin, Çıkartma'
+const TOOLS_EN = 'AI Editor, Recipes, Retouch (One tap, Face, Skin, Makeup, Lift, Skin tone, Hair color, Retouch brush, Relight, Body), Looks, Quick mood, Adjust (Smart, HSL, Curves, Enhance), Crop, Clean up (Magic eraser, Clone), Effects, AI effects, Cutout, Backdrop, Reshape, Text, Stickers'
+const SYSTEM_TR = `Sen Işıl fotoğraf uygulamasının güzellik ve stil danışmanısın. Önce fotoğrafta gördüğünü bir cümleyle söyle, sonra en fazla 4 kısa ve somut öneri ver (toplam 80 kelimeyi geçme). Uygulamadan araç önereceksen YALNIZ şu adları kullan: ${TOOLS_TR}. Başka menü ya da özellik uydurma. Renk önerilerinde gerçek ürün tonları kullan (ör. fondötende "koyu kahve, karamel, bal" gibi). Tıbbi tavsiye verme. Düzgün Türkçe yaz.`
+const SYSTEM_EN = `You are the beauty and style advisor of the Işıl photo app. First say in one sentence what you see, then give at most 4 short, concrete suggestions (under 80 words total). If you suggest an app tool, use ONLY these names: ${TOOLS_EN}. Never invent menus or features. Use real product shades for color advice. No medical advice.`
 
 const STARTERS: [string, string][] = [
   ['Bu fotoğrafta bana hangi ruj tonu yakışır?', 'Which lipstick shade suits me in this photo?'],

@@ -82,7 +82,7 @@ await run('Kalite artırma 4× (UltraSharp V2, CUDA)', 'ultrasharp', async () =>
   const models = await window.__isil.mod('models')
   return { ok: !!r && r.width === 800, provider: models.lastProvider, png: r && (await window.__png(r)) }
 })
-await run('Yüz onarma (CodeFormer, CUDA)', 'codeformer', async () => {
+await run('Yüz onarma (GFPGAN, CUDA)', 'codeformer', async () => {
   const s = (await window.__isil.mod('session')).session
   const ops = await window.__isil.mod('ops')
   const small = ops.toCanvas(window.__src, 300, 450)
@@ -122,6 +122,39 @@ if (engine) {
     c.fillRect(0, m.height * 0.68, m.width, m.height * 0.32)
     const r = await g.localMaskedEdit(src, m, 'a dark green leather jacket')
     return { ok: !!r, png: r && (await window.__png(r)) }
+  })
+  await run('YZ Editör: kişileri koru — yüz piksel piksel aynı', 'keep', async () => {
+    const g = await window.__isil.mod('generative')
+    const vision = await window.__isil.mod('vision')
+    const src = window.__src
+    const r = await g.localEditKeepPeople(src, 'Change the background to a snowy mountain landscape')
+    if (!r) return { ok: false }
+    const f = (await vision.detectFaces(src))[0]
+    let x0 = 1, y0 = 1, x1 = 0, y1 = 0
+    for (const p of f) { x0 = Math.min(x0, p.x); y0 = Math.min(y0, p.y); x1 = Math.max(x1, p.x); y1 = Math.max(y1, p.y) }
+    const box = [x0 * src.width, y0 * src.height, (x1 - x0) * src.width, (y1 - y0) * src.height].map(Math.round)
+    const a = src.getContext('2d').getImageData(...box).data
+    const b = r.getContext('2d').getImageData(...box).data
+    let diff = 0
+    for (let i = 0; i < a.length; i += 4) diff += Math.abs(a[i] - b[i]) + Math.abs(a[i + 1] - b[i + 1]) + Math.abs(a[i + 2] - b[i + 2])
+    const faceDiff = +(diff / (a.length / 4) / 3).toFixed(2)
+    // arka plan değişmiş olmalı (sol üst köşe)
+    const ca = src.getContext('2d').getImageData(0, 0, 60, 60).data, cb = r.getContext('2d').getImageData(0, 0, 60, 60).data
+    let bg = 0
+    for (let i = 0; i < ca.length; i += 4) bg += Math.abs(ca[i] - cb[i]) + Math.abs(ca[i + 1] - cb[i + 1]) + Math.abs(ca[i + 2] - cb[i + 2])
+    const bgDiff = +(bg / (ca.length / 4) / 3).toFixed(1)
+    return { ok: faceDiff < 2 && bgDiff > 10, faceDiff, bgDiff, png: await window.__png(r) }
+  })
+  await run('YZ Editör: siyah-beyaz girdi siyah-beyaz kalır', 'gray', async () => {
+    const g = await window.__isil.mod('generative')
+    const ops = await window.__isil.mod('ops')
+    const c = ops.toCanvas(window.__src, 400, 600)
+    const x = c.getContext('2d')
+    const id = x.getImageData(0, 0, c.width, c.height)
+    for (let i = 0; i < id.data.length; i += 4) id.data[i] = id.data[i + 1] = id.data[i + 2] = Math.round(0.299 * id.data[i] + 0.587 * id.data[i + 1] + 0.114 * id.data[i + 2])
+    x.putImageData(id, 0, 0)
+    const r = await g.localEdit(c, 'Put her on a sunny beach with a blue sky')
+    return { ok: !!r && g.isGrayscale(r), gray: r && g.isGrayscale(r), png: r && (await window.__png(r)) }
   })
   await run('Stil danışmanı (Qwen3-VL 4B)', 'chat', async () => {
     const g = await window.__isil.mod('generative')

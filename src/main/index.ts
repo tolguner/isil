@@ -30,7 +30,7 @@ const projectsDir = () => join(root(), 'projects')
 const modelsDir = () => join(root(), 'models')
 const settingsFile = () => join(root(), 'settings.json')
 
-const IMAGE_EXT = ['jpg', 'jpeg', 'png', 'webp', 'bmp', 'gif', 'avif']
+const IMAGE_EXT = ['jpg', 'jpeg', 'png', 'webp', 'heic', 'heif', 'bmp', 'gif', 'avif']
 
 function safeJoin(base: string, ...parts: string[]): string {
   const p = normalize(join(base, ...parts))

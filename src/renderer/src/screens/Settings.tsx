@@ -60,7 +60,7 @@ export function SettingsPage() {
 
         <section>
           <div className="group-label">{tr('Yerel yapay zekâ modelleri', 'Local AI models')}</div>
-          <p className="note">{tr('Bu modeller bir kez indirilir ve bilgisayarında çalışır; fotoğrafların dışarı gönderilmez. Yüz, vücut, saç ve dokun-seç modelleri uygulamayla birlikte gelir.', 'These download once and run on your computer; your photos never leave it. Face, body, hair and tap-select models ship with the app.')} {tr('YZ motoru kuruluysa güçlü modeller (BiRefNet, UltraSharp V2, CodeFormer, Depth V2 Base) kullanılır; değilse hafif sürümleri.', 'With the AI engine installed the strong models (BiRefNet, UltraSharp V2, CodeFormer, Depth V2 Base) are used; otherwise their light versions.')}</p>
+          <p className="note">{tr('Bu modeller bir kez indirilir ve bilgisayarında çalışır; fotoğrafların dışarı gönderilmez. Yüz, vücut, saç ve dokun-seç modelleri uygulamayla birlikte gelir.', 'These download once and run on your computer; your photos never leave it. Face, body, hair and tap-select models ship with the app.')} {tr('YZ motoru kuruluysa güçlü modeller (BiRefNet, UltraSharp V2, GFPGAN, Depth V2 Base) kullanılır; değilse hafif sürümleri.', 'With the AI engine installed the strong models (BiRefNet, UltraSharp V2, GFPGAN, Depth V2 Base) are used; otherwise their light versions.')}</p>
           {visibleModels().map((m) => (
             <div className="setting" key={m.id}>
               <div>
@@ -141,7 +141,7 @@ export function SettingsPage() {
         <section>
           <div className="group-label">{tr('Hakkında', 'About')}</div>
           <p className="note">
-            Işıl {__APP_VERSION__} · {tr('Kişisel kullanım ve portfolyo projesi.', 'Personal and portfolio project.')} {tr('Açık kaynak bileşenler', 'Open-source components')}: Electron, React, MediaPipe (Apache-2.0), ONNX Runtime (MIT), PyTorch (BSD-3), diffusers / transformers (Apache-2.0), FLUX.2 klein 4B (Apache-2.0) / 9B (FLUX Non-Commercial), Qwen3 / Qwen3-VL (Apache-2.0), BiRefNet (MIT), LaMa (Apache-2.0), Real-ESRGAN (BSD-3), 4x-UltraSharp V2 (CC BY-NC-SA 4.0), CodeFormer (S-Lab 1.0, ticari olmayan), Depth Anything V2 Small (Apache-2.0) / Base (CC BY-NC 4.0), AnimeGANv2, Lucide (ISC), Inter ve diğer yazı tipleri (OFL).
+            Işıl {__APP_VERSION__} · {tr('Kişisel kullanım ve portfolyo projesi.', 'Personal and portfolio project.')} {tr('Açık kaynak bileşenler', 'Open-source components')}: Electron, React, MediaPipe (Apache-2.0), ONNX Runtime (MIT), PyTorch (BSD-3), diffusers / transformers (Apache-2.0), FLUX.2 klein 4B (Apache-2.0) / 9B (FLUX Non-Commercial), Qwen3 / Qwen3-VL (Apache-2.0), BiRefNet (MIT), LaMa (Apache-2.0), Real-ESRGAN (BSD-3), 4x-UltraSharp V2 (CC BY-NC-SA 4.0), GFPGAN 1.4 (Apache-2.0), Depth Anything V2 Small (Apache-2.0) / Base (CC BY-NC 4.0), AnimeGANv2, Lucide (ISC), Inter ve diğer yazı tipleri (OFL).
           </p>
         </section>
       </div>

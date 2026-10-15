@@ -55,7 +55,12 @@ function electronPlatform(): Platform {
   const api = w.isil
   return {
     isElectron: true,
-    openFiles: (multi) => api.openFiles(multi),
+    // HEIC (iPhone) dosyaları burada JPEG'e çevrilir: toplu düzenleme, kolaj, referans görseller de açabilsin
+    openFiles: async (multi) => {
+      const files: PickedFile[] = await api.openFiles(multi)
+      const { normalizePicked } = await import('./heic')
+      return Promise.all(files.map(normalizePicked))
+    },
     readDropped: async (f) => {
       const p = api.pathForFile(f)
       if (p) return api.readPath(p)

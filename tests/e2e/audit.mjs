@@ -175,6 +175,47 @@ if (want('F10')) {
   ok('F10-E1', 'aynı adlı iki çıktı birbirinin üstüne yazmaz', files.length === 2, { files, ...r })
 }
 
+// ---------- 0.3.0: HEIC, GIF notu, ayar kopyala/yapıştır, komut paleti ----------
+if (want('N')) {
+  await fresh()
+  if (existsSync(join(fx, 'iphone.heic'))) {
+    const h = await openFx('iphone.heic')
+    ok('N-01', 'iPhone HEIC açılır', h.ready && h.W > 0, h)
+  }
+  await fresh()
+  const g = await openFx('animated.gif')
+  ok('N-02', 'hareketli GIF açılınca "yalnız ilk kare" bilgisi', g.toasts.some((t) => t.startsWith('info') && /ilk kare|first frame/i.test(t)), { toasts: g.toasts })
+
+  await fresh()
+  await openFx('exif-orient-6.jpg')
+  await win.evaluate(async () => {
+    const S = (await window.__isil.store()).getState
+    S().commit((d) => { d.adjust.exposure = 22; d.adjust.contrast = -10; d.filter = { id: 'altin-saat', amount: 60 } })
+  })
+  await win.keyboard.press('Control+Shift+C')
+  await fresh()
+  await openFx('grayscale.jpg')
+  await win.keyboard.press('Control+Shift+V')
+  await win.waitForTimeout(300)
+  const pasted = await win.evaluate(async () => { const d = (await window.__isil.store()).getState().doc; return { exposure: d.adjust.exposure, contrast: d.adjust.contrast, filter: d.filter?.id, crop: d.crop.w } })
+  ok('N-03', 'ayarları kopyala → başka fotoğrafa yapıştır (Ctrl+Shift+C/V)', pasted.exposure === 22 && pasted.contrast === -10 && pasted.filter === 'altin-saat' && pasted.crop === 1, pasted)
+  await win.keyboard.press('Control+z')
+  const undone = await win.evaluate(async () => (await window.__isil.store()).getState().doc.adjust.exposure)
+  ok('N-04', 'yapıştırma geri alınabilir', undone === 0, { undone })
+
+  await win.keyboard.press('Control+k')
+  await win.waitForTimeout(200)
+  const opened = await win.locator('.palette').count()
+  await win.keyboard.type('mak')
+  await win.waitForTimeout(150)
+  const first = await win.locator('.palette-list li').first().textContent()
+  await win.keyboard.press('Enter')
+  await win.waitForTimeout(600)
+  const tool = await win.evaluate(async () => (await window.__isil.store()).getState().tool)
+  ok('N-05', 'Ctrl+K paleti: "mak" → Makyaj aracı açılır', opened === 1 && /Makyaj|Makeup/.test(first ?? '') && tool === 'makeup', { opened, first, tool })
+  await win.evaluate(async () => { const S = (await window.__isil.store()).getState; if (S().tool) S().closeTool(false) })
+}
+
 // ---------- F02: geri al / yinele ----------
 if (want('F02')) {
   await fresh()

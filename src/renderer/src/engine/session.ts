@@ -285,6 +285,41 @@ class Session {
     r.setWarp(wf?.field ?? null, wf?.gw, wf?.gh)
   }
 
+  private pvRenderer: Renderer | null = null
+  private pvKey = ''
+  private pvMasks: MaskSet | null = null
+  private pvMasksKey = ''
+
+  /**
+   * Ön ayar önizlemesi: ana tuvale ve oturum durumuna dokunmadan ayrı bir motorla önizleme çizer
+   * (tek dokunuş rötuş kartları için; cilt maskeleri burada ayrıca üretilir).
+   */
+  async renderPreview(doc: EditDoc, maxSide = 1000): Promise<HTMLCanvasElement | null> {
+    if (!this.preview) return null
+    this.pvRenderer ??= new Renderer(document.createElement('canvas'))
+    const r = this.pvRenderer
+    if (this.pvKey !== this.baseKey) {
+      r.setBase(this.preview)
+      this.pvKey = this.baseKey
+      this.pvMasksKey = ''
+    }
+    const geos = this.faces ? this.faceGeos() : []
+    if (doc.retouch.faces.some(faceHasSkinWork) && geos.length) {
+      const key = this.baseKey + ':' + geos.length
+      if (key !== this.pvMasksKey || !this.pvMasks) {
+        this.pvMasks = buildMasks(geos, this.W, this.H, this.seg, false)
+        this.pvMasksKey = key
+        r.setFaceMasks(this.pvMasks.a, this.pvMasks.b, this.pvMasks.c)
+      }
+      r.faces = faceUniforms(doc.retouch.faces, geos.length)
+    } else r.faces = null
+    r.hair = null
+    const wf = this.warpField(doc)
+    r.setWarp(wf?.field ?? null, wf?.gw, wf?.gh)
+    const out = r.render(doc, { maxSide })
+    return imageDataToCanvas(r.read(out.target))
+  }
+
   /** Küçük resim (JPEG, uzun kenar 480). */
   async thumbnail(doc: EditDoc): Promise<Uint8Array | null> {
     const r = this.renderer

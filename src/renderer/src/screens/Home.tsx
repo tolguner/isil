@@ -37,7 +37,7 @@ export function Home() {
   const onDrop = async (e: React.DragEvent) => {
     e.preventDefault()
     setOver(false)
-    const f = Array.from(e.dataTransfer.files).find((x) => x.type.startsWith('image/'))
+    const f = Array.from(e.dataTransfer.files).find((x) => x.type.startsWith('image/') || /\.(heic|heif)$/i.test(x.name))
     if (!f) {
       useEditor.getState().toast('error', tr('Lütfen bir görsel dosyası bırakın.', 'Please drop an image file.'))
       return

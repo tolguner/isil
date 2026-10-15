@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { Eraser, MousePointerClick, Stamp, Grid3x3, WandSparkles } from 'lucide-react'
 import { useEditor } from '@/store/editor'
 import { useT } from '@/lib/i18n'
-import { Slider, Segmented } from '@/components/ui'
+import { Slider, Segmented, Switch } from '@/components/ui'
 import { inpaint, toCanvas } from '@/ai/ops'
 import { tapSelect, resetTapSelect } from '@/ai/vision'
 import { localMaskedEdit, grayToAlpha } from '@/ai/generative'
@@ -28,9 +28,10 @@ function maskEmpty() {
 }
 
 // ---------- Sihirli silgi ----------
+const eraseOpts = { shadow: false }
 async function runErase() {
   if (!work.full || maskEmpty()) return
-  const res = await busy(useEditor.getState().settings.language === 'en' ? 'Removing…' : 'Siliniyor…', () => inpaint(work.full!, fullMask()))
+  const res = await busy(useEditor.getState().settings.language === 'en' ? 'Removing…' : 'Siliniyor…', () => inpaint(work.full!, fullMask(), { shadow: eraseOpts.shadow }))
   if (res) setWorkResult(res)
 }
 
@@ -38,10 +39,15 @@ function ErasePanel() {
   const tr = useT()
   useWorkLifecycle()
   const w = useWork()
+  const [shadow, setShadow] = useState(eraseOpts.shadow)
   return (
     <>
       <p className="note">{tr('Silmek istediğin nesnenin üzerini boya, sonra Kaldır’a bas. Arka plan yapay zekâyla bilgisayarında doldurulur.', 'Paint over what you want gone, then press Remove. The background is filled by AI on your computer.')}</p>
       <BrushControls />
+      <div className="setting" style={{ padding: '4px 0' }}>
+        <div><b>{tr('Gölge ve yansımayı da sil', 'Also remove shadow and reflection')}</b><span>{tr('Kişi silerken altındaki gölge ya da sudaki yansıma kalmasın', 'So a removed person leaves no shadow or reflection behind')}</span></div>
+        <Switch on={shadow} onChange={(v) => { eraseOpts.shadow = v; setShadow(v) }} label={tr('Gölge ve yansımayı da sil', 'Also remove shadow and reflection')} />
+      </div>
       <button className="btn primary block" disabled={!w.mask} onClick={runErase}><Eraser size={16} /> {tr('Kaldır', 'Remove')}</button>
       <WorkFooter type="erase" />
     </>

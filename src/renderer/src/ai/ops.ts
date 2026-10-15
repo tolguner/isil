@@ -87,7 +87,7 @@ export async function removeBackground(src: Src, detailed = false, model?: strin
  * Nesne silme. mask: kaynakla aynı boyutta, beyaz = sil.
  * Maskenin sınırlayıcı kutusu etrafında kare bir bölge 512'ye ölçeklenir, sonuç yumuşak maskeyle geri yapıştırılır.
  */
-export async function inpaint(src: Src, mask: HTMLCanvasElement): Promise<HTMLCanvasElement | null> {
+export async function inpaint(src: Src, mask: HTMLCanvasElement, opts: { shadow?: boolean } = {}): Promise<HTMLCanvasElement | null> {
   const lamaId = await pickModel('lama-gpu') // motor kuruluysa CUDA, değilse tarayıcı
   if (!(await ensureModel(lamaId))) return null
   const W = src.width, H = src.height
@@ -125,8 +125,19 @@ export async function inpaint(src: Src, mask: HTMLCanvasElement): Promise<HTMLCa
   const mdata = mctx.getImageData(0, 0, 512, 512).data
   const mt = new Float32Array(512 * 512)
   for (let i = 0; i < mt.length; i++) mt[i] = mdata[i * 4] > 8 ? 1 : 0
+  if (opts.shadow) {
+    // gölge ve yansıma: maskeyi her sütunda aşağı doğru, maske yüksekliğinin ~%35'i kadar uzat
+    let top = 512, bot = -1
+    for (let i = 0; i < mt.length; i++) if (mt[i]) { const y = (i / 512) | 0; if (y < top) top = y; if (y > bot) bot = y }
+    const ext = Math.round((bot - top + 1) * 0.35)
+    for (let x = 0; x < 512; x++) {
+      let last = -1
+      for (let y = 0; y < 512; y++) if (mt[y * 512 + x]) last = y
+      if (last >= 0) for (let y = last + 1; y <= Math.min(511, last + ext); y++) mt[y * 512 + x] = 1
+    }
+  }
   const dil = new Float32Array(mt)
-  for (let it = 0; it < 4; it++) {
+  for (let it = 0; it < 6; it++) {
     const src2 = Float32Array.from(dil)
     for (let y = 1; y < 511; y++) for (let x = 1; x < 511; x++) {
       const i = y * 512 + x
@@ -287,7 +298,38 @@ function similarity(src: [number, number][], dst: [number, number][]) {
  * Yüzleri CodeFormer ile onarır: her yüz 512'ye hizalanır, onarılır, yumuşak kenarlı maskeyle geri yapıştırılır.
  * Yüz yoksa null döner.
  */
-export async function restoreFaces(src: Src, onProgress?: (p: number) => void, blend = 0.8, model = 'codeformer', fidelity = 0.7): Promise<HTMLCanvasElement | null> {
+/**
+ * Onarılan yüzün yalnız parlaklığını al, rengi girdiden koru (YCbCr): siyah-beyaz/sepya fotoğrafa renk sızmaz,
+ * ten rengi açılmaz/kaymaz (görsel eleştirmen ajanının bulgusu). Ortalama parlaklık girdiyle eşlenir.
+ */
+function keepInputColor(restored: HTMLCanvasElement, input: HTMLCanvasElement, mask: HTMLCanvasElement) {
+  const N = restored.width
+  const rx = restored.getContext('2d', { willReadFrequently: true })!
+  const r = rx.getImageData(0, 0, N, N)
+  const i = input.getContext('2d', { willReadFrequently: true })!.getImageData(0, 0, N, N).data
+  const m = mask.getContext('2d', { willReadFrequently: true })!.getImageData(0, 0, N, N).data
+  const d = r.data
+  let sr = 0, si = 0, n = 0
+  for (let k = 0; k < d.length; k += 4) {
+    if (m[k + 3] < 128) continue
+    sr += 0.299 * d[k] + 0.587 * d[k + 1] + 0.114 * d[k + 2]
+    si += 0.299 * i[k] + 0.587 * i[k + 1] + 0.114 * i[k + 2]
+    n++
+  }
+  const shift = n ? (si - sr) / n : 0
+  for (let k = 0; k < d.length; k += 4) {
+    const y = 0.299 * d[k] + 0.587 * d[k + 1] + 0.114 * d[k + 2] + shift
+    const yi = 0.299 * i[k] + 0.587 * i[k + 1] + 0.114 * i[k + 2]
+    // girdinin renk farkları (Cb, Cr) korunur
+    d[k] = clamp255(y + (i[k] - yi))
+    d[k + 1] = clamp255(y + (i[k + 1] - yi))
+    d[k + 2] = clamp255(y + (i[k + 2] - yi))
+  }
+  rx.putImageData(r, 0, 0)
+}
+
+/** Yüz onarma. strength: onarılan yüzün asılla karışım oranı (0..1). Varsayılan model GFPGAN 1.4 (Aşama 2 kararı). */
+export async function restoreFaces(src: Src, onProgress?: (p: number) => void, strength = 0.7, model = 'gfpgan', fidelity = 0.7, keepColor = true): Promise<HTMLCanvasElement | null> {
   const { detectFaces } = await import('./vision')
   const W = src.width, H = src.height
   const probe = toCanvas(src, ...((): [number, number] => { const k = Math.min(1, 1280 / Math.max(W, H)); return [W * k, H * k] })())
@@ -305,10 +347,11 @@ export async function restoreFaces(src: Src, onProgress?: (p: number) => void, b
   const mask = document.createElement('canvas')
   mask.width = mask.height = 512
   const mctx = mask.getContext('2d')!
-  mctx.filter = 'blur(18px)'
+  // geniş yumuşak geçiş: yüz ile boyun/saç arasında dikiş kalmasın
+  mctx.filter = 'blur(28px)'
   mctx.fillStyle = '#fff'
   mctx.beginPath()
-  mctx.ellipse(256, 290, 190, 230, 0, 0, Math.PI * 2)
+  mctx.ellipse(256, 286, 176, 214, 0, 0, Math.PI * 2)
   mctx.fill()
   const crop = document.createElement('canvas')
   crop.width = crop.height = 512
@@ -334,6 +377,7 @@ export async function restoreFaces(src: Src, onProgress?: (p: number) => void, b
     const { out: r, sess } = await runModel(model, feeds)
     const o = r[sess.outputNames[0]]
     const restored = canvasFromCHW(o.data as Float32Array, 512, 512, (v) => clamp255((v + 1) * 127.5))
+    if (keepColor) keepInputColor(restored, crop, mask)
     const rctx = restored.getContext('2d')!
     rctx.globalCompositeOperation = 'destination-in'
     rctx.drawImage(mask, 0, 0)
@@ -343,7 +387,7 @@ export async function restoreFaces(src: Src, onProgress?: (p: number) => void, b
     const itx = -(ia * T.tx - ib * T.ty), ity = -(ib * T.tx + ia * T.ty)
     octx.save()
     octx.imageSmoothingQuality = 'high'
-    octx.globalAlpha = blend // asıl yüzden biraz bırak: kimlik (göz rengi, ifade) korunur
+    octx.globalAlpha = strength // asıl yüzden biraz bırak: kimlik ve ayırt edici izler korunur
     octx.setTransform(ia, ib, -ib, ia, itx, ity)
     octx.drawImage(restored, 0, 0)
     octx.restore()

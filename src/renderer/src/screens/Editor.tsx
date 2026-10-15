@@ -1,4 +1,6 @@
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react'
+import { CommandPalette } from '@/components/CommandPalette'
+import { copyLook, pasteLook } from '@/lib/edits-clipboard'
 import { Download, Eye, Maximize, Minus, Plus, ChevronDown, Sparkles } from 'lucide-react'
 import { useEditor } from '@/store/editor'
 import { session } from '@/engine/session'
@@ -33,7 +35,9 @@ export function Editor() {
       const typing = (e.target as HTMLElement)?.closest('input, textarea, [contenteditable]')
       if (typing) return
       const mod = e.ctrlKey || e.metaKey
-      if (mod && e.key.toLowerCase() === 'z' && !e.shiftKey) { e.preventDefault(); st.undo() }
+      if (mod && e.shiftKey && e.key.toLowerCase() === 'c') { e.preventDefault(); copyLook() }
+      else if (mod && e.shiftKey && e.key.toLowerCase() === 'v') { e.preventDefault(); pasteLook() }
+      else if (mod && e.key.toLowerCase() === 'z' && !e.shiftKey) { e.preventDefault(); st.undo() }
       else if (mod && (e.key.toLowerCase() === 'y' || (e.key.toLowerCase() === 'z' && e.shiftKey))) { e.preventDefault(); st.redo() }
       else if (mod && e.key.toLowerCase() === 's') { e.preventDefault(); void saveNow().then(() => st.toast('success', st.settings.language === 'en' ? 'Saved' : 'Kaydedildi')) }
       else if (mod && e.key.toLowerCase() === 'e') { e.preventDefault(); document.getElementById('export-btn')?.click() }
@@ -57,6 +61,7 @@ export function Editor() {
       <Rail />
       <Stage toolDef={toolDef} />
       <Panel />
+      <CommandPalette />
     </div>
   )
 }

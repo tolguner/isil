@@ -3,6 +3,7 @@ import { platform, type PickedFile } from './platform'
 import { useEditor } from '@/store/editor'
 import { session, encodeCanvas, imageDataToCanvas } from '@/engine/session'
 import { tNow } from './i18n'
+import { normalizePicked } from './heic'
 
 export async function imageSize(bytes: Uint8Array) {
   const bm = await createImageBitmap(new Blob([bytes as BlobPart]), { imageOrientation: 'from-image' })
@@ -25,12 +26,14 @@ export async function startEditing(file: PickedFile) {
   const st = useEditor.getState()
   try {
     st.setBusy({ text: tNow('Fotoğraf açılıyor…', 'Opening photo…') })
+    file = await normalizePicked(file) // iPhone HEIC → JPEG
     const p = await createProjectFrom(file)
     session.reset()
     st.openProject(p)
+    if (/\.gif$/i.test(file.name)) st.toast('info', tNow('Hareketli GIF’lerde yalnız ilk kare düzenlenir.', 'Only the first frame of an animated GIF is edited.'))
   } catch (e) {
     console.error(e)
-    st.toast('error', tNow('Bu dosya açılamadı. Desteklenen biçimler: JPG, PNG, WebP, AVIF, BMP, GIF.', 'Could not open this file. Supported: JPG, PNG, WebP, AVIF, BMP, GIF.'))
+    st.toast('error', tNow('Bu dosya açılamadı. Desteklenen biçimler: JPG, PNG, WebP, HEIC, AVIF, BMP, GIF.', 'Could not open this file. Supported: JPG, PNG, WebP, HEIC, AVIF, BMP, GIF.'))
   } finally {
     useEditor.getState().setBusy(null)
   }
