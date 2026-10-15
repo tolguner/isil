@@ -88,9 +88,9 @@ Onay noktası (Aşama 3 + 4 birlikte): bulguların özeti; Tolga hangi alanlara 
 
 Amaç: Seçilen özelliklerin gerçek kullanım akışını görmek.
 
-- [ ] **Tolga:** seçilen uygulamaları BlueStacks'e kurar, gerekiyorsa kendi hesabıyla giriş yapar. Ücretli plan alınmaz; ücretli özellikler yalnızca dışarıdan görülen kadarıyla incelenir.
-- [ ] Her uygulamanın en güçlü 2–3 akışı adım adım: ekranlar, kontroller, durumlar, tıklama sayısı, sürelerin hissi.
-- [ ] Hypic incelemesindeki gibi notlar ve referans ekran görüntüleri (git dışı).
+- [x] **Tolga:** seçilen uygulamaları BlueStacks'e kurar, gerekiyorsa kendi hesabıyla giriş yapar. Ücretli plan alınmaz; ücretli özellikler yalnızca dışarıdan görülen kadarıyla incelenir.
+- [x] Her uygulamanın en güçlü 2–3 akışı adım adım: ekranlar, kontroller, durumlar, tıklama sayısı, sürelerin hissi.
+- [x] Hypic incelemesindeki gibi notlar ve referans ekran görüntüleri (git dışı).
 
 Çıktı: `replica/rekabet/inceleme-notlari.md`.
 
@@ -99,7 +99,7 @@ Amaç: Seçilen özelliklerin gerçek kullanım akışını görmek.
 Tolga'nın isteği (14.10): uygulamalar yüzeysel değil, gerçekten çözümlenecek. Yöntem **kara kutu**: içeri bakmadan, girdi-çıktı ve herkese açık bilgiyle.
 
 - [ ] **Aynı-fotoğraf testi:** deneme setinden seçilen fotoğraflar rakiplerin ücretsiz araçlarından ve Işıl'dan geçirilir; çıktı farkları (kesim kenarı, cilt dokusu, bükülme alanı, renk eğrisi) piksel düzeyinde karşılaştırılır. Bükülme araçlarında kare ızgara fotoğrafla deformasyon alanı, filtrelerde renk tablosu (gri tonlama/renk çizelgesi) fotoğrafıyla filtre eğrisi çıkarılır.
-- [ ] **Cihazda mı bulutta mı:** uçak modunda hangi araçların çalıştığı, işlem süreleri, çözünürlük sınırları.
+- [x] (16.10, BlueStacks çevrimdışıyken) **Cihazda mı bulutta mı:** uçak modunda hangi araçların çalıştığı, işlem süreleri, çözünürlük sınırları.
 - [x] **Herkese açık teknik kaynaklar:** şirketlerin araştırma makaleleri (ör. Lightricks, PicsArt AI Research), patentler, mühendislik blogları, iş ilanlarındaki teknoloji yığını, konferans konuşmaları.
 - [x] **Bağımsız APK raporları:** Exodus Privacy gibi kuruluşların yayımladığı izin/SDK/izleyici raporları; mağaza sayfasındaki izinler ve veri güvenliği beyanları.
 - [ ] **Yapılmayacaklar:** APK/kod çözme, uygulama içinden model dosyası çıkarma, ağ trafiğini dinleme, ücretli kilidi aşma (kullanım şartları yasaklıyor; Işıl'ı hukuken riskli yapar).
@@ -126,7 +126,7 @@ Onay noktası: 0.3.0 kapsamı.
 
 ### Aşama 8 — Son doğrulama
 
-- [ ] Aşama 1 test planı ve Aşama 2 kalite seti yeniden çalıştırılır; 0.2.0 ile 0.3.0 yan yana.
+- [x] Aşama 1 test planı ve Aşama 2 kalite seti yeniden çalıştırılır; 0.2.0 ile 0.3.0 yan yana. → `replica/dogrulama-0.3.md`
 - [x] `features.csv`, `build-log.md`, README güncellenir.
 
 ## Tolga'dan beklenenler
