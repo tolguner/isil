@@ -84,7 +84,30 @@ BlueStacks bu oturumda internete çıkamadı (PicsArt ve FaceApp "bağlantı yok
 7. **Seçmeli ayar** (PicsArt "Seç": dikdörtgen/oval/fırça/lasso) 0.4 listesindeki "seçmeli ayar"ı doğruluyor.
 8. Ücretli ön ayarlar dene-sonra-öde: önizleme var, kaydetme kilitli. Işıl'da kilit yok; bu not yalnız rakip davranışı için.
 
-## Yapılamayanlar (internet gerekiyor)
+## Çevrimiçi tur (Tolga interneti açtı ve test fotoğraflarının yüklenmesine izin verdi)
 
-- Çevrimiçi kalite karşılaştırması (aynı fotoğraf: rakibin bulut silmesi / rötuşu / FaceApp ↔ Işıl). BlueStacks internete bağlanınca ve test fotoğraflarının (Wikimedia, lisanslı) rakip sunuculara yüklenmesine Tolga izin verirse yapılabilir.
+### Peachy
+- Çevrimiçiyken editörün altındaki Pro şeridi yerini **banner reklama** bırakıyor; uygulama açılışında tam ekran yükleme reklamı (ör. başka bir YZ uygulaması), bekleme ekranlarında video reklam. Bir reklam ekranı takıldı, uygulama Android ayarlarından durmaya zorlanarak kurtarıldı.
+- **Yeniden Işıklandır:** kaynak indikten sonra açıldı (ilk dokunuşta değil, sonradan). Ön ayarlar: Yok, Özel, Flaş 👑, Arka ışık, Saç ışığı. "Özel" ≈10 sn'de yüze yumuşak ön ışık ekledi (hafif, doğal). "Arka ışık": "Peachy Pro" ya da **"Bir Kez Dene" (ödüllü reklam)**.
+- **Otomatik silme → Yoldan geçenler:** yükleme + algılama ≈12 sn ("Yükleniyor…" sırasında video reklam). Sudaki ≈11 kişiyi sarı çizgiyle işaretledi, arkadaki kalabalığı seçmedi (doğru karar). Kaldırmak için "Peachy Pro" ya da "Bir Kez Ücretsiz". Ücretsiz hak kullanıldı: "Yoldan geçenler kaldırılıyor…" ≈15 sn, sonra "Sonucu düzenle" ipucu çıktı ama **görüntüde değişiklik yoktu**; onaylandıktan sonra da kişiler yerinde. Sessiz başarısızlık (öykünücü kaynaklı olabilir, ama kullanıcıya hata gösterilmedi).
+
+### FaceApp
+- Çevrimiçiyken editör açılıyor, yüze otomatik yakınlaştırıyor. Kategoriler: Etkileyici, Saç stilleri, Makyaj, Eğlence, Boyutlar, Cilt, Gülümseme, Duygular, Yüz Hatları, Saç renkleri, Yaş, Cinsiyet, Gözlükler.
+- Gülümseme (Klasik, Kapalı, Tebessüm, Yumuşak, Geniş, Üzgün) ve Saç renkleri (12+) seçeneklerinin **hepsi 👑**; ücretli seçenek dokununca önizleme yerine doğrudan "FaceApp PRO" duvarı. Ücretsiz kullanıcı neredeyse hiçbir şey deneyemiyor. Peachy'nin "önce dene" yaklaşımının tersi.
+
+### PicsArt
+- **Otomatik cilt yumuşatma (bulut):** yoğunluk 0'dan 77'ye çekilince ≈10 sn'de sonuç. Doku yumuşadı, gözler ve kaşlar korundu; ama **yanaktaki geleneksel yüz dövmesi belirgin şekilde soldu**: cilt maskesi kimliği belirleyen işareti "leke" saydı. Işıl'da yumuşatmanın dövme/ben/iz gibi işaretleri koruması bir kalite ölçütü olarak eklenmeli (0.4 kalite testi adayı).
+- **Aynı fotoğraf Işıl'da** (`replica/screens/rakip/isil/yanak-karsilastirma.jpg`: orijinal | yumuşatma 80 | yumuşatma 80 + leke 60):
+  - Yalnız yumuşatma 80: dövme ve burun hızması korunuyor, doku hafif yumuşuyor. PicsArt'ın otomatik modundan daha iyi.
+  - Yumuşatma 80 + leke giderme 60: **dövme neredeyse tamamen siliniyor, hızma da soluyor.** Işıl'ın leke gidericisi de aynı hatayı yapıyor. → 0.4 adayı: leke giderme yalnız küçük, düzensiz lekelere uygulansın (büyüklük/şekil süzgeci) ve "işaretleri koru" (dövme, ben, piercing) seçeneği; kalite setine dövme/ben içeren yüzler eklensin.
+
+## Çevrimiçi turun Işıl için anlamı
+
+- Rakiplerin ücretsiz katmanı reklamla dolu ve kırılgan (takılan reklam ekranı, sessiz başarısız silme). Işıl'da reklam yok, her şey yerel; "çalışmazsa hata söyler" ilkesi korunmalı.
+- "Yoldan geçenleri bul" fikri doğru: Peachy ön plandaki kişileri seçip arka plan kalabalığını bırakıyor. Işıl'da yerel karşılığı: kişi maskesi (BiRefNet/YOLO) + büyüklük/konum süzgeci + kullanıcı onayı + LaMa. 0.4 adayının tasarımı bu davranışa göre yapılabilir.
+- Yeniden ışıklandırmada "Özel" ön ışık doğal ve hafif; Işıl'ın ışıklandırma aracıyla yan yana denenecek.
+
+## Kalanlar
+
+- Çevrimiçi tur yapıldı (yukarıda). Rakip çıktıları uygulama içinden dışa aktarılmadı (reklam/ücretli kapı), karşılaştırma ekran görüntüleriyle.
 - Renk çizelgesiyle filtre eğrisi çıkarma (filtreler çevrimdışı da çalışmalı; zaman kısıtıyla sonraki tura kaldı).
