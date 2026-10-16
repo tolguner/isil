@@ -1,10 +1,10 @@
 # Işıl — yeni sohbette devam notu (2026-10-16)
 
-Yeni sohbette ilk mesaj: **"hypic-klon/DEVAM.md dosyasını oku ve kaldığımız yerden devam et."** Ayrıntı gerekirse aşağıdaki dosyalara bakılır; hepsini baştan okumaya gerek yok.
+Yeni sohbette ilk mesaj: **"Işıl/DEVAM.md dosyasını oku ve kaldığımız yerden devam et."** Ayrıntı gerekirse aşağıdaki dosyalara bakılır; hepsini baştan okumaya gerek yok.
 
 ## Proje
 
-- **Ne:** Işıl, Hypic'in (ByteDance mobil fotoğraf editörü) Windows masaüstü için temiz-oda yeniden yapımı. Electron 44 + React 19 + WebGL2 düzenleme motoru.
+- **Ne:** Işıl; fotoğraf düzenleme, yüz rötuşu, vücut şekillendirme ve filtreleri tek araçta toplayan özgün, ücretsiz Windows masaüstü uygulaması. Electron 44 + React 19 + WebGL2 düzenleme motoru. **Hypic'in kopyası olarak konumlandırılmaz** (Tolga, 16.10); Hypic, FaceApp, Facetune, Peachy ve PicsArt yalnızca referans. Klasör adı 16.10'da hypic-klon → Işıl oldu.
 - **Amaç:** kişisel Ar-Ge; portfolyoya konup konmayacağı belli değil. Her şey ücretsiz, tüm YZ yerel (fotoğraf hiçbir yere yüklenmez).
 - **Yerel YZ:** tarayıcıda ONNX/MediaPipe/YuNet; ağır işler gömülü Python motorunda (`engine/server.py`, torch CUDA): FLUX.2 klein 4B/9B, Qwen3-VL 4B (stil danışmanı), BiRefNet, UltraSharp V2, GFPGAN 1.4, LaMa, Depth V2.
 - **Donanım:** RTX 3050 6 GB laptop. Windows Akıllı Uygulama Denetimi imzasız DLL/ikilileri engelliyor (WASM ve PyPI paketleri sorunsuz).
