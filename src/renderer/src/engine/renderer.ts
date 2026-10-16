@@ -321,6 +321,15 @@ export class Renderer {
       .f('uSplitS', ...(split(filter?.splitS) as [number, number, number, number]))
       .f('uSplitH', ...(split(filter?.splitH) as [number, number, number, number]))
       .f('uCurveOn', lut ? 1 : 0)
+    // seçmeli ayar noktaları
+    const loc = neutral ? [] : (doc.local ?? []).slice(0, 8)
+    const LP = new Float32Array(32), LC = new Float32Array(32), LA = new Float32Array(32)
+    loc.forEach((q, i) => {
+      LP.set([q.x, q.y, q.r, q.tol / 100], i * 4)
+      LC.set([...q.color, 0], i * 4)
+      LA.set([q.adj.b / 100, q.adj.c / 100, q.adj.s / 100, q.adj.w / 100], i * 4)
+    })
+    p.i('uLocalN', loc.length).fv('uLocP', LP, 4).fv('uLocC', LC, 4).fv('uLocA', LA, 4)
     const rows = this.legRows(doc, opts)
     p.f('uRow', rows?.y0 ?? 0, rows?.band ?? 0, rows?.s ?? 0).f('uRowOn', rows ? 1 : 0)
     this.draw(out, L.w, L.h)

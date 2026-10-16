@@ -160,6 +160,10 @@ uniform vec3 uHsl[8];
 uniform vec4 uSplitS, uSplitH;
 uniform float uCurveOn;
 uniform vec2 uSrcSize;
+uniform int uLocalN;         // seçmeli ayar noktası sayısı (en çok 8)
+uniform vec4 uLocP[8];       // x, y (kaynak uv), yarıçap (kısa kenara oran), renk duyarlılığı 0..1
+uniform vec4 uLocC[8];       // noktadaki kaynak renk
+uniform vec4 uLocA[8];       // parlaklık, kontrast, doygunluk, sıcaklık (-1..1)
 ${COMMON}
 
 vec2 outToSrc(vec2 uv){
@@ -185,6 +189,7 @@ float bandW(float h, float center){
 }
 
 vec3 grade(vec3 c, vec2 uv, vec2 suv){
+  vec3 c0 = c; // seçmeli ayarın renk benzerliği kaynak renge göre
   // 0 exposure 1 brightness 2 contrast 3 highlights 4 shadows 5 whites 6 blacks
   // 7 temperature 8 tint 9 saturation 10 vibrance 11 brilliance 12 clarity 13 sharpen
   // 14 structure 15 dehaze 16 fade 17 grain 18 vignette 19 glow
@@ -250,6 +255,23 @@ vec3 grade(vec3 c, vec2 uv, vec2 suv){
   if (uCurveOn > 0.5) {
     c = clamp(c, 0.0, 1.0);
     c = vec3(texture(uCurve, vec2(c.r, 0.5)).r, texture(uCurve, vec2(c.g, 0.5)).g, texture(uCurve, vec2(c.b, 0.5)).b);
+  }
+  // seçmeli ayar: etki = Gauss uzaklık × renk benzerliği (Snapseed U Point benzeri, kendi formülümüz)
+  vec2 asp = uSrcSize / min(uSrcSize.x, uSrcSize.y);
+  for (int i = 0; i < 8; i++) {
+    if (i >= uLocalN) break;
+    vec4 P = uLocP[i];
+    vec2 d = (suv - P.xy) * asp;
+    float w = exp(-dot(d, d) / (2.0 * P.z * P.z * 0.25));
+    vec3 dc = c0 - uLocC[i].rgb;
+    float tol = mix(0.9, 0.07, P.w);
+    w *= exp(-dot(dc, dc) / (2.0 * tol * tol));
+    if (w < 0.002) continue;
+    vec4 A = uLocA[i];
+    c = toSrgb(toLin(max(c, 0.0)) * exp2(A.x * 1.3 * w));
+    c = 0.5 + (c - 0.5) * (1.0 + A.y * 0.8 * w);
+    c = mix(vec3(luma(c)), c, 1.0 + A.z * w);
+    c += vec3(0.13, 0.03, -0.13) * A.w * w;
   }
   // bölünmüş tonlama
   L = clamp(luma(c), 0.0, 1.0);

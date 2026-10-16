@@ -273,3 +273,9 @@ kbd { background: var(--c-surface-3); border-radius: 4px; padding: 1px 5px; font
 .person-box.on { border: 2px solid #ff5a5f; box-shadow: 0 0 0 1px rgba(0,0,0,.5); }
 .person-box.main { border: 2px solid var(--c-accent); }
 .person-box:focus-visible { outline: 2px solid var(--c-accent); outline-offset: 2px; }
+
+/* Seçmeli ayar noktaları */
+.sel-point { position: absolute; width: 22px; height: 22px; border-radius: 50%; display: grid; place-items: center; padding: 0; background: rgba(0,0,0,.55); color: #fff; border: 2px solid #fff; cursor: grab; }
+.sel-point.on { background: var(--c-accent); color: var(--c-on-accent); }
+.sel-point:focus-visible { outline: 2px solid var(--c-accent); outline-offset: 2px; }
+.sel-ring { position: absolute; border-radius: 50%; border: 1.5px dashed rgba(255,255,255,.85); box-shadow: 0 0 0 1px rgba(0,0,0,.4); pointer-events: none; }

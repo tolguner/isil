@@ -4,6 +4,7 @@ Her büyük güncellemede sürüm numarası artırılır (`npm version <x.y.z> -
 
 ## Yayımlanmamış
 
+- Ayarla → **Seçmeli**: fotoğrafa en çok 8 nokta koyup yalnız o bölgenin parlaklık, kontrast, doygunluk ve sıcaklığını değiştirme. Etki konuma yakınlık × noktadaki renge benzerlik; yarıçap ve renk duyarlılığı ayarlanabilir, noktalar sürüklenir. Gölgelendiricide, canlı
 - Temizle → **Yoldan geçenler**: fotoğraftaki kişiler bilgisayarda bulunur (EfficientDet-Lite2, 3×3 karo tarama, kişi başına maske), ana kişi korunur, diğerleri silinmek üzere seçilir; tuvalde tıklayarak değiştirilir; "Gölge ve yansımayı da sil"; seçilenler karo karo LaMa ile silinir. Ön seçim kuralı: en uzun kişinin boyunun %60'ı ve üstü ana kişi sayılır
 - Ayarlar → Hakkında: "Ücretsiz ve açık kaynak (MIT)"
 - Ayarlar: aynı adı taşıyan iki "Kalite" ayarı ayrıldı: "Dosya kalitesi" (JPG/WebP sıkıştırması) ve "Üretken YZ modeli" (FLUX.2 klein 4B / 9B). Dosya kalitesinde sayı kutusu yerine üç seçenek: Küçük (80), Dengeli (92), En iyi (100). Dışa aktarma menüsünde "Dosya kalitesi", üst çubukta "Kalite artır" adları

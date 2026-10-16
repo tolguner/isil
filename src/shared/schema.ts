@@ -67,6 +67,19 @@ export interface RasterOp { id: string; type: RasterOpType; file: string; params
 
 export interface EffectRef { id: string; amount: number }
 
+/**
+ * Seçmeli ayar noktası (Snapseed'deki kontrol noktası benzeri): kaynak uv'de konum, yarıçap (kısa kenara oran),
+ * noktadaki renk ve renk duyarlılığı. Etki = konum yakınlığı × renk benzerliği. Ayarlar -100..100.
+ */
+export interface LocalPoint {
+  id: string
+  x: number; y: number
+  r: number                       // 0.03..0.6
+  color: [number, number, number] // 0..1, noktanın kaynak rengi
+  tol: number                     // renk duyarlılığı 0..100 (0 = renge bakma)
+  adj: { b: number; c: number; s: number; w: number } // parlaklık, kontrast, doygunluk, sıcaklık
+}
+
 export interface EditDoc {
   base: string | null      // son raster sonucu dosya adı; null = kaynak
   rasterOps: RasterOp[]
@@ -77,6 +90,8 @@ export interface EditDoc {
   curves: Curves
   filter: EffectRef | null
   effects: EffectRef[]
+  /** Seçmeli ayar noktaları (en çok 8). */
+  local?: LocalPoint[]
   retouch: { faces: FaceEdit[] }
   body: BodyEdit | null
   background: Background

@@ -36,7 +36,7 @@ Küçük işler (rakip incelemesinden) — **dördü de yapıldı (16.10), CHANG
 - Tek dokunuş tariflerinin hangi kaydırıcıları değiştirdiğini göstermek.
 
 Büyük işler:
-- Seçmeli ayar.
+- ~~Seçmeli ayar~~ **yapıldı (16.10)**: `tools/selective.tsx`, `EditDoc.local`, MAIN gölgelendiricisinde `uLoc*`; test `tests/e2e/selective.mjs`.
 - YZ ile tuval genişletme.
 - ~~Yoldan geçenleri yerel silme~~ **yapıldı (16.10)**: `tools/passersby.tsx`, test `tests/e2e/passersby.mjs <görsel>`, kişi bulma ölçümü `tests/e2e/people.mjs`.
 - Saç/kıyafet akışları, üretken silme, çıkartma yapıcı.
