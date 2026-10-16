@@ -53,7 +53,7 @@ export function SettingsPage() {
             <div style={{ width: 240 }}><Segmented items={[{ id: 'jpeg', label: 'JPG' }, { id: 'png', label: 'PNG' }, { id: 'webp', label: 'WebP' }]} value={s.exportFormat} onChange={(v) => set({ exportFormat: v })} /></div>
           </div>
           <div className="setting">
-            <div><b>{tr('Kalite', 'Quality')}</b><span>JPG / WebP</span></div>
+            <div><b>{tr('Dosya kalitesi', 'File quality')}</b><span>{tr('JPG/WebP sıkıştırması; düşük değer daha küçük dosya, biraz daha az ayrıntı', 'JPG/WebP compression; lower means smaller files with slightly less detail')}</span></div>
             <input className="input" style={{ width: 90 }} type="number" min={50} max={100} value={s.exportQuality} onChange={(e) => set({ exportQuality: Math.min(100, Math.max(50, Number(e.target.value) || 92)) })} />
           </div>
         </section>
@@ -99,7 +99,7 @@ export function SettingsPage() {
           {eng?.available && (
             <>
               <div className="setting">
-                <div><b>{tr('Kalite', 'Quality')}</b><span>{tr('En iyi: 9B model; kimliği ve ayrıntıyı daha iyi korur ama yaklaşık 3 kat yavaş ve ≈12 GB ek indirme', 'Best: 9B model; keeps identity and detail better but about 3× slower and ≈12 GB extra download')}</span></div>
+                <div><b>{tr('Üretken YZ modeli', 'Generative AI model')}</b><span>{tr('En iyi: 9B model; kimliği ve ayrıntıyı daha iyi korur ama yaklaşık 3 kat yavaş ve ≈12 GB ek indirme', 'Best: 9B model; keeps identity and detail better but about 3× slower and ≈12 GB extra download')}</span></div>
                 <div style={{ width: 220 }}><Segmented items={[{ id: 'fast', label: tr('Hızlı (4B)', 'Fast (4B)') }, { id: 'best', label: tr('En iyi (9B)', 'Best (9B)') }]} value={s.genQuality} onChange={(v) => set({ genQuality: v })} /></div>
               </div>
               {Object.entries(PARTS).map(([id, p]) => (

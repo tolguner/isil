@@ -2,6 +2,10 @@
 
 Her büyük güncellemede sürüm numarası artırılır (`npm version <x.y.z> --no-git-tag-version`), uygulama Ayarlar → Hakkında'da sürümü gösterir.
 
+## Yayımlanmamış
+
+- Ayarlar: aynı adı taşıyan iki "Kalite" ayarı ayrıldı: "Dosya kalitesi" (JPG/WebP sıkıştırması) ve "Üretken YZ modeli" (FLUX.2 klein 4B / 9B)
+
 ## 0.4.1 — 2026-10-16
 
 - "Orijinali göster" (göz düğmesi ve `\` tuşu): sihirli silgi, YZ düzenleme, kalite artırma gibi kalıcı işlemlerden sonra işlenmiş fotoğrafı gösteriyordu; artık her zaman ilk kaynak fotoğrafı gösteriyor. Uçtan uca test: `tests/e2e/compare.mjs`
