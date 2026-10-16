@@ -162,19 +162,42 @@ export function applyBodyBands(field: Float32Array, gw: number, gh: number, pose
   }
 }
 
-/** Arka planı koru: alanı kişi maskesiyle (çıktı konumunda) çarp; arka plan pikselleri yerinde kalır. */
+/**
+ * Arka planı koru: alanı kişi maskesiyle (çıktı konumunda) çarp; arka plan pikselleri yerinde kalır.
+ * Ağırlık ızgarada yumuşatılır: keskin geçiş, silüet kenarında örneklemeyi ters çevirip (katlanma)
+ * kenarı ikiler. Katlanma denetimi (foldGuard) bunu yakaladı; 3 hücrelik geçişle det > 0 kalıyor.
+ */
 export function maskField(field: Float32Array, gw: number, gh: number, seg: { w: number; h: number; background: Float32Array }) {
+  let w = new Float32Array(gw * gh)
   for (let j = 0; j < gh; j++) {
     const sy = Math.min(seg.h - 1, Math.floor(((j + 0.5) / gh) * seg.h))
     for (let i = 0; i < gw; i++) {
       const sx = Math.min(seg.w - 1, Math.floor(((i + 0.5) / gw) * seg.w))
       const p = 1 - seg.background[sy * seg.w + sx]
       const t = Math.min(1, Math.max(0, (p - 0.2) / 0.4))
-      const w = t * t * (3 - 2 * t)
-      const k = (j * gw + i) * 2
-      field[k] *= w
-      field[k + 1] *= w
+      w[j * gw + i] = t * t * (3 - 2 * t)
     }
+  }
+  // iki geçişli kutu bulanıklığı (yarıçap 3 hücre)
+  const R = 3
+  for (let pass = 0; pass < 2; pass++) {
+    const t = new Float32Array(gw * gh)
+    for (let j = 0; j < gh; j++) for (let i = 0; i < gw; i++) {
+      let s = 0, n = 0
+      for (let k = -R; k <= R; k++) { const x = i + k; if (x >= 0 && x < gw) { s += w[j * gw + x]; n++ } }
+      t[j * gw + i] = s / n
+    }
+    const u = new Float32Array(gw * gh)
+    for (let j = 0; j < gh; j++) for (let i = 0; i < gw; i++) {
+      let s = 0, n = 0
+      for (let k = -R; k <= R; k++) { const y = j + k; if (y >= 0 && y < gh) { s += t[y * gw + i]; n++ } }
+      u[j * gw + i] = s / n
+    }
+    w = u
+  }
+  for (let q = 0; q < gw * gh; q++) {
+    field[q * 2] *= w[q]
+    field[q * 2 + 1] *= w[q]
   }
 }
 

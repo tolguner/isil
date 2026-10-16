@@ -15,3 +15,4 @@ dev-models/
 replica/ai-results/
 tests/fixtures/out/
 replica/audit/
+__pycache__/

@@ -2,7 +2,7 @@
 import type { EditDoc, Project, Settings } from '@shared/schema'
 import { platform } from '@/lib/platform'
 import { Renderer, legCanvasOk, type OutputInfo } from './renderer'
-import { addMlsField, allProtect, buildField, contourPairs, buildMasks, buildProtectMask, faceOps, faceUniforms, FaceGeo, faceHasSkinWork, type MaskSet } from './face'
+import { addMlsField, allProtect, buildField, foldGuard, contourPairs, buildMasks, buildProtectMask, faceOps, faceUniforms, FaceGeo, faceHasSkinWork, type MaskSet } from './face'
 import { applyBodyBands, applyManualBody, bodyOps, legBand, maskField } from './body'
 import { drawLayers } from './layers'
 import { detectFaces, detectPose, segmentPerson, type PersonParts, type Pt } from '@/ai/vision'
@@ -214,8 +214,16 @@ class Session {
       const cx = this.pose ? (this.pose[11].x + this.pose[12].x + this.pose[23].x + this.pose[24].x) / 4 : 0.5
       applyManualBody(res.field, res.gw, res.gh, doc.body.manual, cx)
     }
+    // katlanma denetimi: canlı liquify alanı (base) yerinde düzenlendiği için kopya üzerinde
+    if (res) {
+      if (res.field === this.liveField?.field) res = { ...res, field: Float32Array.from(res.field) }
+      this.foldScale = foldGuard(res.field, res.gw, res.gh, W, H)
+    }
     return res
   }
+
+  /** Son bükme alanında katlanma denetiminin uyguladığı ölçek (1 = dokunulmadı). */
+  foldScale = 1
 
   /**
    * Yalnız vücut şekli alanı (otomatik kaydırıcılar + bacak bandı; elle bölge hariç).

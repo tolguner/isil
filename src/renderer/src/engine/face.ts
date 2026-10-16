@@ -286,6 +286,38 @@ export function addMlsField(field: Float32Array, gw: number, gh: number, W: numb
   }
 }
 
+/**
+ * Katlanma denetimi (Ar-Ge 2): ters eşleme f(p) = p + o(p) her hücrede yönünü korumalı (det J > 0).
+ * Aşırı ayar birleşimlerinde det minDet'in altına inerse bütün alan ikili aramayla bulunan α ile
+ * küçültülür; normal ayarlarda alana dokunulmaz. Uygulanan α döner (1 = değişmedi).
+ */
+export function foldGuard(field: Float32Array, gw: number, gh: number, W: number, H: number, minDet = 0.05): number {
+  const cw = W / gw, ch = H / gh
+  const minJ = (a: number) => {
+    let m = Infinity
+    for (let j = 0; j < gh - 1; j++) {
+      for (let i = 0; i < gw - 1; i++) {
+        const k = (j * gw + i) * 2, kx = k + 2, ky = k + gw * 2
+        // o piksel cinsinden; J = I + ∇o
+        const dxx = ((field[kx] - field[k]) * W * a) / cw, dyx = ((field[kx + 1] - field[k + 1]) * H * a) / cw
+        const dxy = ((field[ky] - field[k]) * W * a) / ch, dyy = ((field[ky + 1] - field[k + 1]) * H * a) / ch
+        const det = (1 + dxx) * (1 + dyy) - dxy * dyx
+        if (det < m) m = det
+      }
+    }
+    return m
+  }
+  if (minJ(1) >= minDet) return 1
+  let lo = 0, hi = 1
+  for (let it = 0; it < 10; it++) {
+    const mid = (lo + hi) / 2
+    if (minJ(mid) >= minDet) lo = mid
+    else hi = mid
+  }
+  for (let k = 0; k < field.length; k++) field[k] *= lo
+  return lo
+}
+
 /** Bükme alanı: kaynak uv cinsinden örnekleme ofseti, gw×gh ızgara (RG). */
 export function buildField(ops: WarpOp[], W: number, H: number, extra?: Float32Array | null, gw = 0, gh = 0): { field: Float32Array; gw: number; gh: number } | null {
   if (!ops.length && !extra) return null
