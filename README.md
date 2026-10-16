@@ -1,6 +1,6 @@
 # Işıl
 
-Windows için masaüstü fotoğraf düzenleyici. Hypic'in özellik setinin temiz-oda yeniden yapımı: kod, tasarım, adlar ve ön ayarlar sıfırdan yazıldı; Hypic'in hiçbir varlığı kullanılmadı.
+Fotoğraf düzenleme, yüz rötuşu, vücut şekillendirme ve filtreleme işlerinin hepsini tek bir araçta toplayan, tamamen ücretsiz ve özgün bir Windows masaüstü uygulaması. Kod, tasarım, algoritmalar ve ön ayarlar sıfırdan yazıldı.
 
 Her şey ücretsiz ve yerel: yapay zekâ araçları bilgisayarında, internetsiz çalışır; hiçbir fotoğraf dışarı gönderilmez, API anahtarı gerekmez.
 

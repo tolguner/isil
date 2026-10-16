@@ -2,7 +2,7 @@
   "name": "isil",
   "productName": "Işıl",
   "version": "0.3.0",
-  "description": "Masaüstü fotoğraf düzenleyici (Hypic özelliklerinin temiz-oda yeniden yapımı)",
+  "description": "Fotoğraf düzenleme, yüz rötuşu, vücut şekillendirme ve filtreleri tek araçta toplayan ücretsiz masaüstü uygulaması",
   "main": "./out/main/index.js",
   "author": "Tolga Olguner",
   "license": "UNLICENSED",
