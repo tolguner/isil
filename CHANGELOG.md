@@ -2,6 +2,10 @@
 
 Her büyük güncellemede sürüm numarası artırılır (`npm version <x.y.z> --no-git-tag-version`), uygulama Ayarlar → Hakkında'da sürümü gösterir.
 
+## 0.4.1 — 2026-10-16
+
+- "Orijinali göster" (göz düğmesi ve `\` tuşu): sihirli silgi, YZ düzenleme, kalite artırma gibi kalıcı işlemlerden sonra işlenmiş fotoğrafı gösteriyordu; artık her zaman ilk kaynak fotoğrafı gösteriyor. Uçtan uca test: `tests/e2e/compare.mjs`
+
 ## 0.4.0 — 2026-10-16
 
 Ar-Ge 1 (rötuşta işaretleri koruma), Ar-Ge 2 (yüz ve vücut bükmesi, rakip ölçümleriyle) ve rakip incelemesinden çıkan arayüz işleri (`replica/arge/`). Işıl artık özgün, açık kaynak (MIT) bir masaüstü düzenleyici olarak konumlanıyor.

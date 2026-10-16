@@ -35,6 +35,9 @@ class Session {
   project: Project | null = null
   baseKey = ''
   baseBlob: Blob | null = null
+  /** Kalıcı işlemlerden (silgi, YZ, kalite artır…) önceki ilk fotoğraf: "Orijinali göster" için. */
+  original: ImageBitmap | null = null
+  originalKey = ''
   preview: ImageBitmap | null = null
   W = 0
   H = 0
@@ -73,6 +76,7 @@ class Session {
     this.renderer = new Renderer(canvas)
     if (this.preview) this.renderer.setBase(this.preview)
     if (this.maskBitmap) this.renderer.setSubjectMask(this.maskBitmap)
+    if (this.original) this.renderer.setOriginal(this.original)
     this.masksKey = this.protectKey = ''
     this.bgKey = ''
   }
@@ -96,6 +100,9 @@ class Session {
     this.masks = null
     this.liveField = null
     this.maskBitmap = null
+    this.original?.close()
+    this.original = null
+    this.originalKey = ''
   }
 
   /** doc.base / doc.mask değişmişse kaynakları yükler. */
@@ -121,6 +128,14 @@ class Session {
       this.masks = null
       this.masksKey = this.protectKey = ''
       this.liveField = null
+    }
+    // karşılaştırma: belge kalıcı işlem içeriyorsa ilk kaynağı ayrıca yükle
+    const okey = doc.base ? project.id + ':' + project.sourceFile : ''
+    if (okey !== this.originalKey) {
+      this.original?.close()
+      this.original = okey ? await decode(await platform.getFile(project.id, project.sourceFile), PREVIEW_MAX) : null
+      this.originalKey = okey
+      this.renderer?.setOriginal(this.original)
     }
     const mkey = project.id + ':' + (doc.mask ?? '')
     if (mkey !== this.maskKey) {

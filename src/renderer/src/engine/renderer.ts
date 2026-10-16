@@ -56,6 +56,8 @@ export class Renderer {
   private pMain: Program; private pBlur: Program; private pCopy: Program
   private pRetouch: Program; private pFx: Program; private pPresent: Program
   base: Tex | null = null
+  /** Karşılaştırmada gösterilecek ilk kaynak (kalıcı işlem yoksa null: base kullanılır). */
+  private orig: Tex | null = null
   private mask: Tex | null = null
   private maskA: Tex | null = null; private maskB: Tex | null = null; private maskC: Tex | null = null; private maskP: Tex | null = null
   private warp: Tex | null = null
@@ -91,7 +93,7 @@ export class Renderer {
   dispose() {
     this.pool.dispose()
     const gl = this.gl
-    for (const t of [this.base, this.mask, this.maskA, this.maskB, this.maskC, this.maskP, this.warp, this.bgImg, this.curve, this.blank]) if (t) gl.deleteTexture(t.tex)
+    for (const t of [this.base, this.orig, this.mask, this.maskA, this.maskB, this.maskC, this.maskP, this.warp, this.bgImg, this.curve, this.blank]) if (t) gl.deleteTexture(t.tex)
     gl.getExtension('WEBGL_lose_context')?.loseContext()
   }
 
@@ -102,6 +104,9 @@ export class Renderer {
 
   setBase(src: TexImageSource) {
     this.base = this.replace(this.base, src)
+  }
+  setOriginal(src: TexImageSource | null) {
+    this.orig = this.replace(this.orig, src)
   }
   setSubjectMask(src: TexImageSource | null) {
     this.mask = this.replace(this.mask, src)
@@ -232,7 +237,7 @@ export class Renderer {
     const gl = this.gl
     if (!this.base) throw new Error('görüntü yok')
     const neutral = !!opts.neutral
-    const src = neutral ? this.base : this.retouch(this.base)
+    const src = neutral ? (this.orig ?? this.base) : this.retouch(this.base)
     const maxSide = Math.max(this.base.w, this.base.h)
     const blurL = this.blur(src, maxSide * 0.02, 'bl')
     const blurLCopy = this.pool.get('blCopy', blurL.w, blurL.h)
