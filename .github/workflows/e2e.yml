@@ -34,12 +34,12 @@ jobs:
       PORTRAIT_URL: https://storage.googleapis.com/mediapipe-assets/portrait.jpg
       PORTRAIT_SHA256: a6f11efaa834706db23f275b6115058fa87fc7f14362681e6abe14e82749de3e
     steps:
-      - uses: actions/checkout@v5
-      - uses: actions/setup-node@v5
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
         with:
           node-version: 22
           cache: npm
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@v7
         with:
           python-version: '3.12'
       - name: Bağımlılıklar (MediaPipe WASM + yerleşik modeller postinstall ile)
@@ -64,7 +64,7 @@ jobs:
         run: xvfb-run -a --server-args="-screen 0 1920x1080x24" node tests/e2e/${{ inputs.test }}.mjs
       - name: Ekran görüntüleri ve sonuçlar
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: e2e-${{ inputs.test }}
           retention-days: 7
