@@ -206,7 +206,7 @@ class Session {
         const gw = 192, gh = Math.max(16, Math.round((192 * H) / W))
         res = { field: new Float32Array(gw * gh * 2), gw, gh }
       }
-      applyBodyBands(res.field, res.gw, res.gh, this.pose, doc.body.shape, W, H)
+      applyBodyBands(res.field, res.gw, res.gh, this.pose, doc.body.shape, W, H, this.seg)
     }
     if (doc.body?.manual && (doc.body.manual.stretch || doc.body.manual.slim)) {
       if (!res) {

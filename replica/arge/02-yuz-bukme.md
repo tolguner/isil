@@ -91,11 +91,13 @@ Yeni hali (`engine/body.ts` → `applyBodyBands`):
 - **İncelt:** Her satırda poz merkez çizgisine doğru yatay sıkıştırma. Satırın merkezi ve gövde yarı genişliği omuz, kalça, diz ve ayak bileğinden doğrusal olarak çıkarılıyor. Etki yarı genişliğin 1,7 katında sönüyor. Omuz üstünde ve ayak altında dikey bir zarf var. Sonuç: etkilenen alan %10,4'ten %3,4'e indi, arka plan sütunları düz kalıyor.
 - **Bacak:** Kalça–ayak bileği bandında satır tabanlı dikey uzatma, en uçta band × %20. Yatay çizgiler düz kalıyor. Işıl tuvali büyütmediği için ayak altındaki zemin aşağı kayıyor ve görüntünün dışına taşan kısım kırpılıyor.
 
-## Sıradaki adaylar
+## Sıradaki adaylar (iş sırası)
 
-- **İncelt için kişi maskesi kenarı:** Şimdilik yarı genişlik poz noktalarından tahmin ediliyor. Bol giysilerde gerçek silüet daha geniş olabilir. Segmentasyon maskesinin satır başına genişliği daha doğru olur.
-- **Bacak uzatmada tuval büyütme seçeneği** (Peachy gibi), zeminin kırpılmaması için.
-- **Katlanma denetimi:** alanın Jacobian determinantı 0'ın altına inerse güç kırpılsın.
+1. ~~**İncelt için kişi silüeti**~~ **yapıldı (16.10):** Her satırda merkezden dışa doğru kişi maskesinin (MediaPipe çok sınıflı bölütleme, 1 − arka plan) kenarı aranıyor. Yarı genişlik poz tahmininin 0,6–1,8 katına kırpılıyor. Kenar bulunamazsa (kol açık, maske kopuk) poz tahminine dönülüyor. Satırlar arası 5'li ortalama uygulanıyor. Bol bluzda inceltme bluzun kenarını izliyor, bacaklarda daralıyor. Etkilenen alan %4,2.
+2. **Vücutta "Arka planı koru" (Tolga, 16.10):** incelt/bel/kalça alanı kişi maskesiyle çarpılır; kişi incelince açılan kenar şeridi LaMa ile arka planla doldurulur. Şekillendir aracındaki anahtarın vücut kaydırıcılarındaki karşılığı (Peachy'de "Korumak", ücretli). 1'deki silüete dayanır.
+3. **Bacak uzatmada tuval büyütme** (Peachy gibi), zeminin kırpılmaması için.
+4. **Bacak uzatmada arka planı koru:** yalnız kişi bandı uzar, açılan zemin LaMa ile üretilir (yavaş; isteğe bağlı).
+5. **Katlanma denetimi:** alanın Jacobian determinantı 0'ın altına inerse güç kırpılsın.
 
 ## Kaynaklar
 

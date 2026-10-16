@@ -22,7 +22,7 @@ const out = await win.evaluate(async ({ b64, name, CASES, BODY }) => {
   await window.__isil.openFile(name, b64)
   for (let i = 0; i < 200 && !(s.W > 0 && s.lastOut); i++) await new Promise((r) => setTimeout(r, 100))
   S().setTab('retouch'); S().openTool(BODY ? 'body' : 'faceShape')
-  for (let i = 0; i < 120 && !(BODY ? s.pose : s.faces && s.faces.length); i++) await new Promise((r) => setTimeout(r, 250))
+  for (let i = 0; i < 120 && !(BODY ? s.pose && s.seg : s.faces && s.faces.length); i++) await new Promise((r) => setTimeout(r, 250))
   const res = {}
   for (const [k, shape] of Object.entries(CASES)) {
     S().update((d) => {

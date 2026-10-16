@@ -92,7 +92,7 @@ export function applyManualBody(field: Float32Array, gw: number, gh: number, m: 
  * 1,7 katında söner, uzaktaki arka plan kıpırdamaz. Bacak: kalça–ayak bileği bandında dikey uzatma
  * (satır tabanlı, yatay çizgiler düz kalır; Peachy "Uzunluğu" davranışı).
  */
-export function applyBodyBands(field: Float32Array, gw: number, gh: number, pose: Pt[] | null, shape: Record<string, number>, W: number, H: number) {
+export function applyBodyBands(field: Float32Array, gw: number, gh: number, pose: Pt[] | null, shape: Record<string, number>, W: number, H: number, seg?: { w: number; h: number; background: Float32Array } | null) {
   if (!pose) return
   const slim = (shape.slim ?? 0) / 100
   const legs = (shape.legs ?? 0) / 100
@@ -120,6 +120,29 @@ export function applyBodyBands(field: Float32Array, gw: number, gh: number, pose
   const ss = (a: number, b: number, x: number) => { const t = Math.min(1, Math.max(0, (x - a) / (b - a))); return t * t * (3 - 2 * t) }
   // bacak bandı: kalça → ayak bileği, uzatma oranı en uçta %20
   const y0 = hp.y / H, y1 = an.y / H, band = Math.max(y1 - y0, 0.01), d = legs * band * 0.2
+  // satır başına merkez ve yarı genişlik: kişi maskesi varsa silüetten, yoksa poz tahmininden
+  const rowC = new Float32Array(gh), rowHW = new Float32Array(gh)
+  for (let j = 0; j < gh; j++) {
+    const y = ((j + 0.5) / gh) * H
+    const c = at(y)
+    rowC[j] = c.x; rowHW[j] = c.hw
+    if (!seg) continue
+    const sy = Math.min(seg.h - 1, Math.floor((y / H) * seg.h))
+    const person = (x: number) => 1 - seg.background[sy * seg.w + Math.min(seg.w - 1, Math.max(0, Math.floor((x / W) * seg.w)))]
+    if (person(c.x) < 0.5) continue
+    const step = W / seg.w, lim = c.hw * 2.2
+    let L = c.x, R = c.x
+    while (c.x - L < lim && person(L - step) >= 0.5) L -= step
+    while (R - c.x < lim && person(R + step) >= 0.5) R += step
+    if (c.x - L >= lim || R - c.x >= lim) continue // kenar bulunamadı (kollar/arka plan), poz tahminine dön
+    rowC[j] = (L + R) / 2
+    rowHW[j] = Math.min(c.hw * 1.8, Math.max(c.hw * 0.6, (R - L) / 2))
+  }
+  // satırlar arası gürültüyü yumuşat (5 satırlık ortalama)
+  if (seg) {
+    const sm = (a: Float32Array) => { const o = Float32Array.from(a); for (let j = 2; j < gh - 2; j++) o[j] = (a[j - 2] + a[j - 1] + a[j] + a[j + 1] + a[j + 2]) / 5; return o }
+    rowC.set(sm(rowC)); rowHW.set(sm(rowHW))
+  }
   for (let j = 0; j < gh; j++) {
     const yN = (j + 0.5) / gh
     const y = yN * H
@@ -127,13 +150,13 @@ export function applyBodyBands(field: Float32Array, gw: number, gh: number, pose
     if (d > 0 && yN >= y0) oy = yN < y1 + d ? y0 + ((yN - y0) * band) / (band + d) - yN : -d
     // inceltme dikey zarfı: omuz üstünde ve ayak altında yumuşak başla/bit
     const env = slim ? ss(top - sw * 0.2, top + sw * 0.3, y) * (1 - ss(bot - sw * 0.3, bot + sw * 0.2, y)) : 0
-    const c = at(y)
+    const cx = rowC[j], hw = rowHW[j]
     for (let i = 0; i < gw; i++) {
       const k = (j * gw + i) * 2
       field[k + 1] += oy
       if (!env) continue
-      const dx = ((i + 0.5) / gw) * W - c.x
-      const w = 1 - ss(c.hw, c.hw * 1.7, Math.abs(dx))
+      const dx = ((i + 0.5) / gw) * W - cx
+      const w = 1 - ss(hw, hw * 1.7, Math.abs(dx))
       if (w > 0) field[k] += (dx * slim * 0.1 * w * env) / W
     }
   }

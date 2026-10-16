@@ -864,7 +864,7 @@ export const RETOUCH_TOOLS: ToolDef[] = [
   { id: 'hair', label: ['Saç rengi', 'Hair color'], icon: Scissors, Panel: HairPanel, sourceSpace: true, needs: ['faces', 'seg'], applied: (d) => !!d.retouch.faces.find((f) => f.index === 0)?.makeup.hair?.amount },
   { id: 'rbrush', label: ['Rötuş fırçası', 'Retouch brush'], icon: Brush, Panel: RetouchBrushPanel, Overlay: RetouchBrushOverlay, sourceSpace: true, noFooter: true },
   { id: 'relight', label: ['Işıklandır', 'Relight'], icon: Sun, Panel: RelightPanel, Overlay: RelightOverlay, sourceSpace: true, noFooter: true },
-  { id: 'body', label: ['Vücut', 'Body'], icon: PersonStanding, Panel: BodyPanel, Overlay: BodyOverlay, sourceSpace: true, needs: ['pose'], applied: (d) => !!d.body && (nz(d.body.shape) || !!d.body.manual?.stretch || !!d.body.manual?.slim) },
+  { id: 'body', label: ['Vücut', 'Body'], icon: PersonStanding, Panel: BodyPanel, Overlay: BodyOverlay, sourceSpace: true, needs: ['pose', 'seg'], applied: (d) => !!d.body && (nz(d.body.shape) || !!d.body.manual?.stretch || !!d.body.manual?.slim) },
   { id: 'facehide', label: ['Yüz gizle', 'Hide face'], icon: EyeOff, Panel: FaceHidePanel, Overlay: FaceOverlay, sourceSpace: true, needs: ['faces'], noFooter: true },
   { id: 'smile', label: ['İfade (YZ)', 'Expression (AI)'], icon: Smile, Panel: () => <AiRedirect kind="expression" />, noFooter: true, badge: 'YZ' }
 ]
