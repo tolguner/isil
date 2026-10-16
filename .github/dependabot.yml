@@ -17,6 +17,6 @@ updates:
       npm-minor-patch:
         update-types: [minor, patch]
     ignore:
-      # Electron ana sürümleri GPU/WebGPU davranışını değiştirebilir; elle yükseltilir.
-      - dependency-name: electron
+      # Ana sürüm atlamaları (vite 8, electron 45 …) çoğu zaman kod değişikliği ister; elle, ayrı iş olarak yapılır.
+      - dependency-name: '*'
         update-types: ['version-update:semver-major']
