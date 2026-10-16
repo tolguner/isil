@@ -13,7 +13,7 @@ Her şey ücretsiz ve yerel: yapay zekâ araçları bilgisayarında, internetsiz
 - **Kesim ve arka plan:** yapay zekâyla arka plan kaldırma (ISNet / BiRefNet), maske fırçası, renk/degrade/bulanık/görsel zemin, tuval oranı
 - **Katmanlar:** metin (17 açık lisanslı yazı tipi), çıkartma, şekil, çizim
 - **Üretken YZ (yerel):** YZ Editör ve YZ efektleri (FLUX.2 klein 4B / 9B), stil danışmanı (Qwen3-VL 4B), yüz onarma (GFPGAN 1.4)
-- **Diğer:** kırpma/döndürme/perspektif, liquify, 4× kalite artırma (4x-UltraSharp V2 / Real-ESRGAN), kolaj ve birleştirme, toplu düzenleme, kamera, projeler ve otomatik kayıt, HEIC açma, ayarları kopyala/yapıştır, araç arama (Ctrl+K), Türkçe/İngilizce
+- **Diğer:** kırpma/döndürme/perspektif, YZ ile tuval genişletme, seçmeli ayar, liquify, 4× kalite artırma (4x-UltraSharp V2 / Real-ESRGAN), kolaj ve birleştirme, toplu düzenleme, kamera, projeler ve otomatik kayıt, HEIC açma, ayarları kopyala/yapıştır, araç arama (Ctrl+K), Türkçe/İngilizce
 
 ## Geliştirme
 

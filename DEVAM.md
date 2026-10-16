@@ -37,7 +37,7 @@ Küçük işler (rakip incelemesinden) — **dördü de yapıldı (16.10), CHANG
 
 Büyük işler:
 - ~~Seçmeli ayar~~ **yapıldı (16.10)**: `tools/selective.tsx`, `EditDoc.local`, MAIN gölgelendiricisinde `uLoc*`; test `tests/e2e/selective.mjs`.
-- YZ ile tuval genişletme.
+- ~~YZ ile tuval genişletme~~ **yapıldı (17.10)**: `tools/expand.tsx`, test `tests/e2e/expand.mjs [görsel] [klasör] [lama|flux]` (flux için dev-models/engine).
 - ~~Yoldan geçenleri yerel silme~~ **yapıldı (16.10)**: `tools/passersby.tsx`, test `tests/e2e/passersby.mjs <görsel>`, kişi bulma ölçümü `tests/e2e/people.mjs`.
 - Saç/kıyafet akışları, üretken silme, çıkartma yapıcı.
 

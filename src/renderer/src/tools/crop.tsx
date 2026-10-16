@@ -5,6 +5,7 @@ import { useEditor } from '@/store/editor'
 import { useT } from '@/lib/i18n'
 import { Slider } from '@/components/ui'
 import { session } from '@/engine/session'
+import { EXPAND_TOOL } from './expand'
 import type { ToolDef, View } from './types'
 
 export const RATIOS: { id: string; label: [string, string]; r: number | null }[] = [
@@ -156,7 +157,8 @@ export const CROP_TOOLS: ToolDef[] = [
     Overlay: CropOverlay,
     viewDoc: (d) => cropViewDoc(d),
     applied: (d) => d.crop.w < 1 || d.crop.h < 1 || d.crop.rotation !== 0 || d.crop.quarter !== 0
-  }
+  },
+  EXPAND_TOOL
 ]
 
 /** Kırpma aracı açıkken tuvalde tam (döndürülmüş) kare gösterilir. */

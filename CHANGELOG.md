@@ -4,6 +4,8 @@ Her büyük güncellemede sürüm numarası artırılır (`npm version <x.y.z> -
 
 ## Yayımlanmamış
 
+- Kırp → **YZ genişlet**: fotoğrafı her yöne (%15, %30) ya da bir orana (1:1, 4:5, 9:16, 16:9, 3:2) büyütür, yeni alanı yerelde doldurur: yerel YZ motoru kuruluysa FLUX.2 klein, değilse LaMa. Dikiş kalmasın diye renk eşitleme ve kenarda yumuşak geçiş; asıl pikseller değişmez. Karşılaştırma orijinali yeni tuvaldeki yerinde gösterir
+- Tek araçlı olmayan otomatik sekmelerde (Kırp) araç ızgarası görünür
 - Ayarla → **Seçmeli**: fotoğrafa en çok 8 nokta koyup yalnız o bölgenin parlaklık, kontrast, doygunluk ve sıcaklığını değiştirme. Etki konuma yakınlık × noktadaki renge benzerlik; yarıçap ve renk duyarlılığı ayarlanabilir, noktalar sürüklenir. Gölgelendiricide, canlı
 - Temizle → **Yoldan geçenler**: fotoğraftaki kişiler bilgisayarda bulunur (EfficientDet-Lite2, 3×3 karo tarama, kişi başına maske), ana kişi korunur, diğerleri silinmek üzere seçilir; tuvalde tıklayarak değiştirilir; "Gölge ve yansımayı da sil"; seçilenler karo karo LaMa ile silinir. Ön seçim kuralı: en uzun kişinin boyunun %60'ı ve üstü ana kişi sayılır
 - Ayarlar → Hakkında: "Ücretsiz ve açık kaynak (MIT)"

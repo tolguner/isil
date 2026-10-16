@@ -94,11 +94,11 @@ function Panel() {
   return (
     <aside className="panel" aria-label={L(tabDef.label)}>
       <div className="panel-head">
-        <h3>{toolDef && !tabDef.auto ? L(toolDef.label) : L(tabDef.label)}</h3>
+        <h3>{toolDef && (!tabDef.auto || tabDef.tools.length > 1) ? L(toolDef.label) : L(tabDef.label)}</h3>
       </div>
       <div className="panel-body">
         {tabDef.intro && !tool && <p className="note">{L(tabDef.intro)}</p>}
-        {!tabDef.auto && tabDef.tools.length > 1 && (
+        {tabDef.tools.length > 1 && (
           <div className="tiles" role="toolbar">
             {tabDef.tools.map((t) => (
               <Tile key={t.id} icon={<t.icon size={20} />} label={L(t.label)} on={tool === t.id} badge={t.badge} applied={t.applied?.(doc)} onClick={() => useEditor.getState().openTool(t.id)} />

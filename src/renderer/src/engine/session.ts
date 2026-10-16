@@ -76,7 +76,7 @@ class Session {
     this.renderer = new Renderer(canvas)
     if (this.preview) this.renderer.setBase(this.preview)
     if (this.maskBitmap) this.renderer.setSubjectMask(this.maskBitmap)
-    if (this.original) this.renderer.setOriginal(this.original)
+    if (this.original) this.renderer.setOriginal(this.originalFitted())
     this.masksKey = this.protectKey = ''
     this.bgKey = ''
   }
@@ -105,6 +105,34 @@ class Session {
     this.originalKey = ''
   }
 
+  /**
+   * Karşılaştırma görüntüsü. YZ genişlet tuvali büyüttüyse orijinal, şimdiki tuvaldeki yerine (kesirli dikdörtgen,
+   * genişletme işlemlerinin from/to/at bilgisinden) siyah zeminle konur; yoksa gerilmiş ya da yakınlaşmış görünürdü.
+   */
+  private originalFitted(doc?: EditDoc): TexImageSource | null {
+    const o = this.original, p = this.preview
+    if (!o || !p) return o
+    let r = { x: 0, y: 0, w: 1, h: 1 }
+    for (const op of doc?.rasterOps ?? []) {
+      const q = op.params as { tool?: string; from?: [number, number]; to?: [number, number]; at?: [number, number] }
+      if (q.tool !== 'expand' || !q.from || !q.to || !q.at) continue
+      r = { x: (r.x * q.from[0] + q.at[0]) / q.to[0], y: (r.y * q.from[1] + q.at[1]) / q.to[1], w: (r.w * q.from[0]) / q.to[0], h: (r.h * q.from[1]) / q.to[1] }
+    }
+    if (r.w === 1 && r.h === 1 && Math.abs(o.width / o.height - p.width / p.height) < 0.01) return o
+    const c = document.createElement('canvas')
+    c.width = p.width
+    c.height = p.height
+    const ctx = c.getContext('2d')!
+    ctx.fillStyle = '#000'
+    ctx.fillRect(0, 0, c.width, c.height)
+    if (r.w === 1 && r.h === 1) {
+      // oran başka bir işlemle değişti: ortala, sığdır
+      const k = Math.min(p.width / o.width, p.height / o.height)
+      ctx.drawImage(o, (c.width - o.width * k) / 2, (c.height - o.height * k) / 2, o.width * k, o.height * k)
+    } else ctx.drawImage(o, r.x * c.width, r.y * c.height, r.w * c.width, r.h * c.height)
+    return c
+  }
+
   /** doc.base / doc.mask değişmişse kaynakları yükler. */
   async sync(project: Project, doc: EditDoc) {
     this.project = project
@@ -130,12 +158,12 @@ class Session {
       this.liveField = null
     }
     // karşılaştırma: belge kalıcı işlem içeriyorsa ilk kaynağı ayrıca yükle
-    const okey = doc.base ? project.id + ':' + project.sourceFile : ''
+    const okey = doc.base ? project.id + ':' + project.sourceFile + ':' + doc.base : ''
     if (okey !== this.originalKey) {
       this.original?.close()
       this.original = okey ? await decode(await platform.getFile(project.id, project.sourceFile), PREVIEW_MAX) : null
       this.originalKey = okey
-      this.renderer?.setOriginal(this.original)
+      this.renderer?.setOriginal(this.originalFitted(doc))
     }
     const mkey = project.id + ':' + (doc.mask ?? '')
     if (mkey !== this.maskKey) {
