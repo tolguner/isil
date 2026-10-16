@@ -32,6 +32,10 @@ export interface ToolDef {
   viewDoc?: (d: EditDoc) => EditDoc
   /** Uygula/İptal düğmeleri yerine kendi düğmelerini kullanır. */
   noFooter?: boolean
+  /** Ctrl+K paletinde kaydırıcı düzeyinde arama: kaydırıcı adları ve (varsa) alt sekmesi. */
+  sliders?: { label: [string, string]; sub?: string }[]
+  /** Palet bir kaydırıcıya giderken aracın alt sekmesini seçer. */
+  selectSub?: (sub: string) => void
 }
 
 export interface TabDef {

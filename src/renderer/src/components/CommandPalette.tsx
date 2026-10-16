@@ -12,6 +12,23 @@ interface Cmd { id: string; label: string; hint: string; keys: string; run: () =
 // Türkçe karakterleri sadeleştirerek ara ("isik" → "ışık")
 const fold = (s: string) => s.toLocaleLowerCase('tr').replace(/ı/g, 'i').replace(/ş/g, 's').replace(/ğ/g, 'g').replace(/ü/g, 'u').replace(/ö/g, 'o').replace(/ç/g, 'c').normalize('NFD').replace(/[̀-ͯ]/g, '')
 
+/** Paneldeki adı eşleşen kaydırıcıyı (ya da ayarı) görünür yapıp kısa süre vurgula. */
+function highlightControl(name: string, tries = 12) {
+  const target = fold(name)
+  const el = [...document.querySelectorAll<HTMLElement>('.slider-top label, .setting b, .protect-box strong')].find((l) => fold(l.textContent ?? '').trim() === target)
+  const box = el?.closest<HTMLElement>('.slider, .setting, .protect-box')
+  if (!box) {
+    if (tries > 0) setTimeout(() => highlightControl(name, tries - 1), 80)
+    return
+  }
+  box.scrollIntoView({ block: 'center', behavior: 'smooth' })
+  box.classList.remove('flash')
+  void box.offsetWidth
+  box.classList.add('flash')
+  setTimeout(() => box.classList.remove('flash'), 1600)
+  box.querySelector<HTMLElement>('[role="slider"], [role="switch"]')?.focus({ preventScroll: true })
+}
+
 export function CommandPalette() {
   const lang = useLang()
   const [open, setOpen] = useState(false)
@@ -52,6 +69,26 @@ export function CommandPalette() {
             if (st().tool !== tool.id) st().openTool(tool.id)
           }
         })
+      }
+    }
+    // kaydırıcı düzeyinde arama (Peachy'de "bel" yazınca "Bel-Manuel" çıkması gibi): araçların ardından listelenir
+    for (const t of TABS) {
+      for (const tool of t.tools) {
+        for (const sl of tool.sliders ?? []) {
+          const name = sl.label[en ? 1 : 0]
+          list.push({
+            id: `${t.id}/${tool.id}/${sl.sub ?? ''}/${sl.label[0]}`,
+            label: name,
+            hint: `${t.label[en ? 1 : 0]} › ${tool.label[en ? 1 : 0]}`,
+            keys: [sl.label[0], sl.label[1], tool.label[0], tool.label[1]].join(' '),
+            run: () => {
+              st().setTab(t.id)
+              if (st().tool !== tool.id) st().openTool(tool.id)
+              if (sl.sub) tool.selectSub?.(sl.sub)
+              highlightControl(name)
+            }
+          })
+        }
       }
     }
     const act = (id: string, tr: string, enl: string, hint: string, run: () => void) => list.push({ id, label: en ? enl : tr, hint, keys: tr + ' ' + enl, run })

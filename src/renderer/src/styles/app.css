@@ -215,6 +215,10 @@ button, input, select, textarea { font: inherit; color: inherit; }
 .busy-card { background: var(--c-surface); border: 1px solid var(--c-border); border-radius: var(--r-lg); padding: var(--sp-5) var(--sp-6); min-width: 260px; text-align: center; box-shadow: var(--sh-pop); }
 .spinner { width: 32px; height: 32px; border: 3px solid var(--c-surface-3); border-top-color: var(--c-accent); border-radius: 50%; animation: spin .8s linear infinite; margin: 0 auto var(--sp-3); }
 @keyframes spin { to { transform: rotate(360deg); } }
+/* Ctrl+K ile gidilen kaydırıcıyı kısa süre vurgula */
+@keyframes flash { 0%, 100% { box-shadow: 0 0 0 0 transparent; } 25%, 60% { box-shadow: 0 0 0 2px var(--c-accent); } }
+.flash { animation: flash 1.5s ease-in-out; border-radius: 8px; }
+@media (prefers-reduced-motion: reduce) { .flash { animation: none; box-shadow: 0 0 0 2px var(--c-accent); } }
 .bar { height: 4px; background: var(--c-surface-3); border-radius: 4px; overflow: hidden; margin-top: var(--sp-3); }
 .bar > i { display: block; height: 100%; background: var(--c-accent); transition: width .2s; }
 .scrim { position: fixed; inset: 0; background: rgba(0,0,0,.55); display: grid; place-items: center; z-index: 50; }

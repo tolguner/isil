@@ -67,9 +67,22 @@ function ShapeSliders({ keys }: { keys: SliderDef[] }) {
   )
 }
 
+// Alt sekme modül düzeyinde: Ctrl+K paleti bir kaydırıcıya giderken doğru sekmeyi açabilsin
+let shapeTab = 'face'
+const shapeTabListeners = new Set<(t: string) => void>()
+function selectShapeTab(t: string) {
+  shapeTab = t
+  shapeTabListeners.forEach((f) => f(t))
+}
+
 function FaceShapePanel() {
   const tr = useT()
-  const [tab, setTab] = useState('face')
+  const [tab, setTabState] = useState(shapeTab)
+  useEffect(() => {
+    shapeTabListeners.add(setTabState)
+    return () => void shapeTabListeners.delete(setTabState)
+  }, [])
+  const setTab = (t: string) => selectShapeTab(t)
   const keys = SHAPE_TABS.find((t) => t.id === tab)!.keys
   return (
     <>
@@ -1000,15 +1013,15 @@ const nz = (o: Record<string, unknown>) => Object.values(o).some((v) => v)
 
 export const RETOUCH_TOOLS: ToolDef[] = [
   { id: 'beauty', label: ['Tek dokunuş', 'One-tap'], icon: Wand, Panel: BeautyPanel, Overlay: FaceOverlay, sourceSpace: true, needs: ['faces'] },
-  { id: 'faceShape', label: ['Yüz', 'Face'], icon: ScanFace, Panel: FaceShapePanel, Overlay: FaceOverlay, sourceSpace: true, needs: ['faces'], applied: (d) => has(d, (f) => nz(f.shape)) },
-  { id: 'skin', label: ['Cilt', 'Skin'], icon: Droplet, Panel: SkinPanel, Overlay: SkinOverlay, sourceSpace: true, needs: ['faces', 'seg'], applied: (d) => has(d, (f) => nz(f.skin)) },
+  { id: 'faceShape', label: ['Yüz', 'Face'], icon: ScanFace, Panel: FaceShapePanel, Overlay: FaceOverlay, sourceSpace: true, needs: ['faces'], applied: (d) => has(d, (f) => nz(f.shape)), sliders: SHAPE_TABS.flatMap((t) => t.keys.map(([, a, b]) => ({ label: [a, b] as [string, string], sub: t.id }))), selectSub: selectShapeTab },
+  { id: 'skin', label: ['Cilt', 'Skin'], icon: Droplet, Panel: SkinPanel, Overlay: SkinOverlay, sourceSpace: true, needs: ['faces', 'seg'], applied: (d) => has(d, (f) => nz(f.skin)), sliders: [...SKIN_KEYS.map(([, a, b]) => ({ label: [a, b] as [string, string] })), { label: ['İşaretleri koru', 'Protect marks'] }] },
   { id: 'makeup', label: ['Makyaj', 'Makeup'], icon: Palette, Panel: MakeupPanel, Overlay: FaceOverlay, sourceSpace: true, needs: ['faces', 'seg'], applied: (d) => has(d, (f) => ['lip', 'blush', 'lid', 'brow'].some((k) => f.makeup[k]?.amount)) },
   { id: 'lift', label: ['Toparla', 'Lift'], icon: Shell, Panel: LiftPanel, Overlay: FaceOverlay, sourceSpace: true, needs: ['faces', 'seg'] },
   { id: 'tone', label: ['Ten tonu', 'Skin tone'], icon: Gem, Panel: TonePanel, Overlay: FaceOverlay, sourceSpace: true, needs: ['faces', 'seg'] },
   { id: 'hair', label: ['Saç rengi', 'Hair color'], icon: Scissors, Panel: HairPanel, sourceSpace: true, needs: ['faces', 'seg'], applied: (d) => !!d.retouch.faces.find((f) => f.index === 0)?.makeup.hair?.amount },
   { id: 'rbrush', label: ['Rötuş fırçası', 'Retouch brush'], icon: Brush, Panel: RetouchBrushPanel, Overlay: RetouchBrushOverlay, sourceSpace: true, noFooter: true },
   { id: 'relight', label: ['Işıklandır', 'Relight'], icon: Sun, Panel: RelightPanel, Overlay: RelightOverlay, sourceSpace: true, noFooter: true },
-  { id: 'body', label: ['Vücut', 'Body'], icon: PersonStanding, Panel: BodyPanel, Overlay: BodyOverlay, sourceSpace: true, needs: ['pose', 'seg'], applied: (d) => !!d.body && (nz(d.body.shape) || !!d.body.manual?.stretch || !!d.body.manual?.slim) },
+  { id: 'body', label: ['Vücut', 'Body'], icon: PersonStanding, Panel: BodyPanel, Overlay: BodyOverlay, sourceSpace: true, needs: ['pose', 'seg'], applied: (d) => !!d.body && (nz(d.body.shape) || !!d.body.manual?.stretch || !!d.body.manual?.slim), sliders: [...BODY_KEYS.map(([, a, b]) => ({ label: [a, b] as [string, string] })), { label: ['Arka planı koru', 'Protect background'] }] },
   { id: 'facehide', label: ['Yüz gizle', 'Hide face'], icon: EyeOff, Panel: FaceHidePanel, Overlay: FaceOverlay, sourceSpace: true, needs: ['faces'], noFooter: true },
   { id: 'smile', label: ['İfade (YZ)', 'Expression (AI)'], icon: Smile, Panel: () => <AiRedirect kind="expression" />, noFooter: true, badge: 'YZ' }
 ]

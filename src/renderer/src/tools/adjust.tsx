@@ -264,7 +264,7 @@ function CurvesPanel() {
 
 const changed = (d: EditDoc) => Object.values(d.adjust).some((v) => v !== 0)
 export const ADJUST_TOOLS: ToolDef[] = [
-  { id: 'adjust', label: ['Ayarlar', 'Adjust'], icon: SlidersHorizontal, Panel: AdjustPanel, applied: changed },
+  { id: 'adjust', label: ['Ayarlar', 'Adjust'], icon: SlidersHorizontal, Panel: AdjustPanel, applied: changed, sliders: GROUPS.flatMap((g) => g.keys.map(([, a, b]) => ({ label: [a, b] as [string, string] }))) },
   { id: 'auto', label: ['Akıllı', 'Smart'], icon: Wand2, Panel: AutoPanel },
   { id: 'hsl', label: ['HSL', 'HSL'], icon: Palette, Panel: HslPanel, applied: (d) => Object.values(d.hsl).some((b) => b.h || b.s || b.l) },
   { id: 'curves', label: ['Eğriler', 'Curves'], icon: Spline, Panel: CurvesPanel, applied: (d) => Object.values(d.curves).some((c) => c.length > 2 || c[0][1] !== 0 || c[1][1] !== 1) },
