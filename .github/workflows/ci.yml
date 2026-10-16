@@ -32,3 +32,18 @@ jobs:
       - run: npm ci --ignore-scripts
       - run: npm run typecheck
       - run: npm run build
+
+  python:
+    name: Python motoru (sözdizimi + lint)
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      # Yerel YZ motoru (engine/server.py) ve test yardımcıları: sözdizimi hatası ve
+      # pyflakes sınıfı sorunlar (tanımsız ad, kullanılmayan içe aktarma vb.). Biçim kuralları yok.
+      - run: python -m py_compile engine/server.py
+      - run: pip install ruff==0.17.1
+      - run: ruff check engine tests/fixtures --select E9,F --output-format github
