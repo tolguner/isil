@@ -2,7 +2,9 @@
 
 Her büyük güncellemede sürüm numarası artırılır (`npm version <x.y.z> --no-git-tag-version`), uygulama Ayarlar → Hakkında'da sürümü gösterir.
 
-## Yayımlanmamış
+## 0.6.0 — 2026-10-17
+
+Çıkartma yapıcı, yüzü değiştirmeyen saç/kıyafet değiştirme ve üretken silme. Hepsi bilgisayarda çalışır.
 
 - **Üretken silme**: Sihirli silgi, Akıllı seçim ve Yoldan geçenler'de "Hızlı (LaMa) / Üretken (FLUX)" seçimi. Üretken yol önce LaMa ile doldurup sonucu FLUX.2 klein ile düşük güçte (0,55) yeniden işler: büyük alanlarda zemin ve duvar dokusu gerçekçi, yeni içerik uydurulmaz. Tam güçte FLUX'un silinen kişiyi "hayalet" olarak geri çizdiği ölçüldü ve bu yüzden kullanılmadı (`tests/e2e/gen-erase.mjs`). Yerel YZ motoruna `strength` aktarılıyor
 - YZ efekt → **Saç** ve **Gardırop**: artık yalnız saç ya da kıyafet bölgesi (kişi bölütleme maskesi) FLUX ile yeniden çiziliyor; yüz ve arka plan piksel piksel korunuyor (yüz farkı 0–0,1). Kendi tarifini yazma alanı; yeni ön ayarlar: kısa küt, siyah saç, deri ceket, örgü kazak. Saç ve gardırop kartlarının örnek görselleri aynı maskeli yolla yeniden üretildi
