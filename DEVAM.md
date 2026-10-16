@@ -11,7 +11,7 @@ Yeni sohbette ilk mesaj: **"Işıl/DEVAM.md dosyasını oku ve kaldığımız ye
 
 ## Durum
 
-- **Sürüm 0.3.0** yayımlandı ve kurulu (`%LOCALAPPDATA%\Programs\Isil`). Son commit `c6b039a`.
+- **Sürüm 0.4.0** yayımlandı ve kurulu (16.10; GitHub sürümü v0.4.0). Önceki: 0.3.0 (`%LOCALAPPDATA%\Programs\Isil`). Son commit `c6b039a`.
 - **Testler (hepsi geçiyor):** `node tests/e2e/smoke.mjs` 11/11 · `audit.mjs` 41/41 · `ui-sweep.mjs` 36/36 · `ai-local.mjs` 11/11 · `gpu-switch.mjs` 12/12. Önce `npm run build` (audit için `python tests/fixtures/make.py`).
 - **0.3.0 plandaki 8 aşama bitti** (`replica/plan-0.3.md`). Doğrulama: `replica/dogrulama-0.3.md` (loş grup 0→4 yüz; yüz onarmada kimlik güç 1'de 0,56→0,88).
 - **Rakip incelemesi (kullanarak, BlueStacks):** `replica/rekabet/inceleme-notlari.md`. Özet: rakiplerin YZ araçlarının çoğu bulutta; Peachy otomatik silmesi sessizce başarısız; FaceApp ücretsizde her şey Pro; PicsArt bulut yumuşatma yanak dövmesini siliyor.
@@ -21,7 +21,6 @@ Yeni sohbette ilk mesaj: **"Işıl/DEVAM.md dosyasını oku ve kaldığımız ye
 - Not ve ölçüm: `replica/arge/01-rotus-isaret-koruma.md` ("Sonuç" bölümü).
 - **A:** leke gidericiye kontrast bandı (RETOUCH shader'ı). Çok koyu işaretler otomatik korunuyor.
 - **B (2026-10-16):** Cilt panelinde "İşaretleri koru" fırçası. `FaceEdit.protect` → `buildProtectMask` → `uMaskP`; yumuşatma, leke, kırışık ve ten o bölgede sıfır. Dövmeli yüzde dövme farkı 3,50 → 0,33, yanak aynı. Test: `node tests/e2e/protect.mjs` 6/6.
-- Sürüm hâlâ 0.3.0; değişiklik CHANGELOG'da "Yayımlanmamış (0.4 adayı)" altında. Kurulu uygulamaya henüz gelmedi.
 - audit'te Z-01 bir kez MediaPipe segmenter "ROI width and height must be > 0" hatasıyla kaldı, yeniden çalıştırınca 41/41 geçti (kararsız; koruma işiyle ilgisiz).
 - **Ar-Ge 2 (16.10): yüz bükmesi.** `replica/arge/02-yuz-bukme.md`. BlueStacks'te Peachy/PicsArt ızgaralı portreyle ölçüldü (Hypic açılmıyor). Işıl'ın kontur kaydırıcıları MLS'ye geçti. Ölçüm düzeneği depo dışında: `Projeler/isil-olcum` (ADB: `HD-Adb -s 127.0.0.1:5555`; PicsArt FLAG_SECURE → pencere yakalama `cap.ps1`; akış `akis.py`). Işıl tarafı `node tests/e2e/warp-olcum.mjs <görsel> <klasör>`.
 - Göz elipsi ve vücut bantları da yapıldı (aynı not). Testler artık Temp'i temizliyor (`tests/e2e/_tmp.mjs`).

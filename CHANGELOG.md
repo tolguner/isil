@@ -2,7 +2,9 @@
 
 Her büyük güncellemede sürüm numarası artırılır (`npm version <x.y.z> --no-git-tag-version`), uygulama Ayarlar → Hakkında'da sürümü gösterir.
 
-## Yayımlanmamış (0.4 adayı)
+## 0.4.0 — 2026-10-16
+
+Ar-Ge 1 (rötuşta işaretleri koruma), Ar-Ge 2 (yüz ve vücut bükmesi, rakip ölçümleriyle) ve rakip incelemesinden çıkan arayüz işleri (`replica/arge/`). Işıl artık özgün, açık kaynak (MIT) bir masaüstü düzenleyici olarak konumlanıyor.
 
 - Ctrl+K: kaydırıcı düzeyinde arama ("bel", "cene hatti", "golgeler"); Enter aracı açar, alt sekmeyi seçer, kaydırıcıyı vurgular
 - Değişen kategoride nokta: yüz şekli sekmeleri, makyaj, filtre/efekt kategorileri, eğri kanalları
