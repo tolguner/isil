@@ -2,7 +2,7 @@
 import type { EditDoc, Project, Settings } from '@shared/schema'
 import { platform } from '@/lib/platform'
 import { Renderer, type OutputInfo } from './renderer'
-import { allProtect, buildField, buildMasks, buildProtectMask, faceOps, faceUniforms, FaceGeo, faceHasSkinWork, type MaskSet } from './face'
+import { addMlsField, allProtect, buildField, contourPairs, buildMasks, buildProtectMask, faceOps, faceUniforms, FaceGeo, faceHasSkinWork, type MaskSet } from './face'
 import { applyManualBody, bodyOps } from './body'
 import { drawLayers } from './layers'
 import { detectFaces, detectPose, segmentPerson, type PersonParts, type Pt } from '@/ai/vision'
@@ -188,7 +188,19 @@ class Session {
       }
     }
     if (doc.body) ops.push(...bodyOps(this.pose, doc.body.shape, W, H))
-    let res = buildField(ops, W, H, this.liveField?.field ?? null, this.liveField?.gw, this.liveField?.gh)
+    // kontur kaydırıcıları: MLS alanı canlı liquify alanının üstüne eklenir
+    let base = this.liveField
+    if (this.faces) {
+      const geos = this.faceGeos()
+      const pairs = doc.retouch.faces.map((e) => (geos[e.index] ? contourPairs(geos[e.index], e.shape, e.side) : null)).filter((x) => !!x)
+      if (pairs.length) {
+        const gw = base?.gw ?? 192, gh = base?.gh ?? Math.max(16, Math.round((192 * H) / W))
+        const field = base ? Float32Array.from(base.field) : new Float32Array(gw * gh * 2)
+        for (const pr of pairs) addMlsField(field, gw, gh, W, H, pr)
+        base = { field, gw, gh }
+      }
+    }
+    let res = buildField(ops, W, H, base?.field ?? null, base?.gw, base?.gh)
     if (doc.body?.manual && (doc.body.manual.stretch || doc.body.manual.slim)) {
       if (!res) {
         const gw = 192, gh = Math.max(16, Math.round((192 * H) / W))

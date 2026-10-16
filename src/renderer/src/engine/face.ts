@@ -101,7 +101,7 @@ export function faceOps(g: FaceGeo, shape: Record<string, number>, side: Side): 
 
   for (const [key, raw] of Object.entries(shape)) {
     const v = raw / 100
-    if (!v) continue
+    if (!v || CONTOUR_KEYS.has(key)) continue // kontur kaydırıcıları contourField'da
     switch (key) {
       case 'resize': ops.push({ t: 'scale', c: fc, r: Hh * 0.85, sx: 0.12 * v, sy: 0.12 * v }); break
       case 'smallFace': ops.push({ t: 'scale', c: add(fc, mul(dn, Hh * 0.1)), r: Hh * 0.8, sx: -0.12 * v, sy: -0.08 * v }); break
@@ -166,6 +166,110 @@ export function faceOps(g: FaceGeo, shape: Record<string, number>, side: Side): 
     }
   }
   return ops
+}
+
+// ---- Kontur kısıtlı bükme (Ar-Ge 2: replica/arge/02-yuz-bukme.md) ----
+// Yüz çizgisini (oval) iç normal boyunca taşır; gözler, kaşlar, burun ve ağız sabit çapadır,
+// yüzün dışındaki halka da sabittir. Aradaki alan MLS ile (Schaefer 2006, katı) doldurulur:
+// yalnız kontur bandı oynar, ağız/burun kaymaz, katlanma olmaz.
+export const CONTOUR_KEYS = new Set(['slim', 'width', 'temple', 'cheekbone', 'jaw', 'vshape'])
+const ANCHORS = [33, 133, 159, 145, 263, 362, 386, 374, 70, 105, 107, 336, 334, 300, 168, 6, 1, 4, 98, 327, 61, 291, 0, 17, 13, 14]
+const smooth = (a: number, b: number, x: number) => { const t = Math.min(1, Math.max(0, (x - a) / (b - a))); return t * t * (3 - 2 * t) }
+const band = (x: number, a: number, b: number, c: number, d: number) => smooth(a, b, x) * (1 - smooth(c, d, x))
+
+/** Kontur kaydırıcıları → (çıktı konumu, kaynak konumu) çiftleri. Kaydırıcı yoksa null. */
+export function contourPairs(g: FaceGeo, shape: Record<string, number>, side: Side): { p: V[]; q: V[] } | null {
+  const amt = (k: string) => (shape[k] ?? 0) / 100
+  if (![...CONTOUR_KEYS].some((k) => amt(k))) return null
+  const F = g.width, Hh = g.height, fc = g.center, dn = g.down
+  const nose = g.p(1)
+  // yanal eksen: 234 → 454 (görüntüde soldan sağa); g.right görüntüde sola baktığı için kullanılmaz
+  const ax = sub(g.p(454), g.p(234))
+  const e = mul(ax, 1 / Math.max(len(ax), 1))
+  // poz: görünen yarım genişlik büyük olan taraf daha çok oynar (üç çeyrek yüzlerde doğal kalır)
+  const halfA = Math.abs((nose.x - g.p(234).x) * e.x + (nose.y - g.p(234).y) * e.y)
+  const halfB = Math.abs((g.p(454).x - nose.x) * e.x + (g.p(454).y - nose.y) * e.y)
+  const halfM = (halfA + halfB) / 2 || 1
+  const p: V[] = [], q: V[] = []
+  for (const i of OVAL) {
+    const pt = g.p(i)
+    const d = sub(pt, fc)
+    const u = (d.x * e.x + d.y * e.y) / (F / 2)        // -1 (234 tarafı) … 1 (454 tarafı)
+    const t = (d.x * dn.x + d.y * dn.y) / (Hh / 2)     // -1 alın … 1 çene
+    const sgn = u < 0 ? -1 : 1
+    if (!sideOk(side, pt, fc)) { p.push(pt); q.push(pt); continue }
+    const lat = Math.min(1, Math.abs(u) * 1.6)        // çene ucunda yanal itme söner
+    const pose = (u < 0 ? halfA : halfB) / halfM
+    // yanal (içe +) ve dikey (yukarı +) yer değiştirme, yüz genişliği cinsinden
+    let inX = 0, up = 0
+    inX += amt('slim') * 0.022 * band(t, -0.15, 0.35, 0.95, 1.2) * lat
+    up += amt('slim') * 0.012 * smooth(0.7, 1.0, t)
+    inX -= amt('width') * 0.03 * band(t, -0.75, -0.3, 0.45, 0.8) * lat
+    inX -= amt('temple') * 0.028 * band(t, -0.95, -0.7, -0.35, -0.1) * lat
+    inX += amt('cheekbone') * 0.026 * band(t, -0.25, 0.0, 0.15, 0.4) * lat
+    inX += amt('jaw') * 0.034 * band(t, 0.3, 0.55, 0.8, 1.0) * lat
+    inX += amt('vshape') * 0.03 * band(t, 0.45, 0.7, 0.92, 1.1) * lat
+    up += amt('vshape') * 0.01 * smooth(0.75, 1.0, t)
+    const mv = add(mul(e, -sgn * inX * F * pose), mul(dn, -up * Hh))
+    p.push(add(pt, mv)) // çıktıda kontur burada
+    q.push(pt)          // kaynaktan buradan örneklenir
+  }
+  for (const i of ANCHORS) { const a = g.p(i); p.push(a); q.push(a) }
+  // dış halka: yüzün 1,7 katı elips üzerinde sabit noktalar
+  for (let k = 0; k < 20; k++) {
+    const a = (k / 20) * Math.PI * 2
+    const o = add(fc, add(mul(e, Math.cos(a) * F * 0.95), mul(dn, Math.sin(a) * Hh * 0.95)))
+    p.push(o); q.push(o)
+  }
+  return { p, q }
+}
+
+/** MLS katı deformasyon, ters eşleme: her ızgara noktasının kaynaktaki karşılığına ofset (uv) ekler. */
+export function addMlsField(field: Float32Array, gw: number, gh: number, W: number, H: number, pr: { p: V[]; q: V[] }) {
+  const { p, q } = pr
+  const n = p.length
+  // etki kutusu: dış halkanın biraz dışı; ötesi sıfır
+  let bx0 = Infinity, by0 = Infinity, bx1 = -Infinity, by1 = -Infinity
+  for (const v of p) { bx0 = Math.min(bx0, v.x); by0 = Math.min(by0, v.y); bx1 = Math.max(bx1, v.x); by1 = Math.max(by1, v.y) }
+  const i0 = Math.max(0, Math.floor((bx0 / W) * gw)), i1 = Math.min(gw - 1, Math.ceil((bx1 / W) * gw))
+  const j0 = Math.max(0, Math.floor((by0 / H) * gh)), j1 = Math.min(gh - 1, Math.ceil((by1 / H) * gh))
+  const w = new Float64Array(n)
+  for (let j = j0; j <= j1; j++) {
+    for (let i = i0; i <= i1; i++) {
+      const vx = ((i + 0.5) / gw) * W, vy = ((j + 0.5) / gh) * H
+      let sw = 0, px = 0, py = 0, qx = 0, qy = 0, hit = -1
+      for (let k = 0; k < n; k++) {
+        const dx = p[k].x - vx, dy = p[k].y - vy
+        const d2 = dx * dx + dy * dy
+        if (d2 < 1e-6) { hit = k; break }
+        const wk = 1 / (d2 * Math.sqrt(d2)) // α = 1,5: etki konturda kalır
+        w[k] = wk; sw += wk; px += wk * p[k].x; py += wk * p[k].y; qx += wk * q[k].x; qy += wk * q[k].y
+      }
+      let fx: number, fy: number
+      if (hit >= 0) { fx = q[hit].x; fy = q[hit].y }
+      else {
+        px /= sw; py /= sw; qx /= sw; qy /= sw
+        const ax = vx - px, ay = vy - py
+        let rx = 0, ry = 0
+        for (let k = 0; k < n; k++) {
+          const hx = p[k].x - px, hy = p[k].y - py
+          const gx = q[k].x - qx, gy = q[k].y - qy
+          // A_k = w [h; -h⊥][a; -a⊥]^T  (h⊥ = (-hy, hx))
+          const a11 = hx * ax + hy * ay, a12 = hx * ay - hy * ax
+          rx += w[k] * (gx * a11 - gy * a12)
+          ry += w[k] * (gx * a12 + gy * a11)
+        }
+        const len0 = Math.hypot(ax, ay), lr = Math.hypot(rx, ry) || 1
+        fx = (rx / lr) * len0 + qx
+        fy = (ry / lr) * len0 + qy
+      }
+      const ox = fx - vx, oy = fy - vy
+      if (Math.abs(ox) + Math.abs(oy) < 1e-4) continue
+      const kk = (j * gw + i) * 2
+      field[kk] += ox / W
+      field[kk + 1] += oy / H
+    }
+  }
 }
 
 /** Bükme alanı: kaynak uv cinsinden örnekleme ofseti, gw×gh ızgara (RG). */
