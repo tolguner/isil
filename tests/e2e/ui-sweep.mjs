@@ -2,6 +2,7 @@
 // "iptal" belgeyi değiştirmez. Ekran görüntüleri replica/audit/ui/ altına.
 //   npm run build && node tests/e2e/ui-sweep.mjs
 import { _electron as electron } from 'playwright'
+import { tempDir, linkOrCopy } from './_tmp.mjs'
 import { mkdtempSync, mkdirSync, readdirSync, readFileSync, copyFileSync, statSync, existsSync, writeFileSync } from 'fs'
 import { tmpdir } from 'os'
 import { join } from 'path'
@@ -9,10 +10,10 @@ import { join } from 'path'
 const root = process.cwd()
 const out = join(root, 'replica', 'audit', 'ui')
 mkdirSync(out, { recursive: true })
-const userData = mkdtempSync(join(tmpdir(), 'isil-ui-'))
+const userData = tempDir('isil-ui-')
 mkdirSync(join(userData, 'models'), { recursive: true })
 const dev = join(root, 'dev-models')
-if (existsSync(dev)) for (const f of readdirSync(dev).filter((f) => statSync(join(dev, f)).isFile())) copyFileSync(join(dev, f), join(userData, 'models', f))
+if (existsSync(dev)) for (const f of readdirSync(dev).filter((f) => statSync(join(dev, f)).isFile())) linkOrCopy(join(dev, f), join(userData, 'models', f))
 
 const app = await electron.launch({ args: ['.'], cwd: root, env: { ...process.env, ISIL_TEST: '1', ISIL_USERDATA: userData } })
 const win = await app.firstWindow()

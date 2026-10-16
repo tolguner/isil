@@ -1,9 +1,10 @@
 // Kamera ekranının görüntü ürettiğini görüntüye bakmadan doğrular (yalnızca piksel istatistiği).
 import { _electron as electron } from 'playwright'
+import { tempDir } from './_tmp.mjs'
 import { mkdtempSync } from 'fs'
 import { tmpdir } from 'os'
 import { join } from 'path'
-const app = await electron.launch({ args: ['.'], env: { ...process.env, ISIL_TEST: '1', ISIL_USERDATA: mkdtempSync(join(tmpdir(), 'isil-cam-')) } })
+const app = await electron.launch({ args: ['.'], env: { ...process.env, ISIL_TEST: '1', ISIL_USERDATA: tempDir('isil-cam-') } })
 const win = await app.firstWindow()
 await win.waitForFunction(() => !!window.__isil)
 await win.evaluate(async () => (await window.__isil.store()).getState().go('camera'))

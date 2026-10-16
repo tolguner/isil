@@ -158,7 +158,11 @@ export async function segmentPerson(img: TexImageSource): Promise<PersonParts> {
       })
     )
   )
-  const r = (await multi).segment(img as HTMLCanvasElement)
+  const model = await multi
+  // model yüklenirken proje değişirse önizleme bitmap'i kapanır (0×0); MediaPipe'a verme, konsola hata düşer
+  const { width, height } = img as { width: number; height: number }
+  if (!width || !height) throw new Error('görüntü kapandı')
+  const r = model.segment(img as HTMLCanvasElement)
   const m = r.confidenceMasks!
   const get = (i: number) => m[i].getAsFloat32Array().slice()
   const out = { w: m[0].width, h: m[0].height, background: get(0), hair: get(1), bodySkin: get(2), faceSkin: get(3), clothes: get(4) }

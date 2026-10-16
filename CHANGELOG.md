@@ -6,6 +6,9 @@ Her büyük güncellemede sürüm numarası artırılır (`npm version <x.y.z> -
 
 - Rötuş → Cilt: "İşaretleri koru" fırçası. Dövme, ben, çil ya da hızmanın üzerine boyanır; leke giderme, pürüzsüzleştirme, kırışık ve ten tonu o bölgeye uygulanmaz. Boya/Sil, fırça boyutu, "Korumayı temizle". Dövmeli yüzde (yumuşat 80 + leke 60) dövme bölgesindeki değişim 3,5 → 0,33, yanakta yumuşama aynı (`tests/e2e/protect.mjs`)
 - Yüz şekli: incelt, genişlik, şakak, elmacık, çene hattı ve V çizgisi artık kontur kısıtlı MLS bükmesiyle çalışıyor. Yalnız yüz çizgisi oynuyor, ağız/burun/gözler yerinde kalıyor (incelt 100'de ağız kayması 4,5 → 0,5 px). Güç rakiplerin aralığına çekildi (en büyük kayma 48 → 12 px). Üç çeyrek yüzlerde geniş görünen taraf daha çok oynuyor. Eski projelerde bu kaydırıcılar daha hafif görünür (`replica/arge/02-yuz-bukme.md`)
+- Göz büyütme: daire yerine göz çizgisine hizalı elips; iki göz burun kökünde birleşmiyor, kaş oynamıyor
+- Vücut: "İncelt" yalnız gövdeye uygulanıyor (arka plan sütunları/duvarlar bükülmüyor); "Bacak" satır tabanlı bant uzatma (zemin çizgileri düz kalıyor)
+- Kararlılık: proje hızlı değişirken kapanmış önizlemenin MediaPipe bölütleyicisine gitmesi engellendi (konsoldaki "ROI width and height must be > 0" hatası)
 - Leke giderici kontrast bandı: çok koyu kalıcı işaretler otomatik olarak korunuyor
 
 ## 0.3.0 — 2026-10-16

@@ -2,14 +2,15 @@
 // Daha önce: 2. turdan sonra tarayıcı modelleri "model yüklenemedi" diyordu (WASM belleği), motor 30 sn'ye çıkıyordu.
 //   npm run build && node tests/e2e/gpu-switch.mjs   (dev-models/engine gerekli)
 import { _electron as electron } from 'playwright'
+import { tempDir, linkOrCopy } from './_tmp.mjs'
 import { mkdtempSync, mkdirSync, readdirSync, copyFileSync, statSync, readFileSync } from 'fs'
 import { execSync } from 'child_process'
 import { tmpdir } from 'os'
 import { join } from 'path'
 const root = process.cwd(), dev = join(root, 'dev-models')
-const ud = mkdtempSync(join(tmpdir(), 'isil-gpu-'))
+const ud = tempDir('isil-gpu-')
 mkdirSync(join(ud, 'models'), { recursive: true })
-for (const f of readdirSync(dev).filter((f) => statSync(join(dev, f)).isFile())) copyFileSync(join(dev, f), join(ud, 'models', f))
+for (const f of readdirSync(dev).filter((f) => statSync(join(dev, f)).isFile())) linkOrCopy(join(dev, f), join(ud, 'models', f))
 const app = await electron.launch({ args: ['.'], cwd: root, env: { ...process.env, ISIL_TEST: '1', ISIL_USERDATA: ud, ISIL_ENGINE_DIR: join(dev, 'engine') } })
 const win = await app.firstWindow()
 win.on('console', (m) => { if (m.type() === 'warning' && /başarısız|çalışmadı|bad_alloc/.test(m.text())) console.log('[uyarı]', m.text().slice(0, 300)) })

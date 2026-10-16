@@ -1,13 +1,14 @@
 // Uçtan uca duman testi: npm run build && node tests/e2e/smoke.mjs
 import { _electron as electron } from 'playwright'
+import { tempDir, linkOrCopy } from './_tmp.mjs'
 import { mkdtempSync, mkdirSync, copyFileSync, readdirSync, writeFileSync, existsSync, statSync } from 'fs'
 import { tmpdir } from 'os'
 import { join } from 'path'
 
 const root = process.cwd()
-const userData = mkdtempSync(join(tmpdir(), 'isil-test-'))
+const userData = tempDir('isil-test-')
 mkdirSync(join(userData, 'models'), { recursive: true })
-if (existsSync(join(root, 'dev-models'))) for (const f of readdirSync(join(root, 'dev-models')).filter((f) => statSync(join(root, 'dev-models', f)).isFile())) copyFileSync(join(root, 'dev-models', f), join(userData, 'models', f))
+if (existsSync(join(root, 'dev-models'))) for (const f of readdirSync(join(root, 'dev-models')).filter((f) => statSync(join(root, 'dev-models', f)).isFile())) linkOrCopy(join(root, 'dev-models', f), join(userData, 'models', f))
 
 const results = []
 const ok = (name, pass, info = '') => {

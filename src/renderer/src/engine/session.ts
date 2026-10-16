@@ -3,7 +3,7 @@ import type { EditDoc, Project, Settings } from '@shared/schema'
 import { platform } from '@/lib/platform'
 import { Renderer, type OutputInfo } from './renderer'
 import { addMlsField, allProtect, buildField, contourPairs, buildMasks, buildProtectMask, faceOps, faceUniforms, FaceGeo, faceHasSkinWork, type MaskSet } from './face'
-import { applyManualBody, bodyOps } from './body'
+import { applyBodyBands, applyManualBody, bodyOps } from './body'
 import { drawLayers } from './layers'
 import { detectFaces, detectPose, segmentPerson, type PersonParts, type Pt } from '@/ai/vision'
 
@@ -201,6 +201,13 @@ class Session {
       }
     }
     let res = buildField(ops, W, H, base?.field ?? null, base?.gw, base?.gh)
+    if (doc.body && this.pose && (doc.body.shape.slim || doc.body.shape.legs)) {
+      if (!res) {
+        const gw = 192, gh = Math.max(16, Math.round((192 * H) / W))
+        res = { field: new Float32Array(gw * gh * 2), gw, gh }
+      }
+      applyBodyBands(res.field, res.gw, res.gh, this.pose, doc.body.shape, W, H)
+    }
     if (doc.body?.manual && (doc.body.manual.stretch || doc.body.manual.slim)) {
       if (!res) {
         const gw = 192, gh = Math.max(16, Math.round((192 * H) / W))

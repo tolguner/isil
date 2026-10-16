@@ -2,15 +2,16 @@
 //   npm run build && node tests/e2e/ai-local.mjs   (ONLY=flux,chat ile seçilebilir; motor dev-models/engine/python yoksa ISIL_PYTHON=<python.exe>)
 // Modeller dev-models/ (ONNX) ve dev-models/engine/models/ (motor) altında olmalı.
 import { _electron as electron } from 'playwright'
+import { tempDir, linkOrCopy } from './_tmp.mjs'
 import { mkdtempSync, mkdirSync, copyFileSync, readdirSync, readFileSync, writeFileSync, existsSync, statSync } from 'fs'
 import { tmpdir } from 'os'
 import { join } from 'path'
 
 const root = process.cwd()
-const userData = mkdtempSync(join(tmpdir(), 'isil-ai-'))
+const userData = tempDir('isil-ai-')
 mkdirSync(join(userData, 'models'), { recursive: true })
 const dev = join(root, 'dev-models')
-for (const f of readdirSync(dev).filter((f) => statSync(join(dev, f)).isFile())) copyFileSync(join(dev, f), join(userData, 'models', f))
+for (const f of readdirSync(dev).filter((f) => statSync(join(dev, f)).isFile())) linkOrCopy(join(dev, f), join(userData, 'models', f))
 const engine = existsSync(join(dev, 'engine', 'models')) && (!!process.env.ISIL_PYTHON || existsSync(join(dev, 'engine', 'python', '.ok')))
 const only = (process.env.ONLY || '').split(',').filter(Boolean)
 const want = (k) => !only.length || only.includes(k)

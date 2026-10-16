@@ -2,6 +2,7 @@
 //   python tests/fixtures/make.py && npm run build && node tests/e2e/audit.mjs
 // Çıktılar replica/audit/ altına (git dışı) yazılır; sonuçlar replica/audit/results.json.
 import { _electron as electron } from 'playwright'
+import { tempDir, linkOrCopy } from './_tmp.mjs'
 import { mkdtempSync, mkdirSync, readdirSync, readFileSync, writeFileSync, existsSync, copyFileSync, statSync } from 'fs'
 import { tmpdir } from 'os'
 import { join } from 'path'
@@ -11,11 +12,11 @@ const fx = join(root, 'tests', 'fixtures', 'out')
 if (!existsSync(fx)) throw new Error('önce: python tests/fixtures/make.py')
 const out = join(root, 'replica', 'audit')
 mkdirSync(out, { recursive: true })
-const userData = mkdtempSync(join(tmpdir(), 'isil-audit-'))
+const userData = tempDir('isil-audit-')
 // NO_MODELS=1: modelsiz ilk kullanım; yoksa dev-models/ kopyalanır
 mkdirSync(join(userData, 'models'), { recursive: true })
 const dev = join(root, 'dev-models')
-if (!process.env.NO_MODELS && existsSync(dev)) for (const f of readdirSync(dev).filter((f) => statSync(join(dev, f)).isFile())) copyFileSync(join(dev, f), join(userData, 'models', f))
+if (!process.env.NO_MODELS && existsSync(dev)) for (const f of readdirSync(dev).filter((f) => statSync(join(dev, f)).isFile())) linkOrCopy(join(dev, f), join(userData, 'models', f))
 const only = (process.env.ONLY || '').split(',').filter(Boolean)
 const want = (k) => !only.length || only.some((o) => k.startsWith(o))
 
@@ -164,7 +165,7 @@ if (want('X')) {
 
 // ---------- F10: toplu dışa aktarma aynı ad ----------
 if (want('F10')) {
-  const dir = mkdtempSync(join(tmpdir(), 'isil-batch-'))
+  const dir = tempDir('isil-batch-')
   const r = await win.evaluate(async (dir) => {
     const { platform } = await window.__isil.mod('platform')
     const a = await platform.exportSave({ bytes: new Uint8Array([1, 2, 3]), ext: 'jpg', suggestedName: 'IMG_0001-isil', dir })

@@ -70,10 +70,31 @@ Yeni incelt alanı, Peachy'de ölçülen U biçimli banda benziyor ve poza duyar
 
 Bilinen sınır: Eski projelerdeki yüz şekli değerleri yeni modülle daha hafif görünür, çünkü güç ayarı değişti.
 
+## Göz büyütme: elips (16.10)
+
+Eski hali: göz merkezinde 1,15 × göz genişliği yarıçaplı bir daire. İki daire burun kökünde birleşiyor, kaşa da taşıyordu. Yeni hali: göz çizgisine (dış köşe → iç köşe) hizalı bir elips. Uzun ekseni 1,0 × göz genişliği, kısa ekseni 0,66 ×. Merkez dış köşeye %6 kayık, Peachy'nin dış köşe ağırlığına benziyor. `WarpOp` ölçeğine isteğe bağlı `ell` (açı, kısa eksen) eklendi. Kaştaki kayma 0,66 px'ten 0'a indi. Alanın en büyük değeri 6,7 px'ten 5,9 px'e indi.
+
+## Vücut (16.10)
+
+Test görseli: tam boy fotoğraf (1000×1778), arkada düz çizgili anıt ve zemin karoları. Görsel ızgaralı.
+
+| uygulama | araç | desen |
+|---|---|---|
+| Peachy | Vücut → Otomatik → Bel 100 | Gövdenin içinde, bel hizasında iki küçük leke halinde içe çekme, en çok ≈2,8 px. Arka plan kıpırdamıyor. |
+| Peachy | Bacaklar 100 | Her bacak boyunca dikey bir bant halinde yanal değişim, yalnız bacakta. |
+| Peachy | Uzunluğu 100 | **Satır tabanlı dikey uzatma.** Kalça–ayak bandı ≈%20–25 uzuyor ve tuval büyüyor. Yatay çizgiler düz kalıyor, bant tüm genişlikte uygulanıyor. |
+| Işıl (eski) | İncelt 100 | Gövde merkezinde, gövde boyunun 1,8 katı yarıçaplı yatay ölçek. **Arka plandaki anıt sütunları da büküldü.** Alanın %10'u oynuyordu. |
+| Işıl (eski) | Bacak 100 | Diz ve ayak bileğinde iki dairesel öteleme, 48 px. **Zemin çizgileri kavis yapıyordu.** |
+| Işıl | Bel / Kalça 100 | Peachy Bel ile aynı aile (iki yerel leke), en çok 7,7 px. Değiştirilmedi. |
+
+Yeni hali (`engine/body.ts` → `applyBodyBands`):
+- **İncelt:** Her satırda poz merkez çizgisine doğru yatay sıkıştırma. Satırın merkezi ve gövde yarı genişliği omuz, kalça, diz ve ayak bileğinden doğrusal olarak çıkarılıyor. Etki yarı genişliğin 1,7 katında sönüyor. Omuz üstünde ve ayak altında dikey bir zarf var. Sonuç: etkilenen alan %10,4'ten %3,4'e indi, arka plan sütunları düz kalıyor.
+- **Bacak:** Kalça–ayak bileği bandında satır tabanlı dikey uzatma, en uçta band × %20. Yatay çizgiler düz kalıyor. Işıl tuvali büyütmediği için ayak altındaki zemin aşağı kayıyor ve görüntünün dışına taşan kısım kırpılıyor.
+
 ## Sıradaki adaylar
 
-- **Göz büyütme:** daire yerine göz ovaline uyan elips (Peachy davranışı), dış köşe ağırlığı.
-- **Vücut:** bel ve kalça için aynı kontur ve MLS yaklaşımı (poz landmark'ları ve kişi maskesi kenarı). Arka plandaki düz çizgilerin bükülmesini ölçmek için ızgaralı tam boy fotoğraf.
+- **İncelt için kişi maskesi kenarı:** Şimdilik yarı genişlik poz noktalarından tahmin ediliyor. Bol giysilerde gerçek silüet daha geniş olabilir. Segmentasyon maskesinin satır başına genişliği daha doğru olur.
+- **Bacak uzatmada tuval büyütme seçeneği** (Peachy gibi), zeminin kırpılmaması için.
 - **Katlanma denetimi:** alanın Jacobian determinantı 0'ın altına inerse güç kırpılsın.
 
 ## Kaynaklar

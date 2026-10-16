@@ -2,6 +2,7 @@
 //   npm run build && ONLY=faces,cutout,upscale,restore,depth,erase,flux4,flux9,vlm node tests/e2e/eval.mjs
 // Çıktılar dev-models/eval/out/<bölüm>/, ölçümler dev-models/eval/out/<bölüm>.json (git dışı).
 import { _electron as electron } from 'playwright'
+import { tempDir, linkOrCopy } from './_tmp.mjs'
 import { mkdtempSync, mkdirSync, readdirSync, readFileSync, writeFileSync, copyFileSync, statSync, existsSync } from 'fs'
 import { tmpdir } from 'os'
 import { join } from 'path'
@@ -12,13 +13,13 @@ const setDir = join(dev, 'eval', 'set')
 const outDir = join(dev, 'eval', 'out')
 const SET = JSON.parse(readFileSync(join(setDir, 'set.json'), 'utf8'))
 const only = (process.env.ONLY || 'faces').split(',')
-const userData = mkdtempSync(join(tmpdir(), 'isil-eval-'))
+const userData = tempDir('isil-eval-')
 mkdirSync(join(userData, 'models'), { recursive: true })
-for (const f of readdirSync(dev).filter((f) => statSync(join(dev, f)).isFile())) copyFileSync(join(dev, f), join(userData, 'models', f))
-copyFileSync(join(dev, 'eval', 'arcface.onnx'), join(userData, 'models', 'arcface.onnx'))
+for (const f of readdirSync(dev).filter((f) => statSync(join(dev, f)).isFile())) linkOrCopy(join(dev, f), join(userData, 'models', f))
+linkOrCopy(join(dev, 'eval', 'arcface.onnx'), join(userData, 'models', 'arcface.onnx'))
 // yüz onarma adayları (FaceFusion deposu); CodeFormer'ın sadakat ayarlı sürümü ayrı adla
 const RD = join(dev, 'eval', 'restore')
-if (existsSync(RD)) for (const [from, to] of [['codeformer.onnx', 'codeformer_w.onnx'], ['gfpgan_1.4.onnx'], ['gpen_bfr_512.onnx'], ['restoreformer_plus_plus.onnx']]) copyFileSync(join(RD, from), join(userData, 'models', to ?? from))
+if (existsSync(RD)) for (const [from, to] of [['codeformer.onnx', 'codeformer_w.onnx'], ['gfpgan_1.4.onnx'], ['gpen_bfr_512.onnx'], ['restoreformer_plus_plus.onnx']]) linkOrCopy(join(RD, from), join(userData, 'models', to ?? from))
 
 const app = await electron.launch({ args: ['.'], cwd: root, env: { ...process.env, ISIL_TEST: '1', ISIL_USERDATA: userData, ISIL_ENGINE_DIR: join(dev, 'engine') } })
 const win = await app.firstWindow()

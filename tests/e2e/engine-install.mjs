@@ -1,12 +1,13 @@
 // Motor kurulum testi (uzun, ~3 GB indirir): boş klasöre Python + PyTorch + diffusers kurar ve küçük bir model parçası indirir.
 //   npm run build && node tests/e2e/engine-install.mjs
 import { _electron as electron } from 'playwright'
+import { tempDir } from './_tmp.mjs'
 import { mkdtempSync, existsSync } from 'fs'
 import { tmpdir } from 'os'
 import { join } from 'path'
 
 const root = process.cwd()
-const userData = mkdtempSync(join(tmpdir(), 'isil-eng-'))
+const userData = tempDir('isil-eng-')
 const engineDir = join(userData, 'engine')
 const env = { ...process.env, ISIL_TEST: '1', ISIL_USERDATA: userData, ISIL_ENGINE_DIR: engineDir }
 delete env.ISIL_PYTHON

@@ -1,10 +1,11 @@
 // Paketlenmiş uygulamanın açıldığını doğrular: npm run dist && node tests/e2e/packaged.mjs
 import { _electron as electron } from 'playwright'
+import { tempDir } from './_tmp.mjs'
 import { mkdtempSync } from 'fs'
 import { tmpdir } from 'os'
 import { join } from 'path'
 const root = process.cwd()
-const app = await electron.launch({ executablePath: join(root, 'release/win-unpacked/Isil.exe'), env: { ...process.env, ISIL_TEST: '1', ISIL_USERDATA: mkdtempSync(join(tmpdir(), 'isil-pkg-')) } })
+const app = await electron.launch({ executablePath: join(root, 'release/win-unpacked/Isil.exe'), env: { ...process.env, ISIL_TEST: '1', ISIL_USERDATA: tempDir('isil-pkg-') } })
 const win = await app.firstWindow()
 const errs = []
 win.on('pageerror', (e) => errs.push(String(e)))

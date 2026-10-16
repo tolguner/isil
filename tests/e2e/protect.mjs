@@ -3,12 +3,13 @@
 // korumasız ve korumalı çıktıda dövme bölgesi ile yanak bölgesindeki fark ölçülür.
 // Ölçüt (replica/arge/01): işaret bölgesinde fark düşük, cildin geri kalanında yumuşama sürer.
 import { _electron as electron } from 'playwright'
+import { tempDir } from './_tmp.mjs'
 import { mkdtempSync, mkdirSync, readFileSync, writeFileSync } from 'fs'
 import { tmpdir } from 'os'
 import { join } from 'path'
 
 const root = process.cwd()
-const userData = mkdtempSync(join(tmpdir(), 'isil-protect-'))
+const userData = tempDir('isil-protect-')
 const outDir = join(root, 'replica', 'arge', 'olcum')
 mkdirSync(outDir, { recursive: true })
 const results = []

@@ -42,7 +42,7 @@ export function bodyOps(pose: Pt[] | null, shape: Record<string, number>, W: num
       case 'hips':
         for (const h of [hipL, hipR]) ops.push({ t: 'move', c: h, r: sw * 0.5, v: inward(h, -sw * 0.07 * v) })
         break
-      case 'slim': ops.push({ t: 'scale', c: center, r: torso * 1.8, sx: -0.1 * v, sy: 0 }); break
+      // slim ve legs: applyBodyBands (Ar-Ge 2) — arka planı bükmeyen satır tabanlı alanlar
       case 'chest': ops.push({ t: 'scale', c: mid(mid(shL, shR), center, 0.45), r: sw * 0.55, sx: 0.12 * v, sy: 0.08 * v }); break
       case 'shoulders':
         for (const s of [shL, shR]) ops.push({ t: 'move', c: s, r: sw * 0.4, v: inward(s, -sw * 0.06 * v) })
@@ -58,15 +58,6 @@ export function bodyOps(pose: Pt[] | null, shape: Record<string, number>, W: num
       case 'thighs':
         for (const [a, b] of [[P[23], P[25]], [P[24], P[26]]]) ops.push({ t: 'scale', c: mid(a, b), r: sw * 0.45, sx: -0.12 * v, sy: 0 })
         break
-      case 'legs': {
-        const hipY = Math.max(hipL.y, hipR.y)
-        const knee = mid(P[25], P[26])
-        const ankle = mid(P[27], P[28])
-        const L = Math.max(ankle.y - hipY, H * 0.2)
-        ops.push({ t: 'move', c: knee, r: L * 0.9, v: { x: 0, y: L * 0.05 * v } })
-        ops.push({ t: 'move', c: ankle, r: L * 0.9, v: { x: 0, y: L * 0.1 * v } })
-        break
-      }
     }
   }
   return ops
@@ -91,6 +82,59 @@ export function applyManualBody(field: Float32Array, gw: number, gh: number, m: 
       const x = (i + 0.5) / gw
       field[k + 1] += oy
       if (slim) field[k] += (x - cx) * slim * 0.12 * inBand
+    }
+  }
+}
+
+/**
+ * Ar-Ge 2 (replica/arge/02-yuz-bukme.md): vücut inceltme ve bacak uzatma.
+ * İncelt: her satırda poz merkez çizgisine doğru yatay sıkıştırma; etki gövde yarı genişliğinin
+ * 1,7 katında söner, uzaktaki arka plan kıpırdamaz. Bacak: kalça–ayak bileği bandında dikey uzatma
+ * (satır tabanlı, yatay çizgiler düz kalır; Peachy "Uzunluğu" davranışı).
+ */
+export function applyBodyBands(field: Float32Array, gw: number, gh: number, pose: Pt[] | null, shape: Record<string, number>, W: number, H: number) {
+  if (!pose) return
+  const slim = (shape.slim ?? 0) / 100
+  const legs = (shape.legs ?? 0) / 100
+  if (!slim && !legs) return
+  const P = pose.map((p) => ({ x: p.x * W, y: p.y * H }))
+  const sh = mid(P[11], P[12]), hp = mid(P[23], P[24]), kn = mid(P[25], P[26]), an = mid(P[27], P[28])
+  const sw = Math.hypot(P[11].x - P[12].x, P[11].y - P[12].y) || W * 0.2
+  const hipW = Math.hypot(P[23].x - P[24].x, P[23].y - P[24].y) || sw * 0.6
+  // merkez çizgisi ve yarı genişlik denetim noktaları (y'ye göre sıralı)
+  const ctl = [
+    { y: sh.y - sw * 0.15, x: sh.x, hw: sw * 0.5 },
+    { y: hp.y, x: hp.x, hw: Math.max(hipW * 0.85, sw * 0.42) },
+    { y: kn.y, x: kn.x, hw: Math.max(hipW * 0.75, sw * 0.3) },
+    { y: an.y, x: an.x, hw: Math.max(hipW * 0.6, sw * 0.22) }
+  ].sort((a, b) => a.y - b.y)
+  const at = (y: number) => {
+    if (y <= ctl[0].y) return ctl[0]
+    for (let k = 1; k < ctl.length; k++) if (y <= ctl[k].y) {
+      const a = ctl[k - 1], b = ctl[k], t = (y - a.y) / Math.max(b.y - a.y, 1)
+      return { y, x: a.x + (b.x - a.x) * t, hw: a.hw + (b.hw - a.hw) * t }
+    }
+    return ctl[ctl.length - 1]
+  }
+  const top = ctl[0].y, bot = ctl[ctl.length - 1].y + sw * 0.15
+  const ss = (a: number, b: number, x: number) => { const t = Math.min(1, Math.max(0, (x - a) / (b - a))); return t * t * (3 - 2 * t) }
+  // bacak bandı: kalça → ayak bileği, uzatma oranı en uçta %20
+  const y0 = hp.y / H, y1 = an.y / H, band = Math.max(y1 - y0, 0.01), d = legs * band * 0.2
+  for (let j = 0; j < gh; j++) {
+    const yN = (j + 0.5) / gh
+    const y = yN * H
+    let oy = 0
+    if (d > 0 && yN >= y0) oy = yN < y1 + d ? y0 + ((yN - y0) * band) / (band + d) - yN : -d
+    // inceltme dikey zarfı: omuz üstünde ve ayak altında yumuşak başla/bit
+    const env = slim ? ss(top - sw * 0.2, top + sw * 0.3, y) * (1 - ss(bot - sw * 0.3, bot + sw * 0.2, y)) : 0
+    const c = at(y)
+    for (let i = 0; i < gw; i++) {
+      const k = (j * gw + i) * 2
+      field[k + 1] += oy
+      if (!env) continue
+      const dx = ((i + 0.5) / gw) * W - c.x
+      const w = 1 - ss(c.hw, c.hw * 1.7, Math.abs(dx))
+      if (w > 0) field[k] += (dx * slim * 0.1 * w * env) / W
     }
   }
 }

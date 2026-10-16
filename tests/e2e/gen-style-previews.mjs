@@ -2,6 +2,7 @@
 // Kaynak: deneme setindeki kamu malı portre (eski-foto-kadin, Wikimedia Commons, Public domain).
 //   npm run build && node tests/e2e/gen-style-previews.mjs   → src/renderer/public/style-previews/<id>.jpg
 import { _electron as electron } from 'playwright'
+import { tempDir } from './_tmp.mjs'
 import { mkdtempSync, mkdirSync, readFileSync, writeFileSync, existsSync } from 'fs'
 import { tmpdir } from 'os'
 import { join } from 'path'
@@ -9,7 +10,7 @@ import { join } from 'path'
 const root = process.cwd()
 const out = join(root, 'src', 'renderer', 'public', 'style-previews')
 mkdirSync(out, { recursive: true })
-const ud = mkdtempSync(join(tmpdir(), 'isil-sp-'))
+const ud = tempDir('isil-sp-')
 mkdirSync(join(ud, 'models'), { recursive: true })
 if (existsSync(join(root, 'dev-models', 'animegan_face_paint_v2.onnx'))) writeFileSync(join(ud, 'models', 'animegan_face_paint_v2.onnx'), readFileSync(join(root, 'dev-models', 'animegan_face_paint_v2.onnx')))
 const app = await electron.launch({ args: ['.'], cwd: root, env: { ...process.env, ISIL_TEST: '1', ISIL_USERDATA: ud, ISIL_ENGINE_DIR: join(root, 'dev-models', 'engine') } })

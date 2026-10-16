@@ -1,9 +1,10 @@
 // Dokun-seç modelinin çıktısını farklı girişlerle ölçer (hata ayıklama).
 import { _electron as electron } from 'playwright'
+import { tempDir } from './_tmp.mjs'
 import { mkdtempSync } from 'fs'
 import { tmpdir } from 'os'
 import { join } from 'path'
-const app = await electron.launch({ args: ['.'], env: { ...process.env, ISIL_TEST: '1', ISIL_USERDATA: mkdtempSync(join(tmpdir(), 'isil-probe-')) } })
+const app = await electron.launch({ args: ['.'], env: { ...process.env, ISIL_TEST: '1', ISIL_USERDATA: tempDir('isil-probe-') } })
 const win = await app.firstWindow()
 win.on('console', (m) => { if (/dokun/i.test(m.text())) console.log('[konsol]', m.text().slice(0, 200)) })
 await win.waitForFunction(() => !!window.__isil)

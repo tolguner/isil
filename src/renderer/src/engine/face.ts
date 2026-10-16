@@ -48,7 +48,7 @@ export class FaceGeo {
 // ---- Bükme işlemleri ----
 export type WarpOp =
   | { t: 'move'; c: V; r: number; v: V }
-  | { t: 'scale'; c: V; r: number; sx: number; sy: number }
+  | { t: 'scale'; c: V; r: number; sx: number; sy: number; ell?: { ang: number; ry: number } } // ell: eliptik etki alanı (r uzun eksen)
 
 const falloff = (d: number, r: number) => {
   if (d >= r) return 0
@@ -60,7 +60,13 @@ const falloff = (d: number, r: number) => {
 /** Ters eşleme: çıktıdaki p, kaynakta p + offset noktasından örneklenir. */
 export function opOffset(op: WarpOp, p: V): V {
   const d = sub(p, op.c)
-  const w = falloff(len(d), op.r)
+  let dist = len(d)
+  if (op.t === 'scale' && op.ell) {
+    const cs = Math.cos(op.ell.ang), sn = Math.sin(op.ell.ang)
+    const lx = d.x * cs + d.y * sn, ly = -d.x * sn + d.y * cs
+    dist = Math.hypot(lx, (ly * op.r) / op.ell.ry)
+  }
+  const w = falloff(dist, op.r)
   if (w === 0) return { x: 0, y: 0 }
   if (op.t === 'move') return mul(op.v, -w)
   const sx = 1 + op.sx * w
@@ -126,7 +132,15 @@ export function faceOps(g: FaceGeo, shape: Record<string, number>, side: Side): 
         ops.push({ t: 'move', c: g.p(152), r: 0.25 * F, v: mul(dn, 0.035 * Hh * v) })
         pair(148, 377, (c) => ({ t: 'move', c, r: 0.18 * F, v: inward(c, 0.04 * F * v) }))
         break
-      case 'eyeSize': for (const [c, ok] of [[eyeR, sideOk(side, eyeR, fc)], [eyeL, sideOk(side, eyeL, fc)]] as const) if (ok) ops.push({ t: 'scale', c, r: 1.15 * ew, sx: 0.28 * v, sy: 0.28 * v }); break
+      case 'eyeSize':
+        // Ar-Ge 2: daire yerine göz çizgisine hizalı elips; merkez dış köşeye hafif kayık
+        for (const [c, outer, inner] of [[eyeR, 33, 133], [eyeL, 263, 362]] as const) {
+          if (!sideOk(side, c, fc)) continue
+          const ax = sub(g.p(outer), g.p(inner))
+          const cc = add(c, mul(ax, 0.06))
+          ops.push({ t: 'scale', c: cc, r: 1.0 * ew, sx: 0.3 * v, sy: 0.3 * v, ell: { ang: Math.atan2(ax.y, ax.x), ry: 0.66 * ew } })
+        }
+        break
       case 'eyeHeight': for (const c of [eyeR, eyeL]) if (sideOk(side, c, fc)) ops.push({ t: 'scale', c, r: 1.1 * ew, sx: 0, sy: 0.3 * v }); break
       case 'eyeWidth': for (const c of [eyeR, eyeL]) if (sideOk(side, c, fc)) ops.push({ t: 'scale', c, r: 1.1 * ew, sx: 0.25 * v, sy: 0 }); break
       case 'eyePos': for (const c of [eyeR, eyeL]) if (sideOk(side, c, fc)) ops.push({ t: 'move', c, r: 1.2 * ew, v: mul(dn, -0.12 * ew * v) }); break
