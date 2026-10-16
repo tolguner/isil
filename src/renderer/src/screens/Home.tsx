@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { Camera, Eraser, ImagePlus, LayoutGrid, Layers, MessageCircleHeart, Scissors, Sparkles, Trash2, Copy, CheckSquare, FolderOpen, Check, Wand2 } from 'lucide-react'
+import { Camera, Eraser, ImagePlus, LayoutGrid, Layers, MessageCircleHeart, Scissors, Sparkles, Trash2, Copy, CheckSquare, FolderOpen, Check, Wand2, Smile, PersonStanding, ZoomIn } from 'lucide-react'
 import type { ProjectMeta } from '@shared/schema'
 import { useEditor, type TabId } from '@/store/editor'
 import { platform } from '@/lib/platform'
@@ -50,6 +50,10 @@ export function Home() {
     { icon: <Wand2 size={20} />, title: tr('Yapay zekâ editörü', 'AI editor'), sub: tr('Yazarak düzenle', 'Edit by typing'), run: () => pickAndEdit('ai') },
     { icon: <Scissors size={20} />, title: tr('Arka planı kaldır', 'Remove background'), sub: tr('Tek tıkla kes', 'One-click cutout'), run: () => { cutRequest.auto = true; void pickAndEdit('cutout', 'cutout') } },
     { icon: <Eraser size={20} />, title: tr('Sihirli silgi', 'Magic eraser'), sub: tr('İstenmeyeni sil', 'Remove objects'), run: () => pickAndEdit('cleanup', 'erase') },
+    // görev kısayolları (rakip incelemesi: PicsArt "önce görev, sonra fotoğraf")
+    { icon: <ZoomIn size={20} />, title: tr('Kalite artır', 'Enhance quality'), sub: tr('4× netleştir', 'Upscale 4×'), run: () => pickAndEdit('adjust', 'enhance') },
+    { icon: <Smile size={20} />, title: tr('Yüz rötuşu', 'Face retouch'), sub: tr('Tek dokunuş güzellik', 'One-tap beauty'), run: () => pickAndEdit('retouch', 'beauty') },
+    { icon: <PersonStanding size={20} />, title: tr('Vücut şekillendir', 'Reshape body'), sub: tr('İncelt, bacak uzat', 'Slim, longer legs'), run: () => pickAndEdit('retouch', 'body') },
     { icon: <LayoutGrid size={20} />, title: tr('Kolaj', 'Collage'), sub: tr('2–9 fotoğraf', '2–9 photos'), run: () => go('collage') },
     { icon: <Layers size={20} />, title: tr('Toplu düzenle', 'Batch edit'), sub: tr('Aynı ayar, çok foto', 'One look, many photos'), run: () => go('batch') },
     { icon: <MessageCircleHeart size={20} />, title: tr('Stil danışmanı', 'Style advisor'), sub: tr('Güzellik ve stil sohbeti', 'Beauty & style chat'), run: () => go('stylist') },

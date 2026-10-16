@@ -5,6 +5,10 @@ import { useEditor } from '@/store/editor'
 import { useT } from '@/lib/i18n'
 import { Preset, Slider, Tabs } from '@/components/ui'
 import { thumb } from '@/engine/thumbs'
+import { filterById, effectById } from '@/engine/presets'
+import { highlightControl } from '@/components/CommandPalette'
+import { ADJUST_NAMES } from './adjust'
+import type { TabId } from '@/store/editor'
 import type { ToolDef } from './types'
 
 export interface Recipe {
@@ -69,6 +73,54 @@ function RecipeThumb({ r }: { r: Recipe }) {
   return url ? <img src={url} alt="" /> : null
 }
 
+/**
+ * Tarifin neyi değiştirdiği (rakip incelemesi: Peachy'nin otomatik rötuşu değiştirdiği kaydırıcıları
+ * noktayla gösteriyor). Her satıra dokununca ilgili araç açılır ve kaydırıcı vurgulanır.
+ */
+function RecipeSummary({ r, amount }: { r: Recipe; amount: number }) {
+  const tr = useT()
+  const st = useEditor.getState
+  const k = amount / 100
+  const goTo = (tab: TabId, tool: string, label?: string) => {
+    st().setTab(tab)
+    if (st().tool !== tool) st().openTool(tool)
+    if (label) highlightControl(label)
+  }
+  const rows: { text: string; value: string; run: () => void }[] = []
+  for (const [key, v] of Object.entries(r.adjust ?? {})) {
+    const n = ADJUST_NAMES[key as keyof typeof ADJUST_NAMES]
+    if (!n || !v) continue
+    const val = Math.round(v * k)
+    rows.push({ text: tr(n[0], n[1]), value: (val > 0 ? '+' : '') + val, run: () => goTo('adjust', 'adjust', tr(n[0], n[1])) })
+  }
+  if (r.filter) {
+    const f = filterById(r.filter[0])
+    rows.push({ text: tr('Filtre', 'Look') + ': ' + (f ? tr(f.name.tr, f.name.en) : r.filter[0]), value: String(Math.round(r.filter[1] * k)), run: () => goTo('filters', 'filters') })
+  }
+  for (const [id, a] of r.effects ?? []) {
+    const e = effectById(id)
+    rows.push({ text: tr('Efekt', 'Effect') + ': ' + (e ? tr(e.name.tr, e.name.en) : id), value: String(Math.round(a * k)), run: () => goTo('effects', 'effects') })
+  }
+  if (r.ratio) rows.push({ text: tr('Tuval oranı', 'Canvas ratio'), value: r.ratio, run: () => goTo('background', 'background') })
+  if (r.text) rows.push({ text: tr('Metin katmanı', 'Text layer'), value: r.text.font, run: () => goTo('text', 'text') })
+  if (!rows.length) return null
+  return (
+    <div className="recipe-summary" aria-label={tr('Tarifin değiştirdikleri', 'What this recipe changed')}>
+      <div className="group-label">{tr('Değiştirdikleri', 'What it changed')}</div>
+      <ul>
+        {rows.map((x) => (
+          <li key={x.text}>
+            <button className="btn ghost sm" onClick={x.run}>
+              <span>{x.text}</span>
+              <output>{x.value}</output>
+            </button>
+          </li>
+        ))}
+      </ul>
+    </div>
+  )
+}
+
 function RecipesPanel() {
   const tr = useT()
   const [cat, setCat] = useState('glow')
@@ -88,6 +140,7 @@ function RecipesPanel() {
         ))}
       </div>
       {sel && <Slider label={tr('Yoğunluk', 'Intensity')} value={amt} onChange={(v) => { setAmt(v); apply(sel, v) }} />}
+      {sel && <RecipeSummary r={RECIPES.find((x) => x.id === sel)!} amount={amt} />}
     </>
   )
 }

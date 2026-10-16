@@ -105,6 +105,9 @@ async function analyze() {
   return { p1: pct(0.01), p50: pct(0.5), p99: pct(0.99), sat: sat / n / 255, warm: (rs - bs) / n / 255 }
 }
 
+/** Ayar kaydırıcılarının adları (tarif özetinde ve aramada). */
+export const ADJUST_NAMES = Object.fromEntries(GROUPS.flatMap((g) => g.keys.map(([k, a, b]) => [k, [a, b] as [string, string]]))) as Record<AdjustKey, [string, string]>
+
 const AUTO_MODES: { id: string; label: [string, string] }[] = [
   { id: 'auto', label: ['Otomatik', 'Auto'] },
   { id: 'color', label: ['Rengi artır', 'Boost color'] },

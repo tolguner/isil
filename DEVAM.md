@@ -30,7 +30,7 @@ Yeni sohbette ilk mesaj: **"Işıl/DEVAM.md dosyasını oku ve kaldığımız ye
 
 ## 0.4 aday listesi (Tolga kapsamı henüz seçmedi)
 
-Küçük işler (rakip incelemesinden):
+Küçük işler (rakip incelemesinden) — **dördü de yapıldı (16.10), CHANGELOG'da; test `tests/e2e/palette.mjs` 9/9**:
 - Ctrl+K paletinde kaydırıcı düzeyinde arama.
 - Değişen kategoride nokta işareti.
 - Ana sayfada görev kısayolları (arka planı kaldır, nesne sil, kalite artır).

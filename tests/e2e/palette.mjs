@@ -1,4 +1,5 @@
-// Ctrl+K kaydırıcı düzeyinde arama: npm run build && node tests/e2e/palette.mjs
+// 0.4 arayüz işleri: Ctrl+K kaydırıcı araması, kategori noktası, tarif özeti, ana sayfa görev kısayolları
+// npm run build && node tests/e2e/palette.mjs
 import { _electron as electron } from 'playwright'
 import { mkdirSync, readFileSync } from 'fs'
 import { join } from 'path'
@@ -55,6 +56,25 @@ const dots = await win.evaluate(async () => {
   return [...document.querySelectorAll('.tabs [role="tab"]')].filter((b) => b.querySelector('.mod')).map((b) => b.textContent)
 })
 ok('Değişen sekmede nokta var, diğerlerinde yok', dots.length === 1 && dots[0].startsWith('Göz'), JSON.stringify(dots))
+// 5) tarif özeti: "Altın ışıltı" seçilince değiştirdikleri listelenir; satıra dokununca Ayarla açılır
+await win.evaluate(async () => { const S = (await window.__isil.store()).getState; S().closeTool(false); S().setTab('recipes') })
+await win.waitForTimeout(300)
+await win.getByRole('button', { name: 'Altın ışıltı' }).click()
+await win.waitForTimeout(300)
+const rows = await win.locator('.recipe-summary li').allInnerTexts()
+ok('Tarif özeti değişenleri gösteriyor', rows.some((t) => t.startsWith('Pozlama')) && rows.some((t) => t.startsWith('Filtre')), JSON.stringify(rows))
+await win.locator('.recipe-summary li', { hasText: 'Pozlama' }).getByRole('button').click()
+await win.waitForTimeout(700)
+const go = await win.evaluate(async () => {
+  const S = (await window.__isil.store()).getState()
+  return { tab: S.tab, tool: S.tool, flash: document.querySelector('.slider.flash label')?.textContent ?? null }
+})
+ok('Özet satırı kaydırıcıya götürüyor', go.tool === 'adjust' && (go.flash ?? '').startsWith('Pozlama'), JSON.stringify(go))
+// 6) ana sayfa görev kısayolları
+await win.evaluate(async () => { const m = await window.__isil.mod('projects'); await m.saveNow(); (await window.__isil.store()).getState().closeProject() })
+await win.waitForTimeout(500)
+const quick = await win.locator('.quick').innerText().catch(() => '')
+ok('Ana sayfada görev kısayolları', ['Kalite artır', 'Yüz rötuşu', 'Vücut şekillendir'].every((t) => quick.includes(t)), quick.split(/\s*\n\s*/).join(' | ').slice(0, 200))
 ok('Sayfa hatası yok', errors.length === 0, errors.slice(0, 3).join(' | '))
 await app.close()
 const failed = results.filter((r) => !r.pass).length

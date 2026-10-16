@@ -13,7 +13,7 @@ interface Cmd { id: string; label: string; hint: string; keys: string; run: () =
 const fold = (s: string) => s.toLocaleLowerCase('tr').replace(/ı/g, 'i').replace(/ş/g, 's').replace(/ğ/g, 'g').replace(/ü/g, 'u').replace(/ö/g, 'o').replace(/ç/g, 'c').normalize('NFD').replace(/[̀-ͯ]/g, '')
 
 /** Paneldeki adı eşleşen kaydırıcıyı (ya da ayarı) görünür yapıp kısa süre vurgula. */
-function highlightControl(name: string, tries = 12) {
+export function highlightControl(name: string, tries = 12) {
   const target = fold(name)
   const el = [...document.querySelectorAll<HTMLElement>('.slider-top label, .setting b, .protect-box strong')].find((l) => fold(l.textContent ?? '').trim() === target)
   const box = el?.closest<HTMLElement>('.slider, .setting, .protect-box')
