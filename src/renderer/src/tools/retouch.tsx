@@ -6,12 +6,13 @@ import { useT } from '@/lib/i18n'
 import { ColorRow, Preset, Slider, Tabs, Segmented, Switch } from '@/components/ui'
 import { session } from '@/engine/session'
 import { FaceGeo, OVAL, allProtect, drawProtect } from '@/engine/face'
-import { BODY_PRESETS } from '@/engine/body'
-import { depthMap, toCanvas } from '@/ai/ops'
+import { BODY_PRESETS, bakeBodyWarp } from '@/engine/body'
+import { depthMap, inpaint, toCanvas } from '@/ai/ops'
 import { commitRaster } from '@/lib/projects'
 import type { ToolDef, View } from './types'
 import { ApplyAll, FaceOverlay, NoFace, SidePicker, editFace, useFace, useFaceCount } from './faceui'
 import { BrushOverlay, PaintMask, type BrushState } from './brush'
+import { busy } from './raster'
 
 type SliderDef = [key: string, tr: string, en: string]
 
@@ -623,6 +624,68 @@ function FaceHidePanel() {
 const BODY_KEYS: SliderDef[] = [['slim', 'İnce', 'Slim'], ['waist', 'Bel', 'Waist'], ['hips', 'Kalça', 'Hips'], ['chest', 'Göğüs', 'Chest'], ['shoulders', 'Omuz', 'Shoulders'], ['arms', 'Kollar', 'Arms'], ['thighs', 'Bacak kalınlığı', 'Thighs'], ['legs', 'Bacak uzat', 'Longer legs'], ['head', 'Baş', 'Head'], ['neck', 'Boyun', 'Neck']]
 const BODY_PRESET_NAMES: Record<string, [string, string]> = { classic: ['Klasik', 'Classic'], natural: ['Doğal', 'Natural'], slender: ['Narin', 'Slender'], hourglass: ['Kum saati', 'Hourglass'], athletic: ['Atletik', 'Athletic'], golden: ['Altın oran', 'Golden ratio'], headShoulder: ['Baş-omuz', 'Head-shoulder'], legTorso: ['Bacak-gövde', 'Leg-torso'] }
 const bodyStore = { mode: 'auto' as 'auto' | 'manual' }
+/** Korumalı vücut inceltmesini fotoğrafa işle, açılan şeridi LaMa ile doldur (Ar-Ge 2, aday 2). */
+export async function fillBodyGap() {
+  const st = useEditor.getState()
+  const tr = (a: string, b: string) => (st.settings.language === 'tr' ? a : b)
+  const doc = st.doc
+  return busy(tr('Boşluk dolduruluyor…', 'Filling the gap…'), async () => {
+    const field = session.bodyField(doc)
+    if (!field) throw new Error(tr('Vücut algılanamadı', 'No body detected'))
+    const gw = 192, gh = Math.max(16, Math.round((192 * session.H) / session.W))
+    const full = await session.fullBase()
+    const c = toCanvas(full)
+    full.close()
+    const src = c.getContext('2d', { willReadFrequently: true })!.getImageData(0, 0, c.width, c.height)
+    const { img, gap, gapCount } = bakeBodyWarp(src, field, gw, gh, session.seg)
+    const warped = document.createElement('canvas')
+    warped.width = img.width
+    warped.height = img.height
+    warped.getContext('2d')!.putImageData(img, 0, 0)
+    const result: HTMLCanvasElement = warped
+    if (gapCount > 0) {
+      // Şerit ince ve uzun: tek seferde LaMa'ya verilirse görüntü 512'ye küçülüp bulanıklaşıyor ve maske
+      // şişip kolları siliyor. Bu yüzden yalnız şerit içeren karolarda, kenar payıyla, tek tek onarılır.
+      const T = 320, M = 96
+      const gd = gap.data, GW = gap.width, GH = gap.height
+      const ctx = warped.getContext('2d', { willReadFrequently: true })!
+      for (let ty = 0; ty < GH; ty += T) {
+        for (let tx = 0; tx < GW; tx += T) {
+          let has = false
+          for (let y = ty; y < Math.min(GH, ty + T) && !has; y += 2) for (let x = tx; x < Math.min(GW, tx + T); x += 2) if (gd[(y * GW + x) * 4] > 0) { has = true; break }
+          if (!has) continue
+          const rx = Math.max(0, tx - M), ry = Math.max(0, ty - M)
+          const rw = Math.min(GW, tx + T + M) - rx, rh = Math.min(GH, ty + T + M) - ry
+          const tile = document.createElement('canvas')
+          tile.width = rw
+          tile.height = rh
+          tile.getContext('2d')!.drawImage(warped, rx, ry, rw, rh, 0, 0, rw, rh)
+          const tm = document.createElement('canvas')
+          tm.width = rw
+          tm.height = rh
+          const tctx = tm.getContext('2d', { willReadFrequently: true })!
+          const md = tctx.createImageData(rw, rh)
+          for (let y = 0; y < rh; y++) for (let x = 0; x < rw; x++) {
+            const v = gd[((ry + y) * GW + rx + x) * 4]
+            const q = (y * rw + x) * 4
+            md.data[q] = md.data[q + 1] = md.data[q + 2] = v
+            md.data[q + 3] = 255
+          }
+          tctx.putImageData(md, 0, 0)
+          const filled = await inpaint(tile, tm)
+          if (!filled) throw new Error(tr('Onarım modeli (LaMa) yüklenemedi', 'Inpainting model (LaMa) could not be loaded'))
+          // yalnız karonun kendisini (kenar payı hariç) geri yaz
+          ctx.drawImage(filled, tx - rx, ty - ry, Math.min(T, GW - tx), Math.min(T, GH - ty), tx, ty, Math.min(T, GW - tx), Math.min(T, GH - ty))
+        }
+      }
+    }
+    await commitRaster(result, 'inpaint', { tool: 'body-protect', gap: gapCount }, (d) => {
+      d.body = d.body?.manual ? { shape: {}, manual: d.body.manual } : null
+    })
+    return gapCount
+  })
+}
+
 function BodyPanel() {
   const tr = useT()
   const body = useEditor((s) => s.doc.body)
@@ -660,6 +723,12 @@ function BodyPanel() {
               d.body.protect = v || undefined
             })} />
           </div>
+          {body?.protect && ['slim', 'waist', 'hips'].some((k) => (shape[k] ?? 0) > 0) && (
+            <>
+              <p className="note">{tr('Kişi inceldikçe kenarında ince bir şerit açılır. Yapay zekâ bu şeridi arka planla doldurur; vücut ayarları fotoğrafa işlenir.', 'Slimming leaves a thin strip at the edge. AI fills it with background; the body edits are baked into the photo.')}</p>
+              <button className="btn block" onClick={() => void fillBodyGap()}>{tr('Boşluğu YZ ile doldur ve uygula', 'Fill gap with AI and apply')}</button>
+            </>
+          )}
         </>
       ) : (
         <>

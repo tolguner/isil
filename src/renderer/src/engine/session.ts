@@ -203,12 +203,8 @@ class Session {
     if (doc.body && this.pose) {
       const gw = res?.gw ?? 192, gh = res?.gh ?? Math.max(16, Math.round((192 * H) / W))
       res ??= { field: new Float32Array(gw * gh * 2), gw, gh }
-      // vücut şekli ayrı alanda: "Arka planı koru" açıksa kişi maskesiyle sınırlanır (bacak uzatma hariç)
-      const body = buildField(bodyOps(this.pose, doc.body.shape, W, H), W, H, new Float32Array(gw * gh * 2), gw, gh)!
-      applyBodyBands(body.field, gw, gh, this.pose, doc.body.shape, W, H, this.seg, { slim: true })
-      if (doc.body.protect && this.seg) maskField(body.field, gw, gh, this.seg)
-      for (let k = 0; k < body.field.length; k++) res.field[k] += body.field[k]
-      applyBodyBands(res.field, gw, gh, this.pose, doc.body.shape, W, H, this.seg, { legs: true })
+      const body = this.bodyField(doc, gw, gh)!
+      for (let k = 0; k < body.length; k++) res.field[k] += body[k]
     }
     if (doc.body?.manual && (doc.body.manual.stretch || doc.body.manual.slim)) {
       if (!res) {
@@ -219,6 +215,20 @@ class Session {
       applyManualBody(res.field, res.gw, res.gh, doc.body.manual, cx)
     }
     return res
+  }
+
+  /**
+   * Yalnız vücut şekli alanı (otomatik kaydırıcılar + bacak bandı; elle bölge hariç).
+   * "Arka planı koru" açıksa şekil kısmı kişi maskesiyle sınırlanır, bacak uzatma sınırlanmaz.
+   */
+  bodyField(doc: EditDoc, gw = 192, gh = Math.max(16, Math.round((192 * this.H) / this.W))): Float32Array | null {
+    if (!doc.body || !this.pose) return null
+    const W = this.W, H = this.H
+    const body = buildField(bodyOps(this.pose, doc.body.shape, W, H), W, H, new Float32Array(gw * gh * 2), gw, gh)!
+    applyBodyBands(body.field, gw, gh, this.pose, doc.body.shape, W, H, this.seg, { slim: true })
+    if (doc.body.protect && this.seg) maskField(body.field, gw, gh, this.seg)
+    applyBodyBands(body.field, gw, gh, this.pose, doc.body.shape, W, H, this.seg, { legs: true })
+    return body.field
   }
 
   /** Renderer'ı belgeyle eşitle (maskeler, uniform'lar, bükme). */

@@ -177,3 +177,40 @@ export function maskField(field: Float32Array, gw: number, gh: number, seg: { w:
     }
   }
 }
+
+/**
+ * Vücut alanını tam çözünürlükte kaynağa uygula (CPU, çift doğrusal) ve korumalı inceltmede açılan
+ * şeridin maskesini çıkar: eski silüetin içinde kalıp artık arka plandan örneklenen pikseller.
+ */
+export function bakeBodyWarp(src: ImageData, field: Float32Array, gw: number, gh: number, seg: { w: number; h: number; background: Float32Array } | null): { img: ImageData; gap: ImageData; gapCount: number } {
+  const W = src.width, H = src.height, s = src.data
+  const out = new ImageData(W, H), o = out.data
+  const gap = new ImageData(W, H), g = gap.data
+  const person = (x: number, y: number) => {
+    if (!seg) return 0
+    const sx = Math.min(seg.w - 1, Math.max(0, Math.floor((x / W) * seg.w))), sy = Math.min(seg.h - 1, Math.max(0, Math.floor((y / H) * seg.h)))
+    return 1 - seg.background[sy * seg.w + sx]
+  }
+  let gapCount = 0
+  for (let y = 0; y < H; y++) {
+    const gy = Math.min(gh - 1.001, Math.max(0, ((y + 0.5) / H) * gh - 0.5)), j = Math.floor(gy), ty = gy - j
+    for (let x = 0; x < W; x++) {
+      const gx = Math.min(gw - 1.001, Math.max(0, ((x + 0.5) / W) * gw - 0.5)), i = Math.floor(gx), tx = gx - i
+      const a = (j * gw + i) * 2, b = a + 2, c = a + gw * 2, d = c + 2
+      const ox = (field[a] * (1 - tx) + field[b] * tx) * (1 - ty) + (field[c] * (1 - tx) + field[d] * tx) * ty
+      const oy = (field[a + 1] * (1 - tx) + field[b + 1] * tx) * (1 - ty) + (field[c + 1] * (1 - tx) + field[d + 1] * tx) * ty
+      const sx = Math.min(W - 1.001, Math.max(0, x + ox * W)), sy = Math.min(H - 1.001, Math.max(0, y + oy * H))
+      const x0 = Math.floor(sx), y0 = Math.floor(sy), fx = sx - x0, fy = sy - y0
+      const p00 = (y0 * W + x0) * 4, p10 = p00 + 4, p01 = p00 + W * 4, p11 = p01 + 4
+      const q = (y * W + x) * 4
+      for (let k = 0; k < 3; k++) o[q + k] = (s[p00 + k] * (1 - fx) + s[p10 + k] * fx) * (1 - fy) + (s[p01 + k] * (1 - fx) + s[p11 + k] * fx) * fy
+      o[q + 3] = s[p00 + 3]
+      if (seg && (ox || oy) && person(x, y) > 0.5 && person(sx, sy) < 0.5) {
+        g[q] = g[q + 1] = g[q + 2] = 255
+        gapCount++
+      }
+      g[q + 3] = 255
+    }
+  }
+  return { img: out, gap, gapCount }
+}

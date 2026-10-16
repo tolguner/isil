@@ -82,7 +82,7 @@ export async function saveNow() {
 
 let opCounter = 0
 /** Piksel işlemini yeni taban olarak kaydet (geri alınabilir: eski dosyalar silinmez). */
-export async function commitRaster(img: ImageData | HTMLCanvasElement | Blob, type: import('@shared/schema').RasterOpType, params: Record<string, unknown> = {}) {
+export async function commitRaster(img: ImageData | HTMLCanvasElement | Blob, type: import('@shared/schema').RasterOpType, params: Record<string, unknown> = {}, mutate?: (d: import('@shared/schema').EditDoc) => void) {
   const st = useEditor.getState()
   const p = st.project
   if (!p) return
@@ -94,6 +94,7 @@ export async function commitRaster(img: ImageData | HTMLCanvasElement | Blob, ty
   st.commit((d) => {
     d.base = rel
     d.rasterOps.push({ id: name, type, file: rel, params, at: new Date().toISOString() })
+    mutate?.(d) // aynı geri alma adımında belgeyi de güncelle (ör. fotoğrafa işlenen vücut ayarlarını sıfırla)
   })
   useEditor.getState().bumpRevision()
 }
