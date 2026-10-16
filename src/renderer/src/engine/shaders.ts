@@ -49,7 +49,7 @@ void main(){ o = texture(uTex, vUv); }`
 export const RETOUCH = `#version 300 es
 precision highp float;
 in vec2 vUv; out vec4 o;
-uniform sampler2D uBase, uBlurS, uBlurM, uMaskA, uMaskB, uMaskC;
+uniform sampler2D uBase, uBlurS, uBlurM, uMaskA, uMaskB, uMaskC, uMaskP;
 uniform vec4 uSkin[8];   // pürüzsüz, leke, beyazlat, gözenek
 uniform vec4 uSkin2[8];  // göz altı, diş, göz parlat, ten tonu miktarı
 uniform vec4 uTone[8];   // ten rengi rgb + doku(ayrıntı)
@@ -74,20 +74,22 @@ void main(){
   if (id >= 0 && id < 8) {
     vec4 sk = uSkin[id]; vec4 sk2 = uSkin2[id];
     float skin = A.r;
+    // korunan işaretler (kullanıcı fırçası): yumuşatma, leke, kırışık ve ten burada sıfır
+    float keep = skin * (1.0 - texture(uMaskP, vUv).r);
     vec3 high = c - b;
     vec3 low = mix(b, m, 0.55);
     float wb = exp(-dot(c - low, c - low) * 28.0);
-    float k = skin * sk.x * wb;
+    float k = keep * sk.x * wb;
     col = mix(col, low + high * mix(0.45, 0.12, sk.w), k);
     // leke: çevresinden KONTRAST BANDINDA koyu küçük alanlar. d = yerel cilde göre koyuluk.
     // Ar-Ge (replica/arge/01): leke orta kontrastlı küçük bir blob; dövme/ben/piercing çok daha koyu
     // kalıcı işaret. Bandın üstünü (çok koyu) koruyarak kimlik işaretlerini silmekten kaçın.
     float d = luma(m) - luma(c);
     float spot = smoothstep(0.015, 0.06, d) * (1.0 - smoothstep(0.12, 0.2, d));
-    float k2 = skin * sk.y * spot;
+    float k2 = keep * sk.y * spot;
     col = mix(col, m + high * 0.15, clamp(k2 * 1.4, 0.0, 1.0));
     // kırışık: yüksek frekansı kır
-    col = mix(col, col - high * 0.6, skin * uSculpt[id].w * 0.8);
+    col = mix(col, col - high * 0.6, keep * uSculpt[id].w * 0.8);
     // ayrıntı/doku geri kazanma
     col += high * skin * uTone[id].w * 0.8;
     // cilt aydınlatma
@@ -109,7 +111,7 @@ void main(){
     // ten tonu
     vec3 tone = uTone[id].rgb;
     vec3 toned = softLight(col, tone);
-    col = mix(col, toned, skin * sk2.w);
+    col = mix(col, toned, keep * sk2.w);
     // makyaj
     vec4 lp = uLip[id];
     vec3 lipCol = mix(col * lp.rgb * 1.35, softLight(col, lp.rgb), 0.45);

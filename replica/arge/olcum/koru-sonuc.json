@@ -1,0 +1,48 @@
+{
+  "date": "2026-10-16T10:58:53.205Z",
+  "faces": 1,
+  "tattoo": {
+    "plain": 3.5,
+    "kept": 0.33
+  },
+  "piercing": {
+    "plain": 4.87,
+    "kept": 0.74
+  },
+  "cheek": {
+    "plain": 1.69,
+    "kept": 1.69
+  },
+  "results": [
+    {
+      "name": "Yüz bulundu",
+      "pass": true,
+      "info": "yüz=1"
+    },
+    {
+      "name": "Dövme korunuyor (fark en az %70 düşük)",
+      "pass": true,
+      "info": "korumasız=3.5 korumalı=0.33"
+    },
+    {
+      "name": "Hızma korunuyor (fark en az %70 düşük)",
+      "pass": true,
+      "info": "korumasız=4.87 korumalı=0.74"
+    },
+    {
+      "name": "Yanak yine yumuşuyor (fark %90+ korunur)",
+      "pass": true,
+      "info": "korumasız=1.69 korumalı=1.69"
+    },
+    {
+      "name": "Fırça izi belgeye yazıldı",
+      "pass": true,
+      "info": "iz=1 nokta=9"
+    },
+    {
+      "name": "Sayfa hatası yok",
+      "pass": true,
+      "info": ""
+    }
+  ]
+}

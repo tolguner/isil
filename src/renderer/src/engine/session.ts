@@ -2,7 +2,7 @@
 import type { EditDoc, Project, Settings } from '@shared/schema'
 import { platform } from '@/lib/platform'
 import { Renderer, type OutputInfo } from './renderer'
-import { buildField, buildMasks, faceOps, faceUniforms, FaceGeo, faceHasSkinWork, type MaskSet } from './face'
+import { allProtect, buildField, buildMasks, buildProtectMask, faceOps, faceUniforms, FaceGeo, faceHasSkinWork, type MaskSet } from './face'
 import { applyManualBody, bodyOps } from './body'
 import { drawLayers } from './layers'
 import { detectFaces, detectPose, segmentPerson, type PersonParts, type Pt } from '@/ai/vision'
@@ -50,6 +50,8 @@ class Session {
   poseKey = ''
   masks: MaskSet | null = null
   masksKey = ''
+  protect: ImageData | null = null
+  protectKey = ''
   liveField: { field: Float32Array; gw: number; gh: number } | null = null
   bgImage: ImageBitmap | null = null
   bgKey = ''
@@ -71,7 +73,7 @@ class Session {
     this.renderer = new Renderer(canvas)
     if (this.preview) this.renderer.setBase(this.preview)
     if (this.maskBitmap) this.renderer.setSubjectMask(this.maskBitmap)
-    this.masksKey = ''
+    this.masksKey = this.protectKey = ''
     this.bgKey = ''
   }
 
@@ -83,7 +85,7 @@ class Session {
 
   reset() {
     this.project = null
-    this.baseKey = this.maskKey = this.facesKey = this.segKey = this.poseKey = this.masksKey = this.bgKey = ''
+    this.baseKey = this.maskKey = this.facesKey = this.segKey = this.poseKey = this.masksKey = this.protectKey = this.bgKey = ''
     this.preview?.close()
     this.preview = null
     this.baseBlob = null
@@ -117,7 +119,7 @@ class Session {
       this.pose = null
       this.seg = null
       this.masks = null
-      this.masksKey = ''
+      this.masksKey = this.protectKey = ''
       this.liveField = null
     }
     const mkey = project.id + ':' + (doc.mask ?? '')
@@ -142,7 +144,7 @@ class Session {
     if (!this.preview) return []
     this.faces = await detectFaces(this.preview)
     this.facesKey = this.baseKey
-    this.masksKey = ''
+    this.masksKey = this.protectKey = ''
     this.emit()
     return this.faces
   }
@@ -157,7 +159,7 @@ class Session {
       this.seg = null
     }
     this.segKey = this.baseKey
-    this.masksKey = ''
+    this.masksKey = this.protectKey = ''
     return this.seg
   }
 
@@ -214,12 +216,23 @@ class Session {
       r.faces = faceUniforms(doc.retouch.faces, geos.length)
       const hair = doc.retouch.faces[0]?.makeup.hair
       r.hair = hair && hair.amount ? { rgb: hexToRgb(hair.color || '#7a3b2e'), amount: hair.amount / 100 } : null
+      this.syncProtect(r, doc)
     } else {
       r.faces = null
       r.hair = null
     }
     const wf = this.warpField(doc)
     r.setWarp(wf?.field ?? null, wf?.gw, wf?.gh)
+  }
+
+  /** İşaret koruma maskesini belgeyle eşitle (izler değişince yeniden çizilir). */
+  private syncProtect(r: Renderer, doc: EditDoc) {
+    const strokes = allProtect(doc.retouch.faces)
+    const key = this.baseKey + ':' + JSON.stringify(strokes)
+    if (key === this.protectKey) return
+    this.protect = buildProtectMask(strokes, this.W, this.H)
+    this.protectKey = key
+    r.setProtectMask(this.protect)
   }
 
   draw(doc: EditDoc, opts: { compare?: boolean; skipGeometry?: boolean; skipBackground?: boolean } = {}) {
@@ -244,6 +257,7 @@ class Session {
       if (this.maskBitmap && this.project && doc.mask) r.setSubjectMask(await decode(await platform.getFile(this.project.id, doc.mask)))
       if (this.bgImage && this.project && doc.background.fill?.type === 'image') r.setBgImage(await decode(await platform.getFile(this.project.id, doc.background.fill.file)))
       if (this.masks) r.setFaceMasks(this.masks.a, this.masks.b, this.masks.c)
+      r.setProtectMask(buildProtectMask(allProtect(doc.retouch.faces), this.W, this.H))
       this.masksKey = this.masksKey // maskeler normalize uv ile örneklenir; aynı kalır
       const saved = this.masks
       this.prepareExport(r, doc, saved)
@@ -289,6 +303,7 @@ class Session {
   private pvKey = ''
   private pvMasks: MaskSet | null = null
   private pvMasksKey = ''
+  private pvProtectKey = ''
 
   /**
    * Ön ayar önizlemesi: ana tuvale ve oturum durumuna dokunmadan ayrı bir motorla önizleme çizer
@@ -301,7 +316,7 @@ class Session {
     if (this.pvKey !== this.baseKey) {
       r.setBase(this.preview)
       this.pvKey = this.baseKey
-      this.pvMasksKey = ''
+      this.pvMasksKey = this.pvProtectKey = ''
     }
     const geos = this.faces ? this.faceGeos() : []
     if (doc.retouch.faces.some(faceHasSkinWork) && geos.length) {
@@ -310,6 +325,11 @@ class Session {
         this.pvMasks = buildMasks(geos, this.W, this.H, this.seg, false)
         this.pvMasksKey = key
         r.setFaceMasks(this.pvMasks.a, this.pvMasks.b, this.pvMasks.c)
+      }
+      const pk = this.baseKey + ':' + JSON.stringify(allProtect(doc.retouch.faces))
+      if (pk !== this.pvProtectKey) {
+        r.setProtectMask(buildProtectMask(allProtect(doc.retouch.faces), this.W, this.H))
+        this.pvProtectKey = pk
       }
       r.faces = faceUniforms(doc.retouch.faces, geos.length)
     } else r.faces = null

@@ -2,6 +2,11 @@
 
 Her büyük güncellemede sürüm numarası artırılır (`npm version <x.y.z> --no-git-tag-version`), uygulama Ayarlar → Hakkında'da sürümü gösterir.
 
+## Yayımlanmamış (0.4 adayı)
+
+- Rötuş → Cilt: "İşaretleri koru" fırçası. Dövme, ben, çil ya da hızmanın üzerine boyanır; leke giderme, pürüzsüzleştirme, kırışık ve ten tonu o bölgeye uygulanmaz. Boya/Sil, fırça boyutu, "Korumayı temizle". Dövmeli yüzde (yumuşat 80 + leke 60) dövme bölgesindeki değişim 3,5 → 0,33, yanakta yumuşama aynı (`tests/e2e/protect.mjs`)
+- Leke giderici kontrast bandı: çok koyu kalıcı işaretler otomatik olarak korunuyor
+
 ## 0.3.0 — 2026-10-16
 
 Rakip araştırması, kullanıcı yorumları ve görsel eleştirmen ajanının puanlarına göre seçilen 11 madde (`replica/yol-haritasi.md`).

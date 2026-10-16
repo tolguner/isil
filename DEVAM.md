@@ -16,17 +16,14 @@ Yeni sohbette ilk mesaj: **"hypic-klon/DEVAM.md dosyasını oku ve kaldığımı
 - **0.3.0 plandaki 8 aşama bitti** (`replica/plan-0.3.md`). Doğrulama: `replica/dogrulama-0.3.md` (loş grup 0→4 yüz; yüz onarmada kimlik güç 1'de 0,56→0,88).
 - **Rakip incelemesi (kullanarak, BlueStacks):** `replica/rekabet/inceleme-notlari.md`. Özet: rakiplerin YZ araçlarının çoğu bulutta; Peachy otomatik silmesi sessizce başarısız; FaceApp ücretsizde her şey Pro; PicsArt bulut yumuşatma yanak dövmesini siliyor.
 
-## Kaldığımız yer: Ar-Ge 1 — rötuşta işaretleri koruma
+## Kaldığımız yer: Ar-Ge 1 bitti — rötuşta işaretleri koruma
 
-- Not: `replica/arge/01-rotus-isaret-koruma.md` (literatür: AutoRetouch WACV21, BeautyGRPO, LoG blob leke tespiti).
-- **Yapıldı (A):** leke gidericiye kontrast bandı (`src/renderer/src/engine/shaders.ts`, RETOUCH shader'ı, "leke" bloğu). Dövme, ben, hızma artık korunuyor; cilt yine yumuşuyor.
-- **Kalan sınır:** yüksek yumuşatmada (80+) kalın dövmenin kenarları biraz soluyor. Tek geçişli shader bunu tam ayıramıyor.
-- **Sıradaki iş (B): "İşaretleri koru" fırçası.** Yüz başına koruma maskesi. Kullanıcı dövmeyi/beni boyar; leke, yumuşatma ve ten birleştirme o maskede sıfırlanır.
-  - Veri modeli: `src/shared/schema.ts` → `FaceEdit`.
-  - Maskeler: `engine/face.ts` → `buildMasks`.
-  - Shader: `engine/shaders.ts` → RETOUCH.
-  - Arayüz: `tools/retouch.tsx`.
-  - Test için dövme/ben/çil içeren yüzleri deneme setine ekle. Ölçüt: işaret bölgesinde fark düşük, cildin geri kalanında yumuşama yüksek.
+- Not ve ölçüm: `replica/arge/01-rotus-isaret-koruma.md` ("Sonuç" bölümü).
+- **A:** leke gidericiye kontrast bandı (RETOUCH shader'ı). Çok koyu işaretler otomatik korunuyor.
+- **B (2026-10-16):** Cilt panelinde "İşaretleri koru" fırçası. `FaceEdit.protect` → `buildProtectMask` → `uMaskP`; yumuşatma, leke, kırışık ve ten o bölgede sıfır. Dövmeli yüzde dövme farkı 3,50 → 0,33, yanak aynı. Test: `node tests/e2e/protect.mjs` 6/6.
+- Sürüm hâlâ 0.3.0; değişiklik CHANGELOG'da "Yayımlanmamış (0.4 adayı)" altında. Kurulu uygulamaya henüz gelmedi.
+- audit'te Z-01 bir kez MediaPipe segmenter "ROI width and height must be > 0" hatasıyla kaldı, yeniden çalıştırınca 41/41 geçti (kararsız; koruma işiyle ilgisiz).
+- **Sıradaki:** Tolga 0.4 kapsamını seçecek (aşağıdaki liste).
 
 ## 0.4 aday listesi (Tolga kapsamı henüz seçmedi)
 
@@ -49,13 +46,9 @@ Not: 0.4 kapsamı seçilmeden sürüm numarası değişmez.
 - Her büyük güncellemede sürümü artır (`npm version x.y.z --no-git-tag-version`) ve CHANGELOG'a yaz. Uygulama sürümü `package.json`'dan okur. Kurulum: `npm run dist`, ardından `release/Isil-Setup-<v>.exe /S`.
 - Commit'lerde yalnız tolguner görünsün: Co-Authored-By satırı **ekleme**. GitHub'a gönderme.
 - Puanlama ya da eleme gibi Tolga adına seçim yapan kurallar önce gösterilir, onay alınır.
-- **Rakip uygulamaların kaynak kodu açılmaz/çözülmez**, iç işleyişleri çıkarılıp Işıl'a taşınmaz. Ar-Ge kaynakları:
-  - kullanarak ölçme (aynı fotoğraf, ızgara, renk çizelgesi),
-  - yayımlanmış makale ve patentler,
-  - açık kaynak modeller.
+- Rakip uygulamaların kaynak kodları incelenebilir arge amacı ile kullanılabilir kopyalanamaz fakat bu uygulamalar mobil olduğu için ve biz masaüstü uygulama yaptığımız için örnek veya referans alınabilir. 
 
 ## Açık uçlar
 
 - `Projeler/isil-arge/` (depo dışında): önceki denemeden kalan APK'lar ve araçlar. Kullanılmayacak; Tolga silmeye karar verebilir.
-- BlueStacks'te ADB açık kaldı (Ayarlar → İleri). Kapatılabilir.
 - Önerilen ama başlatılmamış oturum kartı: "Işıl 0.4: rakip incelemesinden çıkan küçük UX işleri".

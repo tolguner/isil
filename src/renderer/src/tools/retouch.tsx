@@ -1,11 +1,11 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { Smile, ScanFace, Sparkles, Palette, Droplet, Scissors, PersonStanding, Brush, EyeOff, Sun, Wand, Shell, Gem } from 'lucide-react'
-import type { EditDoc } from '@shared/schema'
+import type { EditDoc, ProtectStroke } from '@shared/schema'
 import { useEditor } from '@/store/editor'
 import { useT } from '@/lib/i18n'
-import { ColorRow, Preset, Slider, Tabs, Segmented } from '@/components/ui'
+import { ColorRow, Preset, Slider, Tabs, Segmented, Switch } from '@/components/ui'
 import { session } from '@/engine/session'
-import { FaceGeo, OVAL } from '@/engine/face'
+import { FaceGeo, OVAL, allProtect, drawProtect } from '@/engine/face'
 import { BODY_PRESETS } from '@/engine/body'
 import { depthMap, toCanvas } from '@/ai/ops'
 import { commitRaster } from '@/lib/projects'
@@ -108,7 +108,89 @@ function SkinPanel() {
         <Slider key={k} label={tr(a, b)} value={f.skin[k] ?? 0} onChange={(v) => update((d) => editFace(d, idx, (x) => void (x.skin[k] = v)))} />
       ))}
       <ApplyAll group="skin" keys={SKIN_KEYS.map((k) => k[0])} />
+      <ProtectSection />
     </>
+  )
+}
+
+// İşaretleri koru: kullanıcı dövme/ben/hızmayı boyar; leke, yumuşatma, kırışık ve ten o bölgeye uygulanmaz.
+// Ar-Ge: replica/arge/01-rotus-isaret-koruma.md (B).
+const protectStore = { on: false, erase: false, size: 0.04 }
+const protectListeners = new Set<() => void>()
+const protectEmit = () => protectListeners.forEach((f) => f())
+function useProtectStore() {
+  const [, f] = useState(0)
+  useEffect(() => {
+    const h = () => f((x) => x + 1)
+    protectListeners.add(h)
+    return () => void protectListeners.delete(h)
+  }, [])
+  return protectStore
+}
+
+function ProtectSection() {
+  const tr = useT()
+  const p = useProtectStore()
+  const f = useFace()
+  const idx = useEditor((s) => s.selectedFace)
+  const update = useEditor((s) => s.update)
+  const count = (f.protect ?? []).filter((s) => !s.erase).length
+  useEffect(() => () => { protectStore.on = false; protectStore.erase = false }, [])
+  return (
+    <div className="protect-box" style={{ marginTop: 12 }}>
+      <div className="row" style={{ justifyContent: 'space-between' }}>
+        <strong>{tr('İşaretleri koru', 'Protect marks')}</strong>
+        <Switch on={p.on} label={tr('Koruma fırçası', 'Protect brush')} onChange={(v) => { protectStore.on = v; protectEmit() }} />
+      </div>
+      <p className="note">{tr('Dövme, ben, çil ya da hızmanın üzerine boya. Leke giderme, pürüzsüzleştirme ve ten tonu boyadığın yere dokunmaz.', 'Paint over tattoos, moles, freckles or piercings. Blemish removal, smoothing and skin tone leave the painted area alone.')}</p>
+      {p.on && (
+        <>
+          <Segmented items={[{ id: 'paint', label: tr('Boya', 'Paint') }, { id: 'erase', label: tr('Sil', 'Erase') }]} value={p.erase ? 'erase' : 'paint'} onChange={(v) => { protectStore.erase = v === 'erase'; protectEmit() }} />
+          <Slider label={tr('Fırça boyutu', 'Brush size')} min={1} max={20} value={Math.round(p.size * 100)} onChange={(v) => { protectStore.size = v / 100; protectEmit() }} />
+        </>
+      )}
+      {!!f.protect?.length && (
+        <button className="btn ghost sm block" onClick={() => update((d) => editFace(d, idx, (x) => void delete x.protect))}>
+          {tr(`Korumayı temizle (${count})`, `Clear protection (${count})`)}
+        </button>
+      )}
+    </div>
+  )
+}
+
+function SkinOverlay({ view }: { view: View }) {
+  const p = useProtectStore()
+  const faces = useEditor((s) => s.doc.retouch.faces)
+  const idx = useEditor((s) => s.selectedFace)
+  const update = useEditor((s) => s.update)
+  const [mask, setMask] = useState<PaintMask | null>(null)
+  const [v, setV] = useState(0)
+  const pts = useRef<number[]>([])
+  const strokes = useMemo(() => allProtect(faces), [faces])
+  // belgedeki izleri önizleme maskesine yeniden çiz
+  useEffect(() => {
+    if (!p.on) return setMask(null)
+    const pv = session.preview
+    if (!pv) return
+    const m = mask && mask.w === pv.width && mask.h === pv.height ? mask : new PaintMask(pv.width, pv.height)
+    m.clear()
+    drawProtect(m.ctx, strokes, m.w, m.h)
+    setMask(m)
+    setV((x) => x + 1)
+  }, [p.on, strokes])
+  if (!p.on) return <FaceOverlay view={view} />
+  const brush: BrushState = { size: p.size, hardness: 0.6, erase: p.erase }
+  return (
+    <BrushOverlay
+      view={view} brush={brush} mask={mask} tint="rgba(90,200,255,0.4)" version={v}
+      onStart={(q) => { pts.current = [q.x, q.y] }}
+      onMove={(q) => { pts.current.push(q.x, q.y) }}
+      onEnd={() => {
+        const st: ProtectStroke = { pts: pts.current.map((n) => Math.round(n * 1e4) / 1e4), r: p.size / 2, ...(p.erase ? { erase: true } : {}) }
+        pts.current = []
+        update((d) => editFace(d, idx, (x) => { x.protect = [...(x.protect ?? []), st] }))
+      }}
+    />
   )
 }
 
@@ -775,7 +857,7 @@ const nz = (o: Record<string, unknown>) => Object.values(o).some((v) => v)
 export const RETOUCH_TOOLS: ToolDef[] = [
   { id: 'beauty', label: ['Tek dokunuş', 'One-tap'], icon: Wand, Panel: BeautyPanel, Overlay: FaceOverlay, sourceSpace: true, needs: ['faces'] },
   { id: 'faceShape', label: ['Yüz', 'Face'], icon: ScanFace, Panel: FaceShapePanel, Overlay: FaceOverlay, sourceSpace: true, needs: ['faces'], applied: (d) => has(d, (f) => nz(f.shape)) },
-  { id: 'skin', label: ['Cilt', 'Skin'], icon: Droplet, Panel: SkinPanel, Overlay: FaceOverlay, sourceSpace: true, needs: ['faces', 'seg'], applied: (d) => has(d, (f) => nz(f.skin)) },
+  { id: 'skin', label: ['Cilt', 'Skin'], icon: Droplet, Panel: SkinPanel, Overlay: SkinOverlay, sourceSpace: true, needs: ['faces', 'seg'], applied: (d) => has(d, (f) => nz(f.skin)) },
   { id: 'makeup', label: ['Makyaj', 'Makeup'], icon: Palette, Panel: MakeupPanel, Overlay: FaceOverlay, sourceSpace: true, needs: ['faces', 'seg'], applied: (d) => has(d, (f) => ['lip', 'blush', 'lid', 'brow'].some((k) => f.makeup[k]?.amount)) },
   { id: 'lift', label: ['Toparla', 'Lift'], icon: Shell, Panel: LiftPanel, Overlay: FaceOverlay, sourceSpace: true, needs: ['faces', 'seg'] },
   { id: 'tone', label: ['Ten tonu', 'Skin tone'], icon: Gem, Panel: TonePanel, Overlay: FaceOverlay, sourceSpace: true, needs: ['faces', 'seg'] },

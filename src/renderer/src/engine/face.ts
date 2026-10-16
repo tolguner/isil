@@ -1,5 +1,5 @@
 // Yüz: landmark → bükme işlemleri, bölge maskeleri, rötuş uniform'ları.
-import type { FaceEdit } from '@shared/schema'
+import type { FaceEdit, ProtectStroke } from '@shared/schema'
 import type { Pt } from '@/ai/vision'
 import { emptyFaceUniforms, type FaceUniforms } from './renderer'
 
@@ -427,6 +427,57 @@ export function buildMasks(
 /** ImageData'yı taşıyan sahte kaynak: WebGL texImage2D ImageData'yı ön-çarpımsız alır. */
 function imageDataCanvas(d: ImageData) {
   return d as unknown as HTMLCanvasElement
+}
+
+// ---- İşaret koruma ----
+/** Koruma izlerini 2D bağlama çizer (beyaz = korunur). Arayüz önizlemesi ve motor aynı çizimi kullanır. */
+export function drawProtect(ctx: CanvasRenderingContext2D, strokes: ProtectStroke[], w: number, h: number) {
+  const short = Math.min(w, h)
+  ctx.save()
+  ctx.lineCap = 'round'
+  ctx.lineJoin = 'round'
+  ctx.fillStyle = '#fff'
+  ctx.strokeStyle = '#fff'
+  for (const st of strokes) {
+    const r = Math.max(0.5, st.r * short)
+    ctx.globalCompositeOperation = st.erase ? 'destination-out' : 'source-over'
+    // yumuşak kenar: dövme kenarındaki geçiş görünmesin
+    ctx.filter = `blur(${Math.max(0.5, r * 0.3)}px)`
+    const p = st.pts
+    if (p.length < 4) {
+      ctx.beginPath()
+      ctx.arc(p[0] * w, p[1] * h, r * 0.85, 0, Math.PI * 2)
+      ctx.fill()
+      continue
+    }
+    ctx.lineWidth = r * 1.7
+    ctx.beginPath()
+    ctx.moveTo(p[0] * w, p[1] * h)
+    for (let i = 2; i < p.length; i += 2) ctx.lineTo(p[i] * w, p[i + 1] * h)
+    ctx.stroke()
+  }
+  ctx.restore()
+}
+
+export function allProtect(edits: FaceEdit[]): ProtectStroke[] {
+  return edits.flatMap((e) => e.protect ?? [])
+}
+
+/** Kaynak uzayında koruma maskesi (R kanalı); iz yoksa null. Yüz maskeleriyle aynı ölçekte. */
+export function buildProtectMask(strokes: ProtectStroke[], W: number, H: number): ImageData | null {
+  if (!strokes.some((s) => !s.erase)) return null
+  const s = Math.min(1, 1024 / Math.max(W, H))
+  const w = Math.max(1, Math.round(W * s))
+  const h = Math.max(1, Math.round(H * s))
+  const { ctx } = layer(w, h)
+  drawProtect(ctx, strokes, w, h)
+  const src = ctx.getImageData(0, 0, w, h).data
+  const d = new Uint8ClampedArray(w * h * 4)
+  for (let i = 0; i < w * h; i++) {
+    d[i * 4] = src[i * 4 + 3]
+    d[i * 4 + 3] = 255
+  }
+  return new ImageData(d, w, h)
 }
 
 // ---- Uniform'lar ----

@@ -51,7 +51,7 @@ export class Renderer {
   private pRetouch: Program; private pFx: Program; private pPresent: Program
   base: Tex | null = null
   private mask: Tex | null = null
-  private maskA: Tex | null = null; private maskB: Tex | null = null; private maskC: Tex | null = null
+  private maskA: Tex | null = null; private maskB: Tex | null = null; private maskC: Tex | null = null; private maskP: Tex | null = null
   private warp: Tex | null = null
   private bgImg: Tex | null = null
   private curve: Tex
@@ -83,7 +83,7 @@ export class Renderer {
   dispose() {
     this.pool.dispose()
     const gl = this.gl
-    for (const t of [this.base, this.mask, this.maskA, this.maskB, this.maskC, this.warp, this.bgImg, this.curve, this.blank]) if (t) gl.deleteTexture(t.tex)
+    for (const t of [this.base, this.mask, this.maskA, this.maskB, this.maskC, this.maskP, this.warp, this.bgImg, this.curve, this.blank]) if (t) gl.deleteTexture(t.tex)
     gl.getExtension('WEBGL_lose_context')?.loseContext()
   }
 
@@ -102,6 +102,10 @@ export class Renderer {
     this.maskA = this.replace(this.maskA, a)
     this.maskB = this.replace(this.maskB, b)
     this.maskC = this.replace(this.maskC, c)
+  }
+  /** İşaret koruma maskesi (R: 1 = dokunma); null = koruma yok. */
+  setProtectMask(src: TexImageSource | null) {
+    this.maskP = this.replace(this.maskP, src)
   }
   setBgImage(src: TexImageSource | null) {
     this.bgImg = this.replace(this.bgImg, src)
@@ -164,6 +168,7 @@ export class Renderer {
     const p = this.pRetouch.use()
     p.tex('uBase', 0, src.tex).tex('uBlurS', 1, bsCopy.tex).tex('uBlurM', 2, bm.tex)
       .tex('uMaskA', 3, this.maskA.tex).tex('uMaskB', 4, (this.maskB ?? this.blank).tex).tex('uMaskC', 5, (this.maskC ?? this.blank).tex)
+      .tex('uMaskP', 6, (this.maskP ?? this.blank).tex)
       .fv('uSkin', f.skin, 4).fv('uSkin2', f.skin2, 4).fv('uTone', f.tone, 4).fv('uLip', f.lip, 4)
       .fv('uBlush', f.blush, 4).fv('uLid', f.lid, 4).fv('uBrow', f.brow, 4).fv('uSculpt', f.sculpt, 4)
     if (this.hair && this.hair.amount > 0) p.f('uHair', ...this.hair.rgb, this.hair.amount).f('uHairOn', 1)

@@ -28,6 +28,21 @@ Lekeyi işaretten ayıran sinyal **tek piksel koyuluğu değil**. Bir dövme çi
 - **B — "İşaretleri koru" fırçası (asıl çözüm):** yüz başına bir koruma maskesi; kullanıcı dövme/ben/piercing'i boyar, leke + yumuşatma + ten birleştirme o maskede sıfırlanır. Evoto/Aftershoot'un güvenilir yolu.
 - **Kalite ölçütü:** deneme setine dövme/ben/çil/piercing içeren yüzler ekle. Ölçüt: işaret bölgesinde onarım öncesi/sonrası fark (düşük = korundu), cildin geri kalanında yumuşama (yüksek = iş yapıyor). Böylece "ne kadar korudu" sayıyla izlenir.
 
+## Sonuç (2026-10-16)
+
+- **A yapıldı:** leke teriminde kontrast bandı (`shaders.ts`, RETOUCH). Sınırı: yumuşatma 80+ iken kalın dövmenin kenarı soluyor.
+- **B yapıldı:** `FaceEdit.protect` (kaynak uzayında fırça izleri) → `buildProtectMask` (`face.ts`) → `uMaskP` dokusu; shader'da `keep = skin * (1 - koruma)` yumuşatma, gözenek, leke, kırışık ve ten tonunu çarpar. Aydınlatma, göz altı ve makyaj korumadan etkilenmez. Arayüz: Cilt paneli → "İşaretleri koru" anahtarı, Boya/Sil, boyut, temizle. Dışa aktarma ve tek dokunuş önizlemeleri de maskeyi kullanır.
+- **Ölçüm** (`tests/e2e/protect.mjs`, dövmeli yüz, yumuşat 80 + leke 60, ortalama mutlak fark 0–255):
+
+| Bölge | Korumasız | Korumalı |
+|---|---|---|
+| Dövme | 3,50 | 0,33 |
+| Hızma | 4,87 | 0,74 |
+| Yanak (boyanmamış) | 1,69 | 1,69 |
+
+  Görsel: `olcum/koru-karsilastirma.jpg` (orijinal · korumasız · korumalı).
+- **Bilinen sınır:** yüz şekli bükmesi güçlüyse fırça izi bükülmüş görüntüye çizilir, maske bükülmemiş kaynakta uygulanır; birkaç piksel kayabilir. Fırçanın yumuşak kenarı bunu çoğu durumda örter.
+
 ## Kaynaklar
 
 - AutoRetouch WACV 2021 — https://openaccess.thecvf.com/content/WACV2021/papers/Shafaei_AutoRetouch_Automatic_Professional_Face_Retouching_WACV_2021_paper.pdf

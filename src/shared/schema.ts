@@ -30,7 +30,12 @@ export interface FaceEdit {
   shape: Record<string, number>   // yüz/göz/burun/kaş/dudak/oran kaydırıcıları, -100..100
   skin: Record<string, number>    // pürüzsüz, leke, göz altı, beyazlat, diş …  0..100
   makeup: Record<string, { preset: string | null; amount: number; color?: string }>
+  /** "İşaretleri koru" fırçası: dövme/ben/hızma; leke, yumuşatma, kırışık ve ten burada uygulanmaz. */
+  protect?: ProtectStroke[]
 }
+
+/** Kaynak uzayında fırça izi. pts: [x0,y0,x1,y1,…] (0..1), r: yarıçap, kısa kenara oranla. */
+export interface ProtectStroke { pts: number[]; r: number; erase?: boolean }
 
 export interface BodyEdit {
   shape: Record<string, number>
