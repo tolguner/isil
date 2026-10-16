@@ -24,7 +24,8 @@ Yeni sohbette ilk mesaj: **"Işıl/DEVAM.md dosyasını oku ve kaldığımız ye
 - Sürüm hâlâ 0.3.0; değişiklik CHANGELOG'da "Yayımlanmamış (0.4 adayı)" altında. Kurulu uygulamaya henüz gelmedi.
 - audit'te Z-01 bir kez MediaPipe segmenter "ROI width and height must be > 0" hatasıyla kaldı, yeniden çalıştırınca 41/41 geçti (kararsız; koruma işiyle ilgisiz).
 - **Ar-Ge 2 (16.10): yüz bükmesi.** `replica/arge/02-yuz-bukme.md`. BlueStacks'te Peachy/PicsArt ızgaralı portreyle ölçüldü (Hypic açılmıyor). Işıl'ın kontur kaydırıcıları MLS'ye geçti. Ölçüm düzeneği depo dışında: `Projeler/isil-olcum` (ADB: `HD-Adb -s 127.0.0.1:5555`; PicsArt FLAG_SECURE → pencere yakalama `cap.ps1`; akış `akis.py`). Işıl tarafı `node tests/e2e/warp-olcum.mjs <görsel> <klasör>`.
-- **Sıradaki:** göz büyütmede elips, vücut (bel/kalça) için kontur+MLS; Tolga 0.4 kapsamını seçecek (aşağıdaki liste).
+- Göz elipsi ve vücut bantları da yapıldı (aynı not). Testler artık Temp'i temizliyor (`tests/e2e/_tmp.mjs`).
+- **Sıradaki:** incelt için segmentasyon silüeti, bacak uzatmada tuval büyütme; Tolga 0.4 kapsamını seçecek (aşağıdaki liste).
 
 ## 0.4 aday listesi (Tolga kapsamı henüz seçmedi)
 
