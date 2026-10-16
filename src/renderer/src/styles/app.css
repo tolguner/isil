@@ -139,7 +139,8 @@ button, input, select, textarea { font: inherit; color: inherit; }
 .slider { margin: var(--sp-3) 0; }
 .slider-top { display: flex; justify-content: space-between; align-items: center; font-size: var(--fs-sm); margin-bottom: 6px; }
 .slider-top label { color: var(--c-text); display: flex; align-items: center; gap: 6px; }
-.slider-top .mod { width: 6px; height: 6px; border-radius: 50%; background: var(--c-accent); }
+.slider-top .mod, .tabs .mod { width: 6px; height: 6px; border-radius: 50%; background: var(--c-accent); }
+.tabs .mod { display: inline-block; margin-left: 4px; vertical-align: super; }
 .slider-top output { color: var(--c-text-muted); font-variant-numeric: tabular-nums; font-size: var(--fs-xs); min-width: 34px; text-align: right; }
 .track { position: relative; height: 20px; cursor: pointer; touch-action: none; }
 .track .rail-line { position: absolute; left: 0; right: 0; top: 9px; height: 2px; background: var(--c-surface-3); border-radius: 2px; }

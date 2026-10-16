@@ -46,6 +46,15 @@ ok('Enter yüz aracını açıp kaydırıcıyı vurguluyor', st.tool === 'faceSh
 items = await search('golgeler')
 ok('"golgeler" Ayarla kaydırıcısını buluyor', items.some((t) => t.startsWith('Gölgeler')), JSON.stringify(items.slice(0, 3)))
 await win.keyboard.press('Escape')
+// 4) değişen kategoride nokta: göz kaydırıcısı değişince Yüz aracında "Göz" sekmesi işaretli
+const dots = await win.evaluate(async () => {
+  const S = (await window.__isil.store()).getState
+  S().update((d) => { d.retouch.faces = [{ index: 0, side: 'both', shape: { eyeSize: 30 }, skin: {}, makeup: {} }] })
+  S().setTab('retouch'); S().openTool('faceShape')
+  await new Promise((r) => setTimeout(r, 400))
+  return [...document.querySelectorAll('.tabs [role="tab"]')].filter((b) => b.querySelector('.mod')).map((b) => b.textContent)
+})
+ok('Değişen sekmede nokta var, diğerlerinde yok', dots.length === 1 && dots[0].startsWith('Göz'), JSON.stringify(dots))
 ok('Sayfa hatası yok', errors.length === 0, errors.slice(0, 3).join(' | '))
 await app.close()
 const failed = results.filter((r) => !r.pass).length

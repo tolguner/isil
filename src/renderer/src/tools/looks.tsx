@@ -31,7 +31,7 @@ function FiltersPanel() {
   const list = FILTERS.filter((f) => f.cat === cat)
   return (
     <>
-      <Tabs items={FILTER_CATS.map((c) => ({ id: c.id, label: name(c) }))} value={cat} onChange={setCat} label={tr('Filtre kategorileri', 'Filter categories')} />
+      <Tabs items={FILTER_CATS.map((c) => ({ id: c.id, label: name(c), mod: !!filter && FILTERS.some((x) => x.id === filter.id && x.cat === c.id) }))} value={cat} onChange={setCat} label={tr('Filtre kategorileri', 'Filter categories')} />
       {filter && (
         <Slider label={tr('Yoğunluk', 'Intensity')} value={filter.amount} onChange={(v) => update((d) => void (d.filter = { ...d.filter!, amount: v }))} />
       )}
@@ -88,7 +88,7 @@ function EffectsPanel() {
     })
   return (
     <>
-      <Tabs items={EFFECT_CATS.map((c) => ({ id: c.id, label: name(c) }))} value={cat} onChange={setCat} />
+      <Tabs items={EFFECT_CATS.map((c) => ({ id: c.id, label: name(c), mod: effects.some((e) => effectById(e.id)?.cat === c.id) }))} value={cat} onChange={setCat} />
       {effects.map((e) => {
         const def = effectById(e.id)
         if (!def) return null

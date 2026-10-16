@@ -1,6 +1,6 @@
 import { useEffect, useId, useRef, useState, type ReactNode } from 'react'
 import { useEditor } from '@/store/editor'
-import { useT } from '@/lib/i18n'
+import { useLang, useT } from '@/lib/i18n'
 
 /** Kaydırıcı: tek yönlü (0..max) ya da çift yönlü (-100..100). Çift tık = sıfırla. */
 export function Slider(props: {
@@ -80,12 +80,16 @@ export function Slider(props: {
   )
 }
 
-export function Tabs<T extends string>(props: { items: { id: T; label: string }[]; value: T; onChange: (v: T) => void; label?: string }) {
+/** mod: o sekmede değişiklik var (kaydırıcılardaki gibi küçük nokta; Peachy'deki kategori noktası). */
+export function Tabs<T extends string>(props: { items: { id: T; label: string; mod?: boolean }[]; value: T; onChange: (v: T) => void; label?: string }) {
+  const lang = useLang()
   return (
     <div className="tabs" role="tablist" aria-label={props.label}>
       {props.items.map((it) => (
-        <button key={it.id} role="tab" aria-selected={props.value === it.id} className={props.value === it.id ? 'on' : ''} onClick={() => props.onChange(it.id)}>
+        <button key={it.id} role="tab" aria-selected={props.value === it.id} className={props.value === it.id ? 'on' : ''} onClick={() => props.onChange(it.id)}
+          aria-label={it.mod ? `${it.label} (${lang === 'en' ? 'edited' : 'değişti'})` : undefined}>
           {it.label}
+          {it.mod && <span className="mod" aria-hidden />}
         </button>
       ))}
     </div>

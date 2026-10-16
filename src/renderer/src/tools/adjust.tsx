@@ -192,10 +192,13 @@ function HslPanel() {
 }
 
 type Ch = 'rgb' | 'r' | 'g' | 'b'
+const curveEdited = (c: CurvePoint[]) => c.length > 2 || c[0][1] !== 0 || c[c.length - 1][1] !== 1
+
 function CurvesPanel() {
   const tr = useT()
   const [ch, setCh] = useState<Ch>('rgb')
   const pts = useEditor((s) => s.doc.curves[ch])
+  const curves = useEditor((s) => s.doc.curves)
   const update = useEditor((s) => s.update)
   const svg = useRef<SVGSVGElement>(null)
   const drag = useRef<number | null>(null)
@@ -210,7 +213,7 @@ function CurvesPanel() {
   const setPts = (fn: (p: CurvePoint[]) => CurvePoint[]) => update((d) => void (d.curves[ch] = fn(d.curves[ch].map((p) => [p[0], p[1]] as CurvePoint))))
   return (
     <>
-      <Tabs items={[{ id: 'rgb', label: 'RGB' }, { id: 'r', label: tr('Kırmızı', 'Red') }, { id: 'g', label: tr('Yeşil', 'Green') }, { id: 'b', label: tr('Mavi', 'Blue') }]} value={ch} onChange={setCh} />
+      <Tabs items={([['rgb', 'RGB', 'RGB'], ['r', 'Kırmızı', 'Red'], ['g', 'Yeşil', 'Green'], ['b', 'Mavi', 'Blue']] as const).map(([id, a, b]) => ({ id, label: tr(a, b), mod: curveEdited(curves[id]) }))} value={ch} onChange={setCh} />
       <svg
         ref={svg}
         viewBox={`0 0 ${S} ${S}`}

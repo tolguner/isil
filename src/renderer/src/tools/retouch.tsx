@@ -77,6 +77,7 @@ function selectShapeTab(t: string) {
 
 function FaceShapePanel() {
   const tr = useT()
+  const f = useFace()
   const [tab, setTabState] = useState(shapeTab)
   useEffect(() => {
     shapeTabListeners.add(setTabState)
@@ -87,7 +88,7 @@ function FaceShapePanel() {
   return (
     <>
       <NoFace />
-      <Tabs items={SHAPE_TABS.map((t) => ({ id: t.id, label: tr(t.label[0], t.label[1]) }))} value={tab} onChange={setTab} />
+      <Tabs items={SHAPE_TABS.map((t) => ({ id: t.id, label: tr(t.label[0], t.label[1]), mod: t.keys.some(([k]) => !!f.shape[k]) }))} value={tab} onChange={setTab} />
       <SidePicker />
       <ShapeSliders keys={keys} />
       <ApplyAll group="shape" keys={keys.map((k) => k[0])} />
@@ -321,7 +322,7 @@ function MakeupPanel() {
   return (
     <>
       <NoFace />
-      <Tabs items={[{ id: 'full', label: tr('Tam yüz', 'Full face') }, ...MAKEUP_CATS.map((c) => ({ id: c.id, label: tr(c.label[0], c.label[1]) }))]} value={cat} onChange={setCat} />
+      <Tabs items={[{ id: 'full', label: tr('Tam yüz', 'Full face') }, ...MAKEUP_CATS.map((c) => ({ id: c.id, label: tr(c.label[0], c.label[1]), mod: !!f.makeup[c.id]?.amount }))]} value={cat} onChange={setCat} />
       {cat === 'full' ? (
         <div className="presets">
           <Preset label={tr('Yok', 'None')} onClick={() => update((d) => editFace(d, idx, (x) => { for (const k of ['lip', 'blush', 'lid', 'brow']) delete x.makeup[k] }))}>⊘</Preset>
