@@ -148,6 +148,8 @@ uniform int uQuarter;
 uniform vec2 uFlip;
 uniform vec2 uPersp;
 uniform vec4 uPlace;         // tuvalde görüntü dikdörtgeni (uv)
+uniform vec3 uRow;           // bacak uzatma: band başı, band boyu, göreli uzama (görüntü uv'si)
+uniform float uRowOn;
 uniform vec2 uOutSize;
 uniform float uWarpOn, uMaskOn, uTexel;
 uniform int uFill;           // 0 yok,1 renk,2 degrade,3 bulanık,4 görsel,5 şeffaf
@@ -290,7 +292,14 @@ void main(){
   vec2 cuv = vUv; // tuval uv'si (v=0 üst)
   vec2 iuv = (cuv - uPlace.xy) / uPlace.zw;
   bool inside = all(greaterThanEqual(iuv, vec2(0.0))) && all(lessThanEqual(iuv, vec2(1.0)));
-  vec2 suv = outToSrc(clamp(iuv, 0.0, 1.0));
+  vec2 guv = iuv;
+  if (uRowOn > 0.5) {
+    // tuval (1 + band·s) kat uzun: bandın altı aşağı kayar, band içi gerilir, üstü değişmez
+    float vv = iuv.y * (1.0 + uRow.y * uRow.z);
+    float e = uRow.x + uRow.y * (1.0 + uRow.z);
+    guv.y = vv < uRow.x ? vv : (vv < e ? uRow.x + (vv - uRow.x) / (1.0 + uRow.z) : vv - uRow.y * uRow.z);
+  }
+  vec2 suv = outToSrc(clamp(guv, 0.0, 1.0));
   vec4 bg = fillAt(cuv, suv);
   if (!inside) { o = uFill == 0 ? vec4(0.0) : bg; return; }
   if (uWarpOn > 0.5) suv += texture(uWarp, suv).rg;

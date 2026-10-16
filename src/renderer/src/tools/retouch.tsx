@@ -5,6 +5,7 @@ import { useEditor } from '@/store/editor'
 import { useT } from '@/lib/i18n'
 import { ColorRow, Preset, Slider, Tabs, Segmented, Switch } from '@/components/ui'
 import { session } from '@/engine/session'
+import { legCanvasOk } from '@/engine/renderer'
 import { FaceGeo, OVAL, allProtect, drawProtect } from '@/engine/face'
 import { BODY_PRESETS, bakeBodyWarp } from '@/engine/body'
 import { depthMap, inpaint, toCanvas } from '@/ai/ops'
@@ -680,7 +681,9 @@ export async function fillBodyGap() {
       }
     }
     await commitRaster(result, 'inpaint', { tool: 'body-protect', gap: gapCount }, (d) => {
-      d.body = d.body?.manual ? { shape: {}, manual: d.body.manual } : null
+      // bacak uzatma tuvalde yapılıyorsa fotoğrafa işlenmedi; ayar olarak kalsın
+      const legs = legCanvasOk(d) ? d.body?.shape.legs : undefined
+      d.body = d.body?.manual || legs ? { shape: legs ? { legs } : {}, manual: d.body?.manual ?? null } : null
     })
     return gapCount
   })

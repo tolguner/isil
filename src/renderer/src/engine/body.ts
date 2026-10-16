@@ -118,8 +118,8 @@ export function applyBodyBands(field: Float32Array, gw: number, gh: number, pose
   }
   const top = ctl[0].y, bot = ctl[ctl.length - 1].y + sw * 0.15
   const ss = (a: number, b: number, x: number) => { const t = Math.min(1, Math.max(0, (x - a) / (b - a))); return t * t * (3 - 2 * t) }
-  // bacak bandı: kalça → ayak bileği, uzatma oranı en uçta %20
-  const y0 = hp.y / H, y1 = an.y / H, band = Math.max(y1 - y0, 0.01), d = legs * band * 0.2
+  // bacak bandı: kalça → ayak bileği, uzatma oranı en uçta %20 (tuval büyütülemiyorsa alan içinde)
+  const y0 = hp.y / H, y1 = an.y / H, band = Math.max(y1 - y0, 0.01), d = legs * band * LEG_STRETCH
   // satır başına merkez ve yarı genişlik: kişi maskesi varsa silüetten, yoksa poz tahmininden
   const rowC = new Float32Array(gh), rowHW = new Float32Array(gh)
   for (let j = 0; j < gh; j++) {
@@ -213,4 +213,15 @@ export function bakeBodyWarp(src: ImageData, field: Float32Array, gw: number, gh
     }
   }
   return { img: out, gap, gapCount }
+}
+
+export const LEG_STRETCH = 0.2
+
+/** Bacak uzatma bandı (kaynak uv): kalça → ayak bileği; s = bandın göreli uzama oranı. */
+export function legBand(pose: Pt[] | null, shape: Record<string, number>): { y0: number; y1: number; s: number } | null {
+  const legs = (shape.legs ?? 0) / 100
+  if (!pose || !legs) return null
+  const y0 = (pose[23].y + pose[24].y) / 2, y1 = (pose[27].y + pose[28].y) / 2
+  if (!(y1 > y0 + 0.02)) return null
+  return { y0, y1, s: legs * LEG_STRETCH }
 }

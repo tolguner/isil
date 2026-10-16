@@ -8,7 +8,7 @@ Her büyük güncellemede sürüm numarası artırılır (`npm version <x.y.z> -
 - Yüz şekli: incelt, genişlik, şakak, elmacık, çene hattı ve V çizgisi artık kontur kısıtlı MLS bükmesiyle çalışıyor. Yalnız yüz çizgisi oynuyor, ağız/burun/gözler yerinde kalıyor (incelt 100'de ağız kayması 4,5 → 0,5 px). Güç rakiplerin aralığına çekildi (en büyük kayma 48 → 12 px). Üç çeyrek yüzlerde geniş görünen taraf daha çok oynuyor. Eski projelerde bu kaydırıcılar daha hafif görünür (`replica/arge/02-yuz-bukme.md`)
 - Vücut: "Arka planı koru" anahtarı; incelt, bel ve kalça yalnız kişiye uygulanır, arkadaki duvar/sütun oynamaz. Bacak kısaltma (eksi değer) yeniden çalışıyor. "Boşluğu YZ ile doldur ve uygula": incelen kişinin kenarında açılan şerit yerel LaMa ile arka planla doldurulur
 - Göz büyütme: daire yerine göz çizgisine hizalı elips; iki göz burun kökünde birleşmiyor, kaş oynamıyor
-- Vücut: "İncelt" kişi silüetini izliyor (bol giysi dahil) ve yalnız gövdeye uygulanıyor (arka plan sütunları/duvarlar bükülmüyor); "Bacak" satır tabanlı bant uzatma (zemin çizgileri düz kalıyor)
+- Vücut: "İncelt" kişi silüetini izliyor (bol giysi dahil) ve yalnız gövdeye uygulanıyor (arka plan sütunları/duvarlar bükülmüyor); "Bacak" satır tabanlı bant uzatma: zemin çizgileri düz kalıyor, tuval uzadığı için ayak altındaki zemin kırpılmıyor
 - Kararlılık: proje hızlı değişirken kapanmış önizlemenin MediaPipe bölütleyicisine gitmesi engellendi (konsoldaki "ROI width and height must be > 0" hatası)
 - Leke giderici kontrast bandı: çok koyu kalıcı işaretler otomatik olarak korunuyor
 

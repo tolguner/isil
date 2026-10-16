@@ -1,9 +1,9 @@
 // Etkin projenin görüntü kaynakları, analiz önbelleği ve dışa aktarma.
 import type { EditDoc, Project, Settings } from '@shared/schema'
 import { platform } from '@/lib/platform'
-import { Renderer, type OutputInfo } from './renderer'
+import { Renderer, legCanvasOk, type OutputInfo } from './renderer'
 import { addMlsField, allProtect, buildField, contourPairs, buildMasks, buildProtectMask, faceOps, faceUniforms, FaceGeo, faceHasSkinWork, type MaskSet } from './face'
-import { applyBodyBands, applyManualBody, bodyOps, maskField } from './body'
+import { applyBodyBands, applyManualBody, bodyOps, legBand, maskField } from './body'
 import { drawLayers } from './layers'
 import { detectFaces, detectPose, segmentPerson, type PersonParts, type Pt } from '@/ai/vision'
 
@@ -227,7 +227,8 @@ class Session {
     const body = buildField(bodyOps(this.pose, doc.body.shape, W, H), W, H, new Float32Array(gw * gh * 2), gw, gh)!
     applyBodyBands(body.field, gw, gh, this.pose, doc.body.shape, W, H, this.seg, { slim: true })
     if (doc.body.protect && this.seg) maskField(body.field, gw, gh, this.seg)
-    applyBodyBands(body.field, gw, gh, this.pose, doc.body.shape, W, H, this.seg, { legs: true })
+    // bacak uzatma: tuval büyütülebiliyorsa çıktıda yapılır (renderer.legBand), yoksa alanda
+    if (!legCanvasOk(doc)) applyBodyBands(body.field, gw, gh, this.pose, doc.body.shape, W, H, this.seg, { legs: true })
     return body.field
   }
 
@@ -252,6 +253,7 @@ class Session {
       r.faces = null
       r.hair = null
     }
+    r.legBand = doc.body && legCanvasOk(doc) ? legBand(this.pose, doc.body.shape) : null
     const wf = this.warpField(doc)
     r.setWarp(wf?.field ?? null, wf?.gw, wf?.gh)
   }
@@ -326,6 +328,7 @@ class Session {
       const hair = doc.retouch.faces[0]?.makeup.hair
       r.hair = hair && hair.amount ? { rgb: hexToRgb(hair.color || '#7a3b2e'), amount: hair.amount / 100 } : null
     }
+    r.legBand = doc.body && legCanvasOk(doc) ? legBand(this.pose, doc.body.shape) : null
     const wf = this.warpField(doc)
     r.setWarp(wf?.field ?? null, wf?.gw, wf?.gh)
   }
@@ -365,6 +368,7 @@ class Session {
       r.faces = faceUniforms(doc.retouch.faces, geos.length)
     } else r.faces = null
     r.hair = null
+    r.legBand = doc.body && legCanvasOk(doc) ? legBand(this.pose, doc.body.shape) : null
     const wf = this.warpField(doc)
     r.setWarp(wf?.field ?? null, wf?.gw, wf?.gh)
     const out = r.render(doc, { maxSide })

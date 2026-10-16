@@ -43,6 +43,12 @@ export function cropSize(doc: EditDoc, w: number, h: number) {
   return { w: doc.crop.w * rw, h: doc.crop.h * rh, rw, rh }
 }
 
+/** Bacak uzatmada tuval büyütme yalnız düz kırpmada (döndürme/çeyrek/perspektif yok) yapılır. */
+export function legCanvasOk(doc: EditDoc) {
+  const c = doc.crop
+  return c.quarter % 4 === 0 && !c.rotation && !c.perspH && !c.perspV
+}
+
 export class Renderer {
   gl: WebGL2RenderingContext
   private vao: WebGLVertexArrayObject
@@ -57,6 +63,8 @@ export class Renderer {
   private curve: Tex
   private blank: Tex
   faces: FaceUniforms | null = null
+  /** Bacak uzatma (kaynak uv bandı): tuval bu oranda uzar, satırlar çıktı uzayında eşlenir. */
+  legBand: { y0: number; y1: number; s: number } | null = null
   hair: { rgb: [number, number, number]; amount: number } | null = null
   seed = Math.random()
   maxTex: number
@@ -177,12 +185,30 @@ export class Renderer {
     return out
   }
 
+  /**
+   * Bacak bandını görüntü uv'sine (kırpma sonrası) çevir. Döndürme, çeyrek dönüş ya da perspektif varsa
+   * null: o durumda uzatma bükme alanında yapılır (session.legCanvas).
+   */
+  legRows(doc: EditDoc, opts: RenderOptions = {}): { y0: number; band: number; s: number } | null {
+    const b = this.legBand
+    if (!b || opts.neutral) return null
+    if (opts.skipGeometry) return { y0: b.y0, band: b.y1 - b.y0, s: b.s }
+    const c = doc.crop
+    if (!legCanvasOk(doc)) return null
+    let a = (b.y0 - c.y) / c.h, e = (b.y1 - c.y) / c.h
+    if (c.flipV) [a, e] = [1 - e, 1 - a]
+    a = Math.max(0, Math.min(1, a))
+    e = Math.max(0, Math.min(1, e))
+    return e - a > 0.01 ? { y0: a, band: e - a, s: b.s } : null
+  }
+
   /** Çıktı tuvali boyutu ve görüntü yerleşimi. */
   layout(doc: EditDoc, opts: RenderOptions = {}) {
     if (!this.base) throw new Error('görüntü yok')
     const { w: cw0, h: ch0, rw, rh } = opts.skipGeometry ? { w: this.base.w, h: this.base.h, rw: this.base.w, rh: this.base.h } : cropSize(doc, this.base.w, this.base.h)
+    const rows = this.legRows(doc, opts)
     let cw = cw0
-    let ch = ch0
+    let ch = ch0 * (rows ? 1 + rows.band * rows.s : 1)
     let place: [number, number, number, number] = [0, 0, 1, 1]
     const r = opts.skipBackground ? null : ratioValue(doc.background.ratio)
     if (r) {
@@ -290,6 +316,8 @@ export class Renderer {
       .f('uSplitS', ...(split(filter?.splitS) as [number, number, number, number]))
       .f('uSplitH', ...(split(filter?.splitH) as [number, number, number, number]))
       .f('uCurveOn', lut ? 1 : 0)
+    const rows = this.legRows(doc, opts)
+    p.f('uRow', rows?.y0 ?? 0, rows?.band ?? 0, rows?.s ?? 0).f('uRowOn', rows ? 1 : 0)
     this.draw(out, L.w, L.h)
 
     let result: Target = out
