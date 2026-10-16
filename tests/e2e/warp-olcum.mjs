@@ -10,7 +10,7 @@ const [img, outDir, mode] = process.argv.slice(2)
 const BODY = mode === 'govde'
 mkdirSync(outDir, { recursive: true })
 const CASES = BODY
-  ? { notr: {}, waist: { waist: 100 }, hips: { hips: 100 }, slim: { slim: 100 }, thighs: { thighs: 100 }, legs: { legs: 100 } }
+  ? { notr: {}, waist: { waist: 100 }, hips: { hips: 100 }, slim: { slim: 100 }, thighs: { thighs: 100 }, legs: { legs: 100 }, slimKoru: { slim: 100, _koru: 1 }, waistKoru: { waist: 100, _koru: 1 } }
   : { notr: {}, slim: { slim: 100 }, width: { width: 100 }, eyeSize: { eyeSize: 100 }, resize: { resize: -100 }, vshape: { vshape: 100 } }
 const app = await electron.launch({ args: ['.'], cwd: process.cwd(), env: { ...process.env, ISIL_TEST: '1', ISIL_USERDATA: tempDir('isil-warp-') } })
 const win = await app.firstWindow()
@@ -26,7 +26,7 @@ const out = await win.evaluate(async ({ b64, name, CASES, BODY }) => {
   const res = {}
   for (const [k, shape] of Object.entries(CASES)) {
     S().update((d) => {
-      if (BODY) d.body = Object.keys(shape).length ? { shape, manual: null } : null
+      if (BODY) { const { _koru, ...sh } = shape; d.body = Object.keys(sh).length ? { shape: sh, manual: null, ...(_koru ? { protect: true } : {}) } : null }
       else d.retouch.faces = Object.keys(shape).length ? [{ index: 0, side: 'both', shape, skin: {}, makeup: {} }] : []
     })
     await new Promise((r) => setTimeout(r, 300))

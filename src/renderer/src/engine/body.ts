@@ -92,10 +92,10 @@ export function applyManualBody(field: Float32Array, gw: number, gh: number, m: 
  * 1,7 katında söner, uzaktaki arka plan kıpırdamaz. Bacak: kalça–ayak bileği bandında dikey uzatma
  * (satır tabanlı, yatay çizgiler düz kalır; Peachy "Uzunluğu" davranışı).
  */
-export function applyBodyBands(field: Float32Array, gw: number, gh: number, pose: Pt[] | null, shape: Record<string, number>, W: number, H: number, seg?: { w: number; h: number; background: Float32Array } | null) {
+export function applyBodyBands(field: Float32Array, gw: number, gh: number, pose: Pt[] | null, shape: Record<string, number>, W: number, H: number, seg?: { w: number; h: number; background: Float32Array } | null, parts: { slim?: boolean; legs?: boolean } = { slim: true, legs: true }) {
   if (!pose) return
-  const slim = (shape.slim ?? 0) / 100
-  const legs = (shape.legs ?? 0) / 100
+  const slim = parts.slim ? (shape.slim ?? 0) / 100 : 0
+  const legs = parts.legs ? (shape.legs ?? 0) / 100 : 0
   if (!slim && !legs) return
   const P = pose.map((p) => ({ x: p.x * W, y: p.y * H }))
   const sh = mid(P[11], P[12]), hp = mid(P[23], P[24]), kn = mid(P[25], P[26]), an = mid(P[27], P[28])
@@ -147,7 +147,7 @@ export function applyBodyBands(field: Float32Array, gw: number, gh: number, pose
     const yN = (j + 0.5) / gh
     const y = yN * H
     let oy = 0
-    if (d > 0 && yN >= y0) oy = yN < y1 + d ? y0 + ((yN - y0) * band) / (band + d) - yN : -d
+    if (d !== 0 && yN >= y0) oy = yN < y1 + d ? y0 + ((yN - y0) * band) / (band + d) - yN : -d
     // inceltme dikey zarfı: omuz üstünde ve ayak altında yumuşak başla/bit
     const env = slim ? ss(top - sw * 0.2, top + sw * 0.3, y) * (1 - ss(bot - sw * 0.3, bot + sw * 0.2, y)) : 0
     const cx = rowC[j], hw = rowHW[j]
@@ -158,6 +158,22 @@ export function applyBodyBands(field: Float32Array, gw: number, gh: number, pose
       const dx = ((i + 0.5) / gw) * W - cx
       const w = 1 - ss(hw, hw * 1.7, Math.abs(dx))
       if (w > 0) field[k] += (dx * slim * 0.1 * w * env) / W
+    }
+  }
+}
+
+/** Arka planı koru: alanı kişi maskesiyle (çıktı konumunda) çarp; arka plan pikselleri yerinde kalır. */
+export function maskField(field: Float32Array, gw: number, gh: number, seg: { w: number; h: number; background: Float32Array }) {
+  for (let j = 0; j < gh; j++) {
+    const sy = Math.min(seg.h - 1, Math.floor(((j + 0.5) / gh) * seg.h))
+    for (let i = 0; i < gw; i++) {
+      const sx = Math.min(seg.w - 1, Math.floor(((i + 0.5) / gw) * seg.w))
+      const p = 1 - seg.background[sy * seg.w + sx]
+      const t = Math.min(1, Math.max(0, (p - 0.2) / 0.4))
+      const w = t * t * (3 - 2 * t)
+      const k = (j * gw + i) * 2
+      field[k] *= w
+      field[k + 1] *= w
     }
   }
 }

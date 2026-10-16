@@ -653,6 +653,13 @@ function BodyPanel() {
           {BODY_KEYS.map(([k, a, b]) => (
             <Slider key={k} label={tr(a, b)} bipolar value={shape[k] ?? 0} onChange={(v) => setShape({ [k]: v })} />
           ))}
+          <div className="setting">
+            <div><b>{tr('Arka planı koru', 'Protect background')}</b><span>{tr('İncelt, bel ve kalça yalnızca kişiye uygulanır', 'Slim, waist and hips only affect the person')}</span></div>
+            <Switch label={tr('Arka planı koru', 'Protect background')} on={!!body?.protect} onChange={(v) => update((d) => {
+              d.body = d.body ?? { shape: {}, manual: null }
+              d.body.protect = v || undefined
+            })} />
+          </div>
         </>
       ) : (
         <>

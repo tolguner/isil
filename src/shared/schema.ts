@@ -40,6 +40,8 @@ export interface ProtectStroke { pts: number[]; r: number; erase?: boolean }
 export interface BodyEdit {
   shape: Record<string, number>
   manual: { y0: number; y1: number; stretch: number; slim: number } | null
+  /** Arka planı koru: inceltme/bel/kalça bükmesi yalnız kişi maskesinde uygulanır. */
+  protect?: boolean
 }
 
 export type Fill =
