@@ -222,6 +222,11 @@ class Session {
     return res
   }
 
+  /** Bacak uzatma tuvali büyüterek mi yapılıyor (düz kırpma, arka plan korunmuyor). */
+  legCanvas(doc: EditDoc) {
+    return !!doc.body && legCanvasOk(doc)
+  }
+
   /** Son bükme alanında katlanma denetiminin uyguladığı ölçek (1 = dokunulmadı). */
   foldScale = 1
 
@@ -229,14 +234,21 @@ class Session {
    * Yalnız vücut şekli alanı (otomatik kaydırıcılar + bacak bandı; elle bölge hariç).
    * "Arka planı koru" açıksa şekil kısmı kişi maskesiyle sınırlanır, bacak uzatma sınırlanmaz.
    */
-  bodyField(doc: EditDoc, gw = 192, gh = Math.max(16, Math.round((192 * this.H) / this.W))): Float32Array | null {
+  bodyField(doc: EditDoc, gw = 192, gh = Math.max(16, Math.round((192 * this.H) / this.W)), unmasked = false): Float32Array | null {
     if (!doc.body || !this.pose) return null
     const W = this.W, H = this.H
     const body = buildField(bodyOps(this.pose, doc.body.shape, W, H), W, H, new Float32Array(gw * gh * 2), gw, gh)!
     applyBodyBands(body.field, gw, gh, this.pose, doc.body.shape, W, H, this.seg, { slim: true })
+    // unmasked: katmanlı işleme (kişi tam alanla bükülür, arka plan ayrıca tamamlanır)
+    if (unmasked) {
+      applyBodyBands(body.field, gw, gh, this.pose, doc.body.shape, W, H, this.seg, { legs: true })
+      return body.field
+    }
     if (doc.body.protect && this.seg) maskField(body.field, gw, gh, this.seg)
-    // bacak uzatma: tuval büyütülebiliyorsa çıktıda yapılır (renderer.legBand), yoksa alanda
-    if (!legCanvasOk(doc)) applyBodyBands(body.field, gw, gh, this.pose, doc.body.shape, W, H, this.seg, { legs: true })
+    // bacak uzatma: tuval büyütülebiliyorsa çıktıda yapılır (renderer.legBand), yoksa alanda.
+    // "Arka planı koru" bacakta canlı uygulanmaz (maskeli dikey kaydırma kenarlarda iz bırakıyordu);
+    // "Boşluğu YZ ile doldur" katman yöntemiyle temiz uygular.
+    if (!this.legCanvas(doc)) applyBodyBands(body.field, gw, gh, this.pose, doc.body.shape, W, H, this.seg, { legs: true })
     return body.field
   }
 
@@ -261,7 +273,7 @@ class Session {
       r.faces = null
       r.hair = null
     }
-    r.legBand = doc.body && legCanvasOk(doc) ? legBand(this.pose, doc.body.shape) : null
+    r.legBand = this.legCanvas(doc) ? legBand(this.pose, doc.body!.shape) : null
     const wf = this.warpField(doc)
     r.setWarp(wf?.field ?? null, wf?.gw, wf?.gh)
   }
@@ -336,7 +348,7 @@ class Session {
       const hair = doc.retouch.faces[0]?.makeup.hair
       r.hair = hair && hair.amount ? { rgb: hexToRgb(hair.color || '#7a3b2e'), amount: hair.amount / 100 } : null
     }
-    r.legBand = doc.body && legCanvasOk(doc) ? legBand(this.pose, doc.body.shape) : null
+    r.legBand = this.legCanvas(doc) ? legBand(this.pose, doc.body!.shape) : null
     const wf = this.warpField(doc)
     r.setWarp(wf?.field ?? null, wf?.gw, wf?.gh)
   }
@@ -376,7 +388,7 @@ class Session {
       r.faces = faceUniforms(doc.retouch.faces, geos.length)
     } else r.faces = null
     r.hair = null
-    r.legBand = doc.body && legCanvasOk(doc) ? legBand(this.pose, doc.body.shape) : null
+    r.legBand = this.legCanvas(doc) ? legBand(this.pose, doc.body!.shape) : null
     const wf = this.warpField(doc)
     r.setWarp(wf?.field ?? null, wf?.gw, wf?.gh)
     const out = r.render(doc, { maxSide })
