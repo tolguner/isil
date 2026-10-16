@@ -4,6 +4,7 @@ Her büyük güncellemede sürüm numarası artırılır (`npm version <x.y.z> -
 
 ## Yayımlanmamış
 
+- YZ efekt → **Saç** ve **Gardırop**: artık yalnız saç ya da kıyafet bölgesi (kişi bölütleme maskesi) FLUX ile yeniden çiziliyor; yüz ve arka plan piksel piksel korunuyor (yüz farkı 0–0,1). Kendi tarifini yazma alanı; yeni ön ayarlar: kısa küt, siyah saç, deri ceket, örgü kazak
 - Çıkartma → **Benim**: çıkartma yapıcı. Bu fotoğraftan ya da bir dosyadan konu yapay zekâyla kesilir (BiRefNet/ISNet), kenar çizgisi (yok/ince/kalın, 5 renk) ve gölge eklenir; fotoğrafa eklenir, kişisel kitaplıkta saklanır (yerel), PNG olarak kaydedilebilir
 
 ## 0.5.0 — 2026-10-17

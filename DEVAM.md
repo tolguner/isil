@@ -39,7 +39,7 @@ Büyük işler:
 - ~~Seçmeli ayar~~ **yapıldı (16.10)**: `tools/selective.tsx`, `EditDoc.local`, MAIN gölgelendiricisinde `uLoc*`; test `tests/e2e/selective.mjs`.
 - ~~YZ ile tuval genişletme~~ **yapıldı (17.10)**: `tools/expand.tsx`, test `tests/e2e/expand.mjs [görsel] [klasör] [lama|flux]` (flux için dev-models/engine).
 - ~~Yoldan geçenleri yerel silme~~ **yapıldı (16.10)**: `tools/passersby.tsx`, test `tests/e2e/passersby.mjs <görsel>`, kişi bulma ölçümü `tests/e2e/people.mjs`.
-- Saç/kıyafet akışları, üretken silme. ~~Çıkartma yapıcı~~ **yapıldı (17.10)**: `ai/sticker.ts`, `tools/stickermaker.tsx`, test `tests/e2e/stickermaker.mjs`.
+- ~~Saç/kıyafet akışları~~ **yapıldı (17.10)**: `ai/restyle.ts`, test `tests/e2e/restyle.mjs` (motor gerekir). Kalan: üretken silme. ~~Çıkartma yapıcı~~ **yapıldı (17.10)**: `ai/sticker.ts`, `tools/stickermaker.tsx`, test `tests/e2e/stickermaker.mjs`.
 
 Not: 0.4 kapsamı seçilmeden sürüm numarası değişmez.
 

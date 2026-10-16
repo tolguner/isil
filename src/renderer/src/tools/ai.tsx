@@ -6,6 +6,7 @@ import { Tabs, Preset, Switch } from '@/components/ui'
 import { session } from '@/engine/session'
 import { animeStyle, toCanvas } from '@/ai/ops'
 import { engineStatus, localEdit, localEditKeepPeople } from '@/ai/generative'
+import { restyle, type RestyleKind } from '@/ai/restyle'
 import { platform } from '@/lib/platform'
 import { goSettings } from '@/lib/projects'
 import type { ToolDef, View } from './types'
@@ -136,12 +137,16 @@ export const STYLES: { id: string; cat: string; label: [string, string]; prompt:
   { id: 'y2k', cat: 'retro', label: ['2000’ler', 'Y2K'], prompt: 'Make it look like a 2003 digital camera photo with flash, date stamp and slight noise.' },
   { id: '90s', cat: 'retro', label: ['90’lar film', '90s film'], prompt: 'Make it look like a 1990s 35mm film snapshot, warm colors, grain, light leak.' },
   { id: 'vintage', cat: 'retro', label: ['Vintage portre', 'Vintage portrait'], prompt: 'Make it a 1950s studio portrait photograph, black and white, soft vignette.' },
-  { id: 'wardrobe-suit', cat: 'wardrobe', label: ['Takım elbise', 'Suit'], prompt: 'Change the outfit to a tailored navy suit, keep everything else identical.' },
-  { id: 'wardrobe-dress', cat: 'wardrobe', label: ['Gece elbisesi', 'Evening dress'], prompt: 'Change the outfit to an elegant evening dress, keep everything else identical.' },
-  { id: 'wardrobe-street', cat: 'wardrobe', label: ['Sokak stili', 'Streetwear'], prompt: 'Change the outfit to trendy streetwear with an oversized hoodie, keep everything else identical.' },
-  { id: 'hair-blonde', cat: 'hair', label: ['Sarı saç', 'Blonde'], prompt: 'Change only the hair color to natural honey blonde.' },
-  { id: 'hair-pink', cat: 'hair', label: ['Pastel pembe', 'Pastel pink'], prompt: 'Change only the hair color to pastel pink.' },
-  { id: 'hair-curly', cat: 'hair', label: ['Kıvırcık', 'Curly'], prompt: 'Make the hair voluminous and curly, keep color and face unchanged.' }
+  { id: 'wardrobe-suit', cat: 'wardrobe', label: ['Takım elbise', 'Suit'], prompt: 'a tailored navy suit with a white shirt' },
+  { id: 'wardrobe-dress', cat: 'wardrobe', label: ['Gece elbisesi', 'Evening dress'], prompt: 'an elegant black evening dress' },
+  { id: 'wardrobe-street', cat: 'wardrobe', label: ['Sokak stili', 'Streetwear'], prompt: 'trendy streetwear with an oversized hoodie' },
+  { id: 'hair-blonde', cat: 'hair', label: ['Sarı saç', 'Blonde'], prompt: 'natural honey blonde hair, same hairstyle' },
+  { id: 'hair-pink', cat: 'hair', label: ['Pastel pembe', 'Pastel pink'], prompt: 'pastel pink hair, same hairstyle' },
+  { id: 'hair-curly', cat: 'hair', label: ['Kıvırcık', 'Curly'], prompt: 'voluminous curly hair in the same color' },
+  { id: 'hair-bob', cat: 'hair', label: ['Kısa küt', 'Short bob'], prompt: 'a short chin-length bob haircut in the same color' },
+  { id: 'hair-black', cat: 'hair', label: ['Siyah', 'Black'], prompt: 'glossy jet black hair, same hairstyle' },
+  { id: 'wardrobe-leather', cat: 'wardrobe', label: ['Deri ceket', 'Leather jacket'], prompt: 'a black leather biker jacket over a white t-shirt' },
+  { id: 'wardrobe-knit', cat: 'wardrobe', label: ['Örgü kazak', 'Knit sweater'], prompt: 'a cozy cream cable-knit sweater' }
 ]
 const STYLE_CATS: [string, string, string][] = [['trend', 'Öne çıkan', 'Trending'], ['art', 'Sanat', 'Art'], ['world', 'Dünyalar', 'Worlds'], ['retro', 'Retro', 'Retro'], ['wardrobe', 'Gardırop', 'Wardrobe'], ['hair', 'Saç', 'Hair']]
 
@@ -176,16 +181,44 @@ function AiFxPanel() {
       return
     }
     try {
-      const res = await localEdit(work.full, s.prompt)
+      const kind: RestyleKind | null = s.cat === 'hair' ? 'hair' : s.cat === 'wardrobe' ? 'outfit' : null
+      const res = kind ? await restyleSafe(kind, s.prompt) : await localEdit(work.full, s.prompt)
       if (res) setWorkResult(res)
     } catch (e) {
       useEditor.getState().toast('error', tr('Stil uygulanamadı: ', 'Style failed: ') + (e as Error).message)
     }
   }
+  const restyleSafe = async (kind: RestyleKind, what: string) => {
+    try {
+      return await restyle(work.full!, kind, what)
+    } catch (e) {
+      const m = (e as Error).message
+      if (m === 'no-hair' || m === 'no-outfit') {
+        useEditor.getState().toast('error', m === 'no-hair' ? tr('Fotoğrafta saç bulunamadı.', 'No hair found in the photo.') : tr('Fotoğrafta kıyafet bulunamadı.', 'No clothing found in the photo.'))
+        return null
+      }
+      throw e
+    }
+  }
+  const [custom, setCustom] = useState('')
+  const kindNow: RestyleKind | null = cat === 'hair' ? 'hair' : cat === 'wardrobe' ? 'outfit' : null
   return (
     <>
       {ok === false ? <p className="note">{tr('Yerel YZ motoru yalnızca masaüstü uygulamasında çalışır.', 'The local AI engine only runs in the desktop app.')}</p> : <EngineCard />}
       <Tabs items={STYLE_CATS.map(([id, a, b]) => ({ id, label: tr(a, b) }))} value={cat} onChange={setCat} />
+      {kindNow && (
+        <>
+          <p className="note">{kindNow === 'hair'
+            ? tr('Yalnız saç yeniden çizilir; yüzün ve arka plan piksel piksel aynı kalır.', 'Only the hair is redrawn; the face and background stay pixel-identical.')
+            : tr('Yalnız kıyafet yeniden çizilir; yüz, saç ve arka plan piksel piksel aynı kalır.', 'Only the clothes are redrawn; face, hair and background stay pixel-identical.')}</p>
+          <form className="row" style={{ gap: 6, marginBottom: 8 }} onSubmit={(e) => { e.preventDefault(); const w = custom.trim(); if (w && work.full) { setSel(null); void restyleSafe(kindNow, w).then((r) => r && setWorkResult(r)).catch((er) => useEditor.getState().toast('error', String((er as Error).message))) } }}>
+            <input className="input" style={{ flex: 1 }} value={custom} onChange={(e) => setCustom(e.target.value)}
+              placeholder={kindNow === 'hair' ? tr('Kendi tarifin: ör. dalgalı kızıl saç', 'Your own: e.g. wavy red hair') : tr('Kendi tarifin: ör. kırmızı ekose gömlek', 'Your own: e.g. red plaid shirt')}
+              aria-label={tr('Kendi tarifin', 'Your own description')} />
+            <button className="btn sm primary" type="submit" disabled={!custom.trim()}>{tr('Uygula', 'Apply')}</button>
+          </form>
+        </>
+      )}
       <div className="presets">
         {STYLES.filter((s) => s.cat === cat).map((s) => (
           <Preset key={s.id} label={tr(s.label[0], s.label[1])} on={sel === s.id} onClick={() => run(s.id)} bg={s.local ? 'linear-gradient(160deg,#3a2a5a,#ffb547)' : 'linear-gradient(160deg,#2a2e36,#5a4a7a)'}>
