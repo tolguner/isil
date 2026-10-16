@@ -282,3 +282,11 @@ kbd { background: var(--c-surface-3); border-radius: 4px; padding: 1px 5px; font
 
 /* YZ genişlet: yeni tuval sınırı */
 .expand-frame { position: absolute; border: 2px dashed var(--c-accent); border-radius: 4px; pointer-events: none; box-shadow: 0 0 0 9999px rgba(0,0,0,.0); background: repeating-linear-gradient(45deg, rgba(255,181,71,.06) 0 10px, transparent 10px 20px); }
+
+/* Çıkartma yapıcı */
+.sticker-maker .row { gap: 6px; flex-wrap: wrap; margin: 6px 0; }
+.sticker-preview { display: grid; place-items: center; padding: 10px; margin: 8px 0; border-radius: 10px; background: repeating-conic-gradient(#2a2d33 0 25%, #1d2026 0 50%) 0 0 / 16px 16px; }
+.my-sticker { position: relative; }
+.my-sticker .pv img { max-width: 100%; max-height: 100%; object-fit: contain; }
+.my-sticker .del { position: absolute; top: 2px; right: 2px; width: 18px; height: 18px; border-radius: 50%; display: grid; place-items: center; padding: 0; background: rgba(0,0,0,.6); color: #fff; border: 0; opacity: 0; }
+.my-sticker:hover .del, .my-sticker .del:focus-visible { opacity: 1; }

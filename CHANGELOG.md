@@ -2,6 +2,10 @@
 
 Her büyük güncellemede sürüm numarası artırılır (`npm version <x.y.z> --no-git-tag-version`), uygulama Ayarlar → Hakkında'da sürümü gösterir.
 
+## Yayımlanmamış
+
+- Çıkartma → **Benim**: çıkartma yapıcı. Bu fotoğraftan ya da bir dosyadan konu yapay zekâyla kesilir (BiRefNet/ISNet), kenar çizgisi (yok/ince/kalın, 5 renk) ve gölge eklenir; fotoğrafa eklenir, kişisel kitaplıkta saklanır (yerel), PNG olarak kaydedilebilir
+
 ## 0.5.0 — 2026-10-17
 
 Üç büyük yerel YZ özelliği: yoldan geçenleri silme, seçmeli ayar ve YZ ile tuval genişletme. Hepsi bilgisayarda çalışır, fotoğraf dışarı çıkmaz.

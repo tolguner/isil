@@ -1,3 +1,4 @@
+import { StickerMaker } from './stickermaker'
 import { useEffect, useRef, useState } from 'react'
 import { Type, Sticker, Shapes, Brush, Trash2, Copy, RotateCw, Plus, ImagePlus, ArrowUp, ArrowDown, AlignLeft, AlignCenter, AlignRight } from 'lucide-react'
 import '@fontsource/playfair-display/index.css'
@@ -265,6 +266,7 @@ void AlignLeft; void AlignCenter; void AlignRight
 
 // ---------- Çıkartmalar ----------
 const STICKER_CATS: { id: string; label: [string, string]; items: string[] }[] = [
+  { id: 'mine', label: ['Benim', 'Mine'], items: [] },
   { id: 'love', label: ['Sevgi', 'Love'], items: ['❤️', '🩷', '💖', '💕', '💘', '💌', '🫶', '😍', '🥰', '😘', '🌹', '💐'] },
   { id: 'fun', label: ['Eğlence', 'Fun'], items: ['😂', '🤣', '😎', '🥳', '🤪', '😜', '🙃', '🤩', '👻', '🤡', '💀', '👀'] },
   { id: 'cute', label: ['Tatlı', 'Cute'], items: ['🐱', '🐶', '🐰', '🐻', '🐼', '🦊', '🐥', '🦄', '🐸', '🐨', '🍓', '🧸'] },
@@ -275,14 +277,15 @@ const STICKER_CATS: { id: string; label: [string, string]; items: string[] }[] =
 ]
 function StickerPanel() {
   const tr = useT()
-  const [cat, setCat] = useState('love')
+  const [cat, setCat] = useState('mine')
   const [l] = useLayer<StickerProps>()
   const items = STICKER_CATS.find((c) => c.id === cat)!.items
   const add = (props: StickerProps) => addLayer({ type: 'sticker', x: 0.5, y: 0.5, scale: 1, rotation: 0, opacity: 1, props: props as unknown as Record<string, unknown> })
   return (
     <>
       <Tabs items={STICKER_CATS.map((c) => ({ id: c.id, label: tr(c.label[0], c.label[1]) }))} value={cat} onChange={setCat} />
-      <div className="presets" style={{ gridTemplateColumns: 'repeat(4, 1fr)' }}>
+      {cat === 'mine' && <StickerMaker add={(url) => add({ kind: 'image', value: url, size: 0.35 })} />}
+      {cat !== 'mine' && <div className="presets" style={{ gridTemplateColumns: 'repeat(4, 1fr)' }}>
         <button className="preset" onClick={async () => {
           const f = await platform.openFiles(false)
           if (!f[0]) return
@@ -292,9 +295,9 @@ function StickerPanel() {
         {items.map((e) => (
           <button key={e} className="preset" onClick={() => add({ kind: 'emoji', value: e, size: 0.22 })}><span className="pv" style={{ fontSize: 30 }}>{e}</span></button>
         ))}
-      </div>
+      </div>}
       {l?.type === 'sticker' && <LayerCommon l={l} />}
-      <p className="note">{tr('Görsel çıktartma için PNG (şeffaf) dosya seçebilirsin.', 'You can pick a (transparent) PNG as an image sticker.')}</p>
+      {cat !== 'mine' && <p className="note">{tr('Görsel çıkartma için PNG (şeffaf) dosya seçebilirsin.', 'You can pick a (transparent) PNG as an image sticker.')}</p>}
     </>
   )
 }
