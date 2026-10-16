@@ -7,7 +7,7 @@ import { ColorRow, Preset, Slider, Tabs, Segmented, Switch } from '@/components/
 import { session } from '@/engine/session'
 import { FaceGeo, OVAL, allProtect, drawProtect } from '@/engine/face'
 import { BODY_PRESETS, bakeBodyWarp } from '@/engine/body'
-import { depthMap, inpaint, toCanvas } from '@/ai/ops'
+import { depthMap, inpaintTiles, toCanvas } from '@/ai/ops'
 import { commitRaster } from '@/lib/projects'
 import type { ToolDef, View } from './types'
 import { ApplyAll, FaceOverlay, NoFace, SidePicker, editFace, useFace, useFaceCount } from './faceui'
@@ -638,43 +638,6 @@ function FaceHidePanel() {
 const BODY_KEYS: SliderDef[] = [['slim', 'İnce', 'Slim'], ['waist', 'Bel', 'Waist'], ['hips', 'Kalça', 'Hips'], ['chest', 'Göğüs', 'Chest'], ['shoulders', 'Omuz', 'Shoulders'], ['arms', 'Kollar', 'Arms'], ['thighs', 'Bacak kalınlığı', 'Thighs'], ['legs', 'Bacak uzat', 'Longer legs'], ['head', 'Baş', 'Head'], ['neck', 'Boyun', 'Neck']]
 const BODY_PRESET_NAMES: Record<string, [string, string]> = { classic: ['Klasik', 'Classic'], natural: ['Doğal', 'Natural'], slender: ['Narin', 'Slender'], hourglass: ['Kum saati', 'Hourglass'], athletic: ['Atletik', 'Athletic'], golden: ['Altın oran', 'Golden ratio'], headShoulder: ['Baş-omuz', 'Head-shoulder'], legTorso: ['Bacak-gövde', 'Leg-torso'] }
 const bodyStore = { mode: 'auto' as 'auto' | 'manual' }
-/** Maskeli bölgeyi 320 px'lik karolarda, kenar payıyla LaMa'ya verir (ince/uzun bölgeler bulanıklaşmasın). */
-async function inpaintTiles(canvas: HTMLCanvasElement, mask: ImageData, fail: string) {
-  const T = 320, M = 96
-  const gd = mask.data, GW = mask.width, GH = mask.height
-  const ctx = canvas.getContext('2d', { willReadFrequently: true })!
-  for (let ty = 0; ty < GH; ty += T) {
-    for (let tx = 0; tx < GW; tx += T) {
-      let has = false
-      for (let y = ty; y < Math.min(GH, ty + T) && !has; y += 2) for (let x = tx; x < Math.min(GW, tx + T); x += 2) if (gd[(y * GW + x) * 4] > 20) { has = true; break }
-      if (!has) continue
-      const rx = Math.max(0, tx - M), ry = Math.max(0, ty - M)
-      const rw = Math.min(GW, tx + T + M) - rx, rh = Math.min(GH, ty + T + M) - ry
-      const tile = document.createElement('canvas')
-      tile.width = rw
-      tile.height = rh
-      tile.getContext('2d')!.drawImage(canvas, rx, ry, rw, rh, 0, 0, rw, rh)
-      const tm = document.createElement('canvas')
-      tm.width = rw
-      tm.height = rh
-      const tctx = tm.getContext('2d', { willReadFrequently: true })!
-      const md = tctx.createImageData(rw, rh)
-      for (let y = 0; y < rh; y++) for (let x = 0; x < rw; x++) {
-        const v = gd[((ry + y) * GW + rx + x) * 4]
-        const q = (y * rw + x) * 4
-        md.data[q] = md.data[q + 1] = md.data[q + 2] = v
-        md.data[q + 3] = 255
-      }
-      tctx.putImageData(md, 0, 0)
-      const filled = await inpaint(tile, tm)
-      if (!filled) throw new Error(fail)
-      // yalnız karonun kendisini (kenar payı hariç) geri yaz
-      const w = Math.min(T, GW - tx), h = Math.min(T, GH - ty)
-      ctx.drawImage(filled, tx - rx, ty - ry, w, h, tx, ty, w, h)
-    }
-  }
-}
-
 /** Kişi maskesi (tam çözünürlük, R = 0..255), isteğe bağlı genişletme (px). */
 function personMask(W: number, H: number, grow = 0): ImageData | null {
   const seg = session.seg
@@ -746,7 +709,7 @@ export async function fillBodyGap() {
       const pmSoft = personMask(W, H)
       if (!pm || !pmSoft) throw new Error(tr('Kişi bölütlenemedi', 'Person segmentation failed'))
       const plate = toCanvas(c)
-      await inpaintTiles(plate, pm, fail)
+      if (!(await inpaintTiles(plate, pm))) throw new Error(fail)
       const wm = bakeBodyWarp(pmSoft, field, gw, gh, null).img
       const pd = plate.getContext('2d', { willReadFrequently: true })!.getImageData(0, 0, W, H)
       const od = img.data, md = wm.data, bd = pd.data
@@ -758,7 +721,7 @@ export async function fillBodyGap() {
       }
       plate.getContext('2d')!.putImageData(pd, 0, 0)
       result = plate
-    } else if (gapCount > 0) await inpaintTiles(warped, gap, fail)
+    } else if (gapCount > 0 && !(await inpaintTiles(warped, gap))) throw new Error(fail)
     await commitRaster(result, 'inpaint', { tool: 'body-protect', gap: filledPx, layered }, (d) => {
       // bacak uzatma tuvalde yapılıyorsa fotoğrafa işlenmedi; ayar olarak kalsın
       const legs = !layered && session.legCanvas(d) ? d.body?.shape.legs : undefined

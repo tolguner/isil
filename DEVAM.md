@@ -38,7 +38,7 @@ Küçük işler (rakip incelemesinden) — **dördü de yapıldı (16.10), CHANG
 Büyük işler:
 - Seçmeli ayar.
 - YZ ile tuval genişletme.
-- Yoldan geçenleri yerel silme (kişi maskesi + boyut süzgeci + onay + LaMa).
+- ~~Yoldan geçenleri yerel silme~~ **yapıldı (16.10)**: `tools/passersby.tsx`, test `tests/e2e/passersby.mjs <görsel>`, kişi bulma ölçümü `tests/e2e/people.mjs`.
 - Saç/kıyafet akışları, üretken silme, çıkartma yapıcı.
 
 Not: 0.4 kapsamı seçilmeden sürüm numarası değişmez.

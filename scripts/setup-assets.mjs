@@ -11,6 +11,8 @@ const files = {
   'selfie_multiclass_256x256.tflite': `${base}/image_segmenter/selfie_multiclass_256x256/float32/latest/selfie_multiclass_256x256.tflite`,
   'magic_touch.tflite': `${base}/interactive_segmenter/magic_touch/float32/1/magic_touch.tflite`,
   'interactive_segmentation.task': `${base}/interactive_segmenter_v2/magic_touch/int8/latest/interactive_segmentation.task`,
+  // kişi bulma (yoldan geçenleri silme): EfficientDet-Lite2, COCO, Apache-2.0
+  'efficientdet_lite2.tflite': `${base}/object_detector/efficientdet_lite2/float32/latest/efficientdet_lite2.tflite`,
   // YuNet yüz dedektörü (OpenCV Zoo, MIT) — küçük/loş yüzler için
   'face_detection_yunet_2023mar.onnx': 'https://huggingface.co/opencv/face_detection_yunet/resolve/main/face_detection_yunet_2023mar.onnx'
 }

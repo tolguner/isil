@@ -396,3 +396,41 @@ export async function restoreFaces(src: Src, onProgress?: (p: number) => void, s
   }
   return done ? out : null
 }
+
+/** Maskeli bölgeyi 320 px'lik karolarda, kenar payıyla LaMa'ya verir (ince/uzun bölgeler bulanıklaşmasın). */
+export async function inpaintTiles(canvas: HTMLCanvasElement, mask: ImageData): Promise<boolean> {
+  const T = 320, M = 96
+  const gd = mask.data, GW = mask.width, GH = mask.height
+  const ctx = canvas.getContext('2d', { willReadFrequently: true })!
+  for (let ty = 0; ty < GH; ty += T) {
+    for (let tx = 0; tx < GW; tx += T) {
+      let has = false
+      for (let y = ty; y < Math.min(GH, ty + T) && !has; y += 2) for (let x = tx; x < Math.min(GW, tx + T); x += 2) if (gd[(y * GW + x) * 4] > 20) { has = true; break }
+      if (!has) continue
+      const rx = Math.max(0, tx - M), ry = Math.max(0, ty - M)
+      const rw = Math.min(GW, tx + T + M) - rx, rh = Math.min(GH, ty + T + M) - ry
+      const tile = document.createElement('canvas')
+      tile.width = rw
+      tile.height = rh
+      tile.getContext('2d')!.drawImage(canvas, rx, ry, rw, rh, 0, 0, rw, rh)
+      const tm = document.createElement('canvas')
+      tm.width = rw
+      tm.height = rh
+      const tctx = tm.getContext('2d', { willReadFrequently: true })!
+      const md = tctx.createImageData(rw, rh)
+      for (let y = 0; y < rh; y++) for (let x = 0; x < rw; x++) {
+        const v = gd[((ry + y) * GW + rx + x) * 4]
+        const q = (y * rw + x) * 4
+        md.data[q] = md.data[q + 1] = md.data[q + 2] = v
+        md.data[q + 3] = 255
+      }
+      tctx.putImageData(md, 0, 0)
+      const filled = await inpaint(tile, tm)
+      if (!filled) return false
+      // yalnız karonun kendisini (kenar payı hariç) geri yaz
+      const w = Math.min(T, GW - tx), h = Math.min(T, GH - ty)
+      ctx.drawImage(filled, tx - rx, ty - ry, w, h, tx, ty, w, h)
+    }
+  }
+  return true
+}

@@ -147,7 +147,7 @@ export function SettingsPage() {
         <section>
           <div className="group-label">{tr('Hakkında', 'About')}</div>
           <p className="note">
-            Işıl {__APP_VERSION__} · {tr('Kişisel kullanım ve portfolyo projesi.', 'Personal and portfolio project.')} {tr('Açık kaynak bileşenler', 'Open-source components')}: Electron, React, MediaPipe (Apache-2.0), YuNet (MIT), ONNX Runtime (MIT), libheif (LGPL-3.0), PyTorch (BSD-3), diffusers / transformers (Apache-2.0), FLUX.2 klein 4B (Apache-2.0) / 9B (FLUX Non-Commercial), Qwen3 / Qwen3-VL (Apache-2.0), BiRefNet (MIT), LaMa (Apache-2.0), Real-ESRGAN (BSD-3), 4x-UltraSharp V2 (CC BY-NC-SA 4.0), GFPGAN 1.4 (Apache-2.0), Depth Anything V2 Small (Apache-2.0) / Base (CC BY-NC 4.0), AnimeGANv2, Lucide (ISC), Inter ve diğer yazı tipleri (OFL).
+            Işıl {__APP_VERSION__} · {tr('Ücretsiz ve açık kaynak (MIT).', 'Free and open source (MIT).')} {tr('Açık kaynak bileşenler', 'Open-source components')}: Electron, React, MediaPipe (Apache-2.0), EfficientDet-Lite2 (Apache-2.0), YuNet (MIT), ONNX Runtime (MIT), libheif (LGPL-3.0), PyTorch (BSD-3), diffusers / transformers (Apache-2.0), FLUX.2 klein 4B (Apache-2.0) / 9B (FLUX Non-Commercial), Qwen3 / Qwen3-VL (Apache-2.0), BiRefNet (MIT), LaMa (Apache-2.0), Real-ESRGAN (BSD-3), 4x-UltraSharp V2 (CC BY-NC-SA 4.0), GFPGAN 1.4 (Apache-2.0), Depth Anything V2 Small (Apache-2.0) / Base (CC BY-NC 4.0), AnimeGANv2, Lucide (ISC), Inter ve diğer yazı tipleri (OFL).
           </p>
         </section>
       </div>

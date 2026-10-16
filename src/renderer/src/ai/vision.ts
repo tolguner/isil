@@ -1,6 +1,6 @@
 // MediaPipe görev sarmalayıcıları (yerel, çevrimdışı). Modeller uygulamayla gelir: public/models.
 import {
-  FaceLandmarker, InteractiveSegmenterLegacy, FilesetResolver, ImageSegmenter, InteractiveSegmenter, PoseLandmarker,
+  FaceLandmarker, InteractiveSegmenterLegacy, FilesetResolver, ImageSegmenter, InteractiveSegmenter, ObjectDetector, PoseLandmarker,
   type NormalizedLandmark, type BrushMode
 } from '@mediapipe/tasks-vision'
 import { detectFaceBoxes, boxIoU, type FaceBox } from './yunet'
@@ -287,4 +287,101 @@ export function maskToCanvas(data: Float32Array, w: number, h: number, outW = w,
   octx.imageSmoothingQuality = 'high'
   octx.drawImage(c, 0, 0, outW, outH)
   return o
+}
+
+// ---- Kişi bulma (yoldan geçenleri silme) ----
+let objdet: Promise<ObjectDetector> | null = null
+function objectDetector() {
+  objdet ??= getFileset().then((fs) =>
+    withDelegate((delegate) =>
+      ObjectDetector.createFromOptions(fs, {
+        baseOptions: { modelAssetPath: asset('models/efficientdet_lite2.tflite'), delegate },
+        runningMode: 'IMAGE',
+        categoryAllowlist: ['person'],
+        scoreThreshold: 0.22,
+        maxResults: 60
+      })
+    )
+  )
+  return objdet
+}
+
+export interface PersonBox { x: number; y: number; w: number; h: number; score: number } // normalize 0..1
+
+const iou = (a: PersonBox, b: PersonBox) => {
+  const x0 = Math.max(a.x, b.x), y0 = Math.max(a.y, b.y), x1 = Math.min(a.x + a.w, b.x + b.w), y1 = Math.min(a.y + a.h, b.y + b.h)
+  const i = Math.max(0, x1 - x0) * Math.max(0, y1 - y0)
+  return i / (a.w * a.h + b.w * b.h - i || 1)
+}
+
+/**
+ * Kişi kutuları: tüm görüntü + örtüşen 2×2 karo (küçük/uzaktaki kişiler için), sonra NMS.
+ * EfficientDet-Lite2 (COCO "person", Apache-2.0), MediaPipe ile yerel.
+ */
+export async function detectPeople(img: TexImageSource): Promise<PersonBox[]> {
+  const det = await objectDetector()
+  const { W, H } = dims(img)
+  if (!W || !H) return []
+  const all: PersonBox[] = []
+  const run = (sx: number, sy: number, sw: number, sh: number) => {
+    const c = document.createElement('canvas')
+    const sc = Math.min(1, 1024 / Math.max(sw, sh))
+    c.width = Math.round(sw * sc)
+    c.height = Math.round(sh * sc)
+    c.getContext('2d')!.drawImage(img as CanvasImageSource, sx, sy, sw, sh, 0, 0, c.width, c.height)
+    for (const d of det.detect(c).detections) {
+      const b = d.boundingBox
+      if (!b) continue
+      all.push({ x: (sx + b.originX / sc) / W, y: (sy + b.originY / sc) / H, w: b.width / sc / W, h: b.height / sc / H, score: d.categories[0]?.score ?? 0 })
+    }
+  }
+  run(0, 0, W, H)
+  // 3×3 örtüşen karo: uzaktaki küçük kişiler tam görüntüde dedektörün çözünürlüğünün altında kalıyor
+  const tw = W * 0.45, th = H * 0.45
+  for (const fy of [0, 0.5, 1]) for (const fx of [0, 0.5, 1]) run(fx * (W - tw), fy * (H - th), tw, th)
+  // karo kenarında kesilmiş kutular tam görüntüdekilerle birleşsin: NMS + içerme
+  all.sort((a, b) => b.score - a.score)
+  const keep: PersonBox[] = []
+  for (const b of all) {
+    // aynı kişi: yüksek örtüşme ya da biri ötekinin büyük kısmını içeriyor (karo kenarında kesilmiş kutu)
+    const k = keep.find((k) => {
+      if (iou(k, b) > 0.35) return true
+      const ix = Math.max(0, Math.min(k.x + k.w, b.x + b.w) - Math.max(k.x, b.x)) * Math.max(0, Math.min(k.y + k.h, b.y + b.h) - Math.max(k.y, b.y))
+      const small = Math.min(b.w * b.h, k.w * k.h), big = Math.max(b.w * b.h, k.w * k.h)
+      return ix / small > 0.7 && small > big * 0.3
+    })
+    if (!k) { keep.push({ ...b }); continue }
+    // birleşim: kesilmiş kutu tam boyuna (ör. sudaki bacaklar) uzasın
+    const x1 = Math.max(k.x + k.w, b.x + b.w), y1 = Math.max(k.y + k.h, b.y + b.h)
+    k.x = Math.min(k.x, b.x); k.y = Math.min(k.y, b.y); k.w = x1 - k.x; k.h = y1 - k.y
+  }
+  return keep
+}
+
+/** Bir kişi kutusu için ayrıntılı maske: kutu çevresi kırpılıp çok sınıflı bölütleyiciden geçirilir. */
+export async function personMaskInBox(img: TexImageSource, b: PersonBox, outW: number, outH: number): Promise<Float32Array> {
+  const { W, H } = dims(img)
+  const pad = 0.15
+  const x0 = Math.max(0, (b.x - b.w * pad) * W), y0 = Math.max(0, (b.y - b.h * pad) * H)
+  const x1 = Math.min(W, (b.x + b.w * (1 + pad)) * W), y1 = Math.min(H, (b.y + b.h * (1 + pad)) * H)
+  const c = document.createElement('canvas')
+  const sc = Math.min(4, 512 / Math.max(x1 - x0, y1 - y0))
+  c.width = Math.max(8, Math.round((x1 - x0) * sc))
+  c.height = Math.max(8, Math.round((y1 - y0) * sc))
+  c.getContext('2d')!.drawImage(img as CanvasImageSource, x0, y0, x1 - x0, y1 - y0, 0, 0, c.width, c.height)
+  const parts = await segmentPerson(c)
+  const out = new Float32Array(outW * outH)
+  const ox0 = Math.floor((x0 / W) * outW), ox1 = Math.ceil((x1 / W) * outW), oy0 = Math.floor((y0 / H) * outH), oy1 = Math.ceil((y1 / H) * outH)
+  // kutunun dışına taşan komşu kişileri alma: kutu (+%5) dışını sıfırla
+  const bx0 = (b.x - b.w * 0.05) * outW, bx1 = (b.x + b.w * 1.05) * outW, by0 = (b.y - b.h * 0.05) * outH, by1 = (b.y + b.h * 1.05) * outH
+  for (let y = oy0; y < oy1; y++) {
+    if (y < by0 || y > by1) continue
+    const sy = Math.min(parts.h - 1, Math.max(0, Math.floor(((y - oy0) / Math.max(1, oy1 - oy0)) * parts.h)))
+    for (let x = ox0; x < ox1; x++) {
+      if (x < bx0 || x > bx1) continue
+      const sx = Math.min(parts.w - 1, Math.max(0, Math.floor(((x - ox0) / Math.max(1, ox1 - ox0)) * parts.w)))
+      out[y * outW + x] = 1 - parts.background[sy * parts.w + sx]
+    }
+  }
+  return out
 }

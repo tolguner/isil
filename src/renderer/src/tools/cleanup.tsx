@@ -8,6 +8,7 @@ import { tapSelect, resetTapSelect } from '@/ai/vision'
 import { localMaskedEdit, grayToAlpha } from '@/ai/generative'
 import type { ToolDef, View } from './types'
 import { BrushOverlay, type BrushState } from './brush'
+import { PASSERSBY_TOOL } from './passersby'
 import { WorkFooter, WorkOverlayImage, busy, fullMask, setWorkResult, useWork, useWorkLifecycle, work, workEmit } from './raster'
 
 const brush: BrushState = { size: 0.05, hardness: 0.7, erase: false }
@@ -262,6 +263,7 @@ function ReplacePanel() {
 export const CLEANUP_TOOLS: ToolDef[] = [
   { id: 'erase', label: ['Sihirli silgi', 'Magic eraser'], icon: Eraser, Panel: ErasePanel, Overlay: PaintOverlay, sourceSpace: true, noFooter: true },
   { id: 'smart', label: ['Akıllı seçim', 'Smart select'], icon: MousePointerClick, Panel: SmartPanel, Overlay: SmartOverlay, sourceSpace: true, noFooter: true },
+  PASSERSBY_TOOL,
   { id: 'clone', label: ['Klonla', 'Clone'], icon: Stamp, Panel: ClonePanel, Overlay: CloneOverlay, sourceSpace: true, noFooter: true },
   { id: 'mosaic', label: ['Mozaik', 'Mosaic'], icon: Grid3x3, Panel: MosaicPanel, Overlay: MosaicOverlay, sourceSpace: true, noFooter: true },
   { id: 'replace', label: ['YZ ile değiştir', 'AI replace'], icon: WandSparkles, Panel: ReplacePanel, Overlay: PaintOverlay, sourceSpace: true, noFooter: true, badge: 'YZ' }
