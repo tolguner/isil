@@ -405,7 +405,7 @@ export function EditorTopActions() {
   return (
     <div className="row" style={{ position: 'relative' }}>
       <button className="btn sm" onClick={() => { const st = useEditor.getState(); st.setTab('adjust'); st.openTool('enhance'); setQ('hd') }} title={tr('Kaliteyi artır', 'Enhance quality')}>
-        <Sparkles size={14} /> {q === 'hd' ? 'HD' : tr('Kalite', 'Quality')}
+        <Sparkles size={14} /> {q === 'hd' ? 'HD' : tr('Kalite artır', 'Enhance')}
       </button>
       <button id="export-btn" className="btn primary sm" onClick={() => setOpen((o) => !o)} aria-expanded={open}>
         <Download size={14} /> {tr('Dışa aktar', 'Export')} <ChevronDown size={14} />
@@ -413,7 +413,7 @@ export function EditorTopActions() {
       {open && (
         <div className="menu" role="dialog" aria-label={tr('Dışa aktarma', 'Export')}>
           <Segmented items={[{ id: 'jpeg', label: 'JPG' }, { id: 'png', label: 'PNG' }, { id: 'webp', label: 'WebP' }]} value={fmt} onChange={setFmt} />
-          {fmt !== 'png' && <Slider label={tr('Kalite', 'Quality')} value={quality} min={50} max={100} onChange={setQuality} />}
+          {fmt !== 'png' && <Slider label={tr('Dosya kalitesi', 'File quality')} value={quality} min={50} max={100} onChange={setQuality} />}
           <div className="field">
             <span>{tr('Boyut', 'Size')}</span>
             <select className="select" value={maxSide} onChange={(e) => setMaxSide(Number(e.target.value))}>

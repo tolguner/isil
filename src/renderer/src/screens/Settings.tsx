@@ -53,8 +53,14 @@ export function SettingsPage() {
             <div style={{ width: 240 }}><Segmented items={[{ id: 'jpeg', label: 'JPG' }, { id: 'png', label: 'PNG' }, { id: 'webp', label: 'WebP' }]} value={s.exportFormat} onChange={(v) => set({ exportFormat: v })} /></div>
           </div>
           <div className="setting">
-            <div><b>{tr('Dosya kalitesi', 'File quality')}</b><span>{tr('JPG/WebP sıkıştırması; düşük değer daha küçük dosya, biraz daha az ayrıntı', 'JPG/WebP compression; lower means smaller files with slightly less detail')}</span></div>
-            <input className="input" style={{ width: 90 }} type="number" min={50} max={100} value={s.exportQuality} onChange={(e) => set({ exportQuality: Math.min(100, Math.max(50, Number(e.target.value) || 92)) })} />
+            <div><b>{tr('Dosya kalitesi', 'File quality')}</b><span>{tr('JPG ve WebP için. Dengeli, gözle fark edilmeyen kayıpla dosyayı küçültür; Küçük paylaşım için.', 'For JPG and WebP. Balanced shrinks files with no visible loss.')}</span></div>
+            <div style={{ width: 300 }}>
+              <Segmented
+                items={[{ id: '80', label: tr('Küçük', 'Smaller') }, { id: '92', label: tr('Dengeli', 'Balanced') }, { id: '100', label: tr('En iyi', 'Best') }]}
+                value={String([80, 92, 100].reduce((a, b) => (Math.abs(b - s.exportQuality) < Math.abs(a - s.exportQuality) ? b : a)))}
+                onChange={(v) => set({ exportQuality: Number(v) })}
+              />
+            </div>
           </div>
         </section>
 

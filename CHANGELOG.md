@@ -4,7 +4,7 @@ Her büyük güncellemede sürüm numarası artırılır (`npm version <x.y.z> -
 
 ## Yayımlanmamış
 
-- Ayarlar: aynı adı taşıyan iki "Kalite" ayarı ayrıldı: "Dosya kalitesi" (JPG/WebP sıkıştırması) ve "Üretken YZ modeli" (FLUX.2 klein 4B / 9B)
+- Ayarlar: aynı adı taşıyan iki "Kalite" ayarı ayrıldı: "Dosya kalitesi" (JPG/WebP sıkıştırması) ve "Üretken YZ modeli" (FLUX.2 klein 4B / 9B). Dosya kalitesinde sayı kutusu yerine üç seçenek: Küçük (80), Dengeli (92), En iyi (100). Dışa aktarma menüsünde "Dosya kalitesi", üst çubukta "Kalite artır" adları
 
 ## 0.4.1 — 2026-10-16
 
