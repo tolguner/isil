@@ -240,7 +240,7 @@ def cmd_edit(a):
             image=image,
             mask_image=mask.resize((w, h)),
             image_reference=refs or None,
-            strength=float(a.get("strength", 1.0)),
+            strength=float(a.get("strength") or 1.0),
             **common,
         ).images[0]
     else:

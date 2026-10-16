@@ -307,7 +307,7 @@ export function registerEngineHandlers({ root, onnxDir }: { root: () => string; 
     proc?.stdin.write(JSON.stringify({ cmd: 'cancel' }) + '\n')
   })
 
-  ipcMain.handle('engine:edit', async (e, a: { image: Uint8Array; prompt: string; refs?: Uint8Array[]; mask?: Uint8Array | null; width: number; height: number; quality: 'fast' | 'best'; seed?: number }) => {
+  ipcMain.handle('engine:edit', async (e, a: { image: Uint8Array; prompt: string; refs?: Uint8Array[]; mask?: Uint8Array | null; width: number; height: number; quality: 'fast' | 'best'; seed?: number; strength?: number }) => {
     const files: string[] = []
     try {
       const image = await putTmp(a.image)
@@ -316,7 +316,7 @@ export function registerEngineHandlers({ root, onnxDir }: { root: () => string; 
       const out = join(tmp(), randomUUID() + '.png')
       files.push(image, ...refs, out, ...(mask ? [mask] : []))
       if (!device) device = (await call<{ device: string }>('info', {}).catch(() => null))?.device
-      await call('edit', { model: a.quality === 'best' ? 'flux-best' : 'flux-fast', image, refs, mask, prompt: a.prompt, width: a.width, height: a.height, seed: a.seed, out }, sender(e.sender))
+      await call('edit', { model: a.quality === 'best' ? 'flux-best' : 'flux-fast', image, refs, mask, prompt: a.prompt, width: a.width, height: a.height, seed: a.seed, strength: a.strength, out }, sender(e.sender))
       return new Uint8Array(await fs.readFile(out))
     } finally {
       for (const f of files) void fs.rm(f, { force: true })

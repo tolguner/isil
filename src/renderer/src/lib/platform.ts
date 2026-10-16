@@ -10,7 +10,7 @@ export interface EngineStatus {
   blocked?: string              // ör. Windows Uygulama Denetimi engeli
 }
 export interface EngineProgress { stage: 'download' | 'load' | 'generate' | 'chat'; part?: string; got?: number; total?: number; step?: number; steps?: number; text?: string }
-export interface GenEditArgs { image: Uint8Array; prompt: string; refs?: Uint8Array[]; mask?: Uint8Array | null; width: number; height: number; quality: 'fast' | 'best'; seed?: number }
+export interface GenEditArgs { image: Uint8Array; prompt: string; refs?: Uint8Array[]; mask?: Uint8Array | null; width: number; height: number; quality: 'fast' | 'best'; seed?: number; strength?: number }
 export interface ModelProgress { file: string; got: number; total: number; done?: boolean }
 
 export interface Platform {

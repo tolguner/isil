@@ -7,6 +7,8 @@ import { useT } from '@/lib/i18n'
 import { Switch } from '@/components/ui'
 import { detectPeople, personMaskInBox, type PersonBox } from '@/ai/vision'
 import { inpaintTiles } from '@/ai/ops'
+import { generativeErase } from '@/ai/generative'
+import { FillMethod, eraseOpts } from './fill'
 import type { ToolDef, View } from './types'
 import { WorkFooter, WorkOverlayImage, busy, setWorkResult, useWork, useWorkLifecycle, work, workEmit } from './raster'
 
@@ -85,7 +87,8 @@ function paintMask() {
 
 async function removeSelected(tr: (a: string, b: string) => string) {
   if (!work.full || !work.mask || !st.people.some((p) => p.selected)) return
-  await busy(tr('Siliniyor…', 'Removing…'), async () => {
+  const gen = eraseOpts.gen
+  const job = async () => {
     const full = work.full!
     const g = document.createElement('canvas')
     g.width = full.width
@@ -96,11 +99,20 @@ async function removeSelected(tr: (a: string, b: string) => string) {
     out.width = full.width
     out.height = full.height
     out.getContext('2d')!.drawImage(full, 0, 0)
-    if (!(await inpaintTiles(out, gctx.getImageData(0, 0, g.width, g.height)))) throw new Error(tr('Onarım modeli (LaMa) yüklenemedi', 'Inpainting model (LaMa) could not be loaded'))
-    setWorkResult(out)
+    if (gen) {
+      const res = await generativeErase(full, g)
+      if (!res) return
+      setWorkResult(res)
+    } else {
+      if (!(await inpaintTiles(out, gctx.getImageData(0, 0, g.width, g.height)))) throw new Error(tr('Onarım modeli (LaMa) yüklenemedi', 'Inpainting model (LaMa) could not be loaded'))
+      setWorkResult(out)
+    }
     st.people = st.people.filter((p) => !p.selected)
     emit()
-  })
+  }
+  // FLUX kendi ilerleme göstergesini açar; LaMa yolunda meşgul göstergesi
+  if (gen) await job().catch((e) => useEditor.getState().toast('error', String((e as Error).message)))
+  else await busy(tr('Siliniyor…', 'Removing…'), job)
 }
 
 function PassersbyPanel() {
@@ -129,6 +141,7 @@ function PassersbyPanel() {
         <div><b>{tr('Gölge ve yansımayı da sil', 'Also remove shadow and reflection')}</b><span>{tr('Kişinin altındaki gölge ya da sudaki yansıma kalmasın', 'So no shadow or reflection is left behind')}</span></div>
         <Switch on={s.shadow} onChange={(v) => { st.shadow = v; emit(); paintMask() }} label={tr('Gölge ve yansımayı da sil', 'Also remove shadow and reflection')} />
       </div>
+      <FillMethod />
       <button className="btn primary block" disabled={!sel} onClick={() => void removeSelected(tr)}><UserMinus size={16} /> {tr('Seçilenleri sil', 'Remove selected')}</button>
       <p className="note">{tr('Bulunamayan biri varsa Akıllı seçim ile tıklayarak silebilirsin.', 'If someone was missed, remove them with Smart select.')}</p>
       <WorkFooter type="inpaint" params={{ tool: 'passersby' }} />

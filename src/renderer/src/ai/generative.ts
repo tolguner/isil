@@ -165,7 +165,7 @@ export async function localEditKeepPeople(src: Src, prompt: string): Promise<HTM
 }
 
 /** Maskeli düzenleme (FLUX.2 klein inpaint): yalnız maskeli alan yeniden çizilir, dışı birebir korunur. */
-export async function localMaskedEdit(src: Src, mask: HTMLCanvasElement, what: string, opts: { prefill?: Src; raw?: boolean } = {}): Promise<HTMLCanvasElement | null> {
+export async function localMaskedEdit(src: Src, mask: HTMLCanvasElement, what: string, opts: { prefill?: Src; raw?: boolean; strength?: number } = {}): Promise<HTMLCanvasElement | null> {
   const quality = useEditor.getState().settings.genQuality
   const part = quality === 'best' ? 'flux-best' : 'flux-fast'
   if (!(await ensureEngine(['runtime', part]))) return null
@@ -188,7 +188,7 @@ export async function localMaskedEdit(src: Src, mask: HTMLCanvasElement, what: s
   const maskPng = await png(grow)
   const out = await withProgress(tNow('Yapay zekâ dolduruyor…', 'AI is filling…'), async () => {
       await claimGpu('engine', true)
-      return platform.genEdit({ image, prompt: what, mask: maskPng, width: w, height: h, quality })
+      return platform.genEdit({ image, prompt: what, mask: maskPng, width: w, height: h, quality, strength: opts.strength })
     }
   )
   const bm = await createImageBitmap(new Blob([out as BlobPart], { type: 'image/png' }))
@@ -210,6 +210,18 @@ export async function localMaskedEdit(src: Src, mask: HTMLCanvasElement, what: s
   res.getContext('2d')!.drawImage(edited, 0, 0)
   if (isGrayscale(src) && !wantsColor(what)) toGray(res)
   return res
+}
+
+/**
+ * Üretken silme: alan önce LaMa ile doldurulur, sonra FLUX.2 klein bu sonucu düşük güçte (strength 0,55) yeniden
+ * işler: LaMa'nın bulanık/tekrarlı dokusu gerçekçi hale gelir ama yeni içerik uydurulmaz. Tam güçte FLUX, kalabalık
+ * sahnelerde silinen kişiyi "hayalet" olarak yeniden çiziyordu (Ar-Ge ölçümü, tests/e2e/gen-erase.mjs).
+ */
+export async function generativeErase(src: Src, mask: HTMLCanvasElement, opts: { shadow?: boolean } = {}): Promise<HTMLCanvasElement | null> {
+  const { inpaint } = await import('./ops')
+  const rough = await inpaint(src, mask, opts)
+  if (!rough) return null
+  return localMaskedEdit(rough, mask, 'A clean natural photo of the background. Sharp realistic texture continuing the surroundings, consistent lighting and perspective. Nothing in the masked area.', { prefill: rough, strength: 0.55 })
 }
 
 export function grayToAlpha(gray: HTMLCanvasElement, w: number, h: number): HTMLCanvasElement {

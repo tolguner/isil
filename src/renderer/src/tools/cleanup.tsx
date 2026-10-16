@@ -5,10 +5,11 @@ import { useT } from '@/lib/i18n'
 import { Slider, Segmented, Switch } from '@/components/ui'
 import { inpaint, toCanvas } from '@/ai/ops'
 import { tapSelect, resetTapSelect } from '@/ai/vision'
-import { localMaskedEdit, grayToAlpha } from '@/ai/generative'
+import { localMaskedEdit, grayToAlpha, generativeErase } from '@/ai/generative'
 import type { ToolDef, View } from './types'
 import { BrushOverlay, type BrushState } from './brush'
 import { PASSERSBY_TOOL } from './passersby'
+import { FillMethod, eraseOpts } from './fill'
 import { WorkFooter, WorkOverlayImage, busy, fullMask, setWorkResult, useWork, useWorkLifecycle, work, workEmit } from './raster'
 
 const brush: BrushState = { size: 0.05, hardness: 0.7, erase: false }
@@ -29,9 +30,18 @@ function maskEmpty() {
 }
 
 // ---------- Sihirli silgi ----------
-const eraseOpts = { shadow: false }
 async function runErase() {
   if (!work.full || maskEmpty()) return
+  if (eraseOpts.gen) {
+    // FLUX kendi ilerleme göstergesini açar
+    try {
+      const res = await generativeErase(work.full, fullMask(), { shadow: eraseOpts.shadow })
+      if (res) setWorkResult(res)
+    } catch (e) {
+      useEditor.getState().toast('error', String((e as Error).message))
+    }
+    return
+  }
   const res = await busy(useEditor.getState().settings.language === 'en' ? 'Removing…' : 'Siliniyor…', () => inpaint(work.full!, fullMask(), { shadow: eraseOpts.shadow }))
   if (res) setWorkResult(res)
 }
@@ -45,6 +55,7 @@ function ErasePanel() {
     <>
       <p className="note">{tr('Silmek istediğin nesnenin üzerini boya, sonra Kaldır’a bas. Arka plan yapay zekâyla bilgisayarında doldurulur.', 'Paint over what you want gone, then press Remove. The background is filled by AI on your computer.')}</p>
       <BrushControls />
+      <FillMethod />
       <div className="setting" style={{ padding: '4px 0' }}>
         <div><b>{tr('Gölge ve yansımayı da sil', 'Also remove shadow and reflection')}</b><span>{tr('Kişi silerken altındaki gölge ya da sudaki yansıma kalmasın', 'So a removed person leaves no shadow or reflection behind')}</span></div>
         <Switch on={shadow} onChange={(v) => { eraseOpts.shadow = v; setShadow(v) }} label={tr('Gölge ve yansımayı da sil', 'Also remove shadow and reflection')} />
@@ -105,6 +116,7 @@ function SmartPanel() {
     <>
       <p className="note">{tr('Kaldırmak istediğin nesneye tıkla; yapay zekâ nesneyi bütün olarak seçer. Fazlası seçildiyse "Çıkar" ile tıkla.', 'Click the object to remove; AI selects it whole. If too much is selected, click with "Subtract".')}</p>
       <Segmented items={[{ id: 'add', label: tr('Ekle', 'Add') }, { id: 'sub', label: tr('Çıkar', 'Subtract') }]} value={mode} onChange={(v) => { tap.mode = v; setMode(v) }} />
+      <FillMethod />
       <div className="row">
         <button className="btn ghost sm" onClick={() => { tap.pos = []; tap.neg = []; void runTap() }}>{tr('Seçimi temizle', 'Clear selection')}</button>
       </div>

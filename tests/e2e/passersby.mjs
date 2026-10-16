@@ -5,7 +5,7 @@ import { join, basename } from 'path'
 import { tempDir, linkOrCopy } from './_tmp.mjs'
 
 const root = process.cwd()
-const [img, outDir = join(root, 'tests', 'fixtures', 'out')] = process.argv.slice(2)
+const [img, outDir = join(root, 'tests', 'fixtures', 'out'), method = 'lama'] = process.argv.slice(2)
 mkdirSync(outDir, { recursive: true })
 const userData = tempDir('isil-passersby-')
 mkdirSync(join(userData, 'models'), { recursive: true })
@@ -13,7 +13,8 @@ const dev = join(root, 'dev-models')
 if (existsSync(dev)) for (const f of readdirSync(dev).filter((f) => statSync(join(dev, f)).isFile())) linkOrCopy(join(dev, f), join(userData, 'models', f))
 const results = []
 const ok = (name, pass, info = '') => { results.push({ name, pass, info }); console.log(`${pass ? 'GEÇTİ' : 'KALDI'}  ${name}  ${info}`) }
-const app = await electron.launch({ args: ['.'], cwd: root, env: { ...process.env, ISIL_TEST: '1', ISIL_USERDATA: userData } })
+const engine = existsSync(join(dev, 'engine', 'python', '.ok'))
+const app = await electron.launch({ args: ['.'], cwd: root, env: { ...process.env, ISIL_TEST: '1', ISIL_USERDATA: userData, ...(engine ? { ISIL_ENGINE_DIR: join(dev, 'engine') } : {}) } })
 const win = await app.firstWindow()
 const errors = []
 win.on('pageerror', (e) => errors.push(String(e)))
@@ -40,11 +41,12 @@ await first.click()
 const after = await first.getAttribute('aria-pressed')
 await first.click()
 ok('Tıklama seçimi değiştiriyor', before !== after, `${before} → ${after}`)
+if (method === 'flux') await win.getByRole('radio', { name: 'Üretken (FLUX)' }).click()
 const t0 = Date.now()
 await win.getByRole('button', { name: 'Seçilenleri sil' }).click()
 await win.evaluate(async () => {
   const S = (await window.__isil.store()).getState
-  for (let i = 0; i < 1800 && (S().busy || !document.querySelector('.panel button.primary:not([disabled])')); i++) await new Promise((r) => setTimeout(r, 100))
+  for (let i = 0; i < 1800 && (S().busy || document.querySelectorAll('.person-box.on').length > 0); i++) await new Promise((r) => setTimeout(r, 100))
 })
 await win.waitForTimeout(800)
 const ms = Date.now() - t0
