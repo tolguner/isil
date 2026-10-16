@@ -2,7 +2,9 @@
 
 Her büyük güncellemede sürüm numarası artırılır (`npm version <x.y.z> --no-git-tag-version`), uygulama Ayarlar → Hakkında'da sürümü gösterir.
 
-## Yayımlanmamış
+## 0.5.0 — 2026-10-17
+
+Üç büyük yerel YZ özelliği: yoldan geçenleri silme, seçmeli ayar ve YZ ile tuval genişletme. Hepsi bilgisayarda çalışır, fotoğraf dışarı çıkmaz.
 
 - Kırp → **YZ genişlet**: fotoğrafı her yöne (%15, %30) ya da bir orana (1:1, 4:5, 9:16, 16:9, 3:2) büyütür, yeni alanı yerelde doldurur: yerel YZ motoru kuruluysa FLUX.2 klein, değilse LaMa. Dikiş kalmasın diye renk eşitleme ve kenarda yumuşak geçiş; asıl pikseller değişmez. Karşılaştırma orijinali yeni tuvaldeki yerinde gösterir
 - Tek araçlı olmayan otomatik sekmelerde (Kırp) araç ızgarası görünür
