@@ -79,9 +79,12 @@ void main(){
     float wb = exp(-dot(c - low, c - low) * 28.0);
     float k = skin * sk.x * wb;
     col = mix(col, low + high * mix(0.45, 0.12, sk.w), k);
-    // leke: çevresinden koyu küçük alanlar
+    // leke: çevresinden KONTRAST BANDINDA koyu küçük alanlar. d = yerel cilde göre koyuluk.
+    // Ar-Ge (replica/arge/01): leke orta kontrastlı küçük bir blob; dövme/ben/piercing çok daha koyu
+    // kalıcı işaret. Bandın üstünü (çok koyu) koruyarak kimlik işaretlerini silmekten kaçın.
     float d = luma(m) - luma(c);
-    float k2 = skin * sk.y * smoothstep(0.015, 0.07, d);
+    float spot = smoothstep(0.015, 0.06, d) * (1.0 - smoothstep(0.12, 0.2, d));
+    float k2 = skin * sk.y * spot;
     col = mix(col, m + high * 0.15, clamp(k2 * 1.4, 0.0, 1.0));
     // kırışık: yüksek frekansı kır
     col = mix(col, col - high * 0.6, skin * uSculpt[id].w * 0.8);
