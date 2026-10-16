@@ -1,0 +1,34 @@
+# Her push ve PR'da hızlı kontrol: tür denetimi + üretim derlemesi.
+# Modeller ve Electron ikilisi gerekmediği için kurulum betikleri atlanır (--ignore-scripts),
+# böylece iş birkaç dakikada biter ve özel repoda Actions dakikası az harcanır.
+name: CI
+
+on:
+  push:
+    branches: [master]
+    paths-ignore: ['**.md', 'replica/**', 'LICENSE']
+  pull_request:
+    paths-ignore: ['**.md', 'replica/**', 'LICENSE']
+  workflow_dispatch:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    name: Tür denetimi + derleme
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci --ignore-scripts
+      - run: npm run typecheck
+      - run: npm run build

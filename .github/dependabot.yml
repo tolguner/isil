@@ -1,0 +1,22 @@
+# Bağımlılık güncellemeleri: ayda bir, gruplanmış tek PR (her PR CI dakikası harcar).
+version: 2
+updates:
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: monthly
+    groups:
+      actions:
+        patterns: ['*']
+  - package-ecosystem: npm
+    directory: /
+    schedule:
+      interval: monthly
+    open-pull-requests-limit: 3
+    groups:
+      npm-minor-patch:
+        update-types: [minor, patch]
+    ignore:
+      # Electron ana sürümleri GPU/WebGPU davranışını değiştirebilir; elle yükseltilir.
+      - dependency-name: electron
+        update-types: ['version-update:semver-major']

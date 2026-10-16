@@ -1,0 +1,75 @@
+# Uçtan uca testleri Linux'ta, sanal ekran (xvfb) ve yazılımsal WebGL (SwiftShader) ile çalıştırır.
+# GPU olmadığı için yavaştır; dakika harcamamak için yalnızca elle başlatılır:
+#   Actions → E2E → Run workflow → test seç.
+# Deneme portresi: MediaPipe'ın kendi test görseli (ABD hükümeti resmî portresi, kamu malı);
+# repoya girmez, her çalıştırmada indirilip özeti doğrulanır.
+# Not: protect.mjs yerel, git dışı bir fotoğrafa bağlı olduğu için burada çalıştırılamaz;
+# smoke.mjs'nin büyük ONNX modeli adımları (ISNet, LaMa, ESRGAN) dev-models/ olmadan kalır.
+name: E2E
+
+on:
+  workflow_dispatch:
+    inputs:
+      test:
+        description: Çalıştırılacak test
+        type: choice
+        options: [ui-sweep, audit, smoke]
+        default: ui-sweep
+
+concurrency:
+  group: e2e-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  e2e:
+    name: ${{ inputs.test }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 75
+    env:
+      # ubuntu-24.04'te AppArmor, Chromium'un kum havuzunu engelliyor; CI'da kapatılır.
+      ELECTRON_DISABLE_SANDBOX: '1'
+      PORTRAIT_URL: https://storage.googleapis.com/mediapipe-assets/portrait.jpg
+      PORTRAIT_SHA256: a6f11efaa834706db23f275b6115058fa87fc7f14362681e6abe14e82749de3e
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+          cache: npm
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Bağımlılıklar (MediaPipe WASM + yerleşik modeller postinstall ile)
+        run: npm ci
+      - name: Electron'u yazılımsal WebGL bayraklarıyla başlat
+        # Testler electron.launch({ args: ['.'] }) çağırıyor; bayraklar sarmalayıcı betikle eklenir,
+        # uygulama ve test koduna dokunulmaz.
+        run: |
+          d=node_modules/electron/dist
+          printf '#!/bin/sh\nexec "$(dirname "$0")/electron" --ignore-gpu-blocklist --enable-unsafe-swiftshader "$@"\n' > $d/electron-ci
+          chmod +x $d/electron-ci
+          printf 'electron-ci' > node_modules/electron/path.txt
+      - name: Deneme portresi ve kenar durumu dosyaları
+        run: |
+          mkdir -p src/renderer/public/test
+          curl -sSfL -o src/renderer/public/test/portrait.jpg "$PORTRAIT_URL"
+          echo "$PORTRAIT_SHA256  src/renderer/public/test/portrait.jpg" | sha256sum -c -
+          pip install pillow pillow-heif
+          python tests/fixtures/make.py
+      - run: npm run build
+      - name: node tests/e2e/${{ inputs.test }}.mjs
+        run: xvfb-run -a --server-args="-screen 0 1920x1080x24" node tests/e2e/${{ inputs.test }}.mjs
+      - name: Ekran görüntüleri ve sonuçlar
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: e2e-${{ inputs.test }}
+          retention-days: 7
+          if-no-files-found: ignore
+          path: |
+            replica/audit/
+            replica/clone-screens/
+            replica/smoke-results.json
