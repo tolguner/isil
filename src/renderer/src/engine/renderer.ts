@@ -6,11 +6,11 @@ import { effectById, filterById, type Tint } from './presets'
 
 export interface FaceUniforms {
   skin: Float32Array; skin2: Float32Array; tone: Float32Array
-  lip: Float32Array; blush: Float32Array; lid: Float32Array; brow: Float32Array; sculpt: Float32Array
+  lip: Float32Array; blush: Float32Array; lid: Float32Array; brow: Float32Array; sculpt: Float32Array; skinX: Float32Array
 }
 export function emptyFaceUniforms(): FaceUniforms {
   const z = () => new Float32Array(32)
-  return { skin: z(), skin2: z(), tone: z(), lip: z(), blush: z(), lid: z(), brow: z(), sculpt: z() }
+  return { skin: z(), skin2: z(), tone: z(), lip: z(), blush: z(), lid: z(), brow: z(), sculpt: z(), skinX: z() }
 }
 
 export interface RenderOptions {
@@ -183,7 +183,7 @@ export class Renderer {
       .tex('uMaskA', 3, this.maskA.tex).tex('uMaskB', 4, (this.maskB ?? this.blank).tex).tex('uMaskC', 5, (this.maskC ?? this.blank).tex)
       .tex('uMaskP', 6, (this.maskP ?? this.blank).tex)
       .fv('uSkin', f.skin, 4).fv('uSkin2', f.skin2, 4).fv('uTone', f.tone, 4).fv('uLip', f.lip, 4)
-      .fv('uBlush', f.blush, 4).fv('uLid', f.lid, 4).fv('uBrow', f.brow, 4).fv('uSculpt', f.sculpt, 4)
+      .fv('uBlush', f.blush, 4).fv('uLid', f.lid, 4).fv('uBrow', f.brow, 4).fv('uSculpt', f.sculpt, 4).fv('uSkinX', f.skinX, 4)
     if (this.hair && this.hair.amount > 0) p.f('uHair', ...this.hair.rgb, this.hair.amount).f('uHairOn', 1)
     else p.f('uHairOn', 0)
     this.draw(out, src.w, src.h)

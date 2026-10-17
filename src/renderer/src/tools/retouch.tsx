@@ -100,7 +100,7 @@ function FaceShapePanel() {
 // ---------------- Cilt ----------------
 const SKIN_KEYS: SliderDef[] = [
   ['smooth', 'Pürüzsüzleştir', 'Smooth'], ['blemish', 'Leke giderme', 'Blemishes'], ['pores', 'Gözenek', 'Pores'], ['wrinkle', 'Kırışıklık', 'Wrinkles'],
-  ['undereye', 'Göz altı', 'Dark circles'], ['detail', 'Ayrıntı', 'Detail'], ['whiten', 'Aydınlat', 'Brighten'], ['teeth', 'Diş beyazlat', 'Whiten teeth'],
+  ['undereye', 'Göz altı', 'Dark circles'], ['detail', 'Ayrıntı', 'Detail'], ['texture', 'Cilt dokusu', 'Skin texture'], ['whiten', 'Aydınlat', 'Brighten'], ['teeth', 'Diş beyazlat', 'Whiten teeth'],
   ['eyes', 'Göz parlat', 'Brighten eyes']
 ]
 
@@ -114,9 +114,9 @@ function SkinPanel() {
     <>
       <NoFace />
       <div className="row wrap" style={{ marginBottom: 8 }}>
-        <button className="btn sm primary" onClick={() => set({ smooth: 45, blemish: 60, undereye: 40, eyes: 25, teeth: 30, whiten: 10, pores: 30 })}><Sparkles size={14} /> {tr('Oto', 'Auto')}</button>
+        <button className="btn sm primary" onClick={() => set({ smooth: 45, blemish: 60, undereye: 40, eyes: 25, teeth: 30, whiten: 10, pores: 30, texture: 20 })}><Sparkles size={14} /> {tr('Oto', 'Auto')}</button>
         <button className="btn sm" onClick={() => set({ smooth: 25, blemish: 40, undereye: 25, pores: 15 })}>{tr('Doğal', 'Natural')}</button>
-        <button className="btn sm" onClick={() => set({ smooth: 70, blemish: 80, undereye: 55, whiten: 20, pores: 60, wrinkle: 40 })}>{tr('Pürüzsüz', 'Flawless')}</button>
+        <button className="btn sm" onClick={() => set({ smooth: 70, blemish: 80, undereye: 55, whiten: 20, pores: 60, wrinkle: 40, texture: 30 })}>{tr('Pürüzsüz', 'Flawless')}</button>
         <button className="btn sm ghost" onClick={() => update((d) => editFace(d, idx, (x) => void (x.skin = {})))}>{tr('Sıfırla', 'Reset')}</button>
       </div>
       {SKIN_KEYS.map(([k, a, b]) => (

@@ -58,6 +58,7 @@ uniform vec4 uBlush[8];
 uniform vec4 uLid[8];
 uniform vec4 uBrow[8];
 uniform vec4 uSculpt[8]; // kontür, aydınlatıcı, dolgun ışık, kırışık
+uniform vec4 uSkinX[8];  // doku (yapay gözenek), -, -, -
 uniform vec4 uHair;      // saç rengi + miktar
 uniform float uHairOn;
 ${COMMON}
@@ -92,6 +93,21 @@ void main(){
     col = mix(col, col - high * 0.6, keep * uSculpt[id].w * 0.8);
     // ayrıntı/doku geri kazanma
     col += high * skin * uTone[id].w * 0.8;
+    // cilt dokusu: yumuşatmanın sildiği gözenek dokusunu geri ver. İki ölçekli değer gürültüsü (gözenek ~2-3 px,
+    // daha büyük düzensizlik ~9 px), aydınlıkla orantılı; korunan işaretlerin üstüne de uygulanmaz
+    float tx = uSkinX[id].x;
+    if (tx > 0.0) {
+      vec2 px = vUv * vec2(textureSize(uBase, 0));
+      // pürüzsüz değer gürültüsü (çift doğrusal), blok görünmesin
+      vec2 q = px / 2.2, fq = fract(q), iq = floor(q);
+      fq = fq * fq * (3.0 - 2.0 * fq);
+      float n1 = mix(mix(hash12(iq), hash12(iq + vec2(1, 0)), fq.x), mix(hash12(iq + vec2(0, 1)), hash12(iq + vec2(1, 1)), fq.x), fq.y) - 0.5;
+      vec2 q2 = px / 8.0, f2 = fract(q2), i2 = floor(q2) + 31.0;
+      f2 = f2 * f2 * (3.0 - 2.0 * f2);
+      float n2 = mix(mix(hash12(i2), hash12(i2 + vec2(1, 0)), f2.x), mix(hash12(i2 + vec2(0, 1)), hash12(i2 + vec2(1, 1)), f2.x), f2.y) - 0.5;
+      float pore = n1 * 0.8 + n2 * 0.35;
+      col *= 1.0 + pore * 0.26 * tx * keep * (0.4 + luma(col));
+    }
     // cilt aydınlatma
     vec3 lift = col + (1.0 - col) * 0.22;
     lift = mix(vec3(luma(lift)), lift, 0.9);

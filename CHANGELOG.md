@@ -2,6 +2,10 @@
 
 Her büyük güncellemede sürüm numarası artırılır (`npm version <x.y.z> --no-git-tag-version`), uygulama Ayarlar → Hakkında'da sürümü gösterir.
 
+## Yayımlanmamış
+
+- Rötuş → Cilt → **Cilt dokusu**: pürüzsüzleştirmenin sildiği gözenek dokusu iki ölçekli yumuşak gürültüyle geri verilir (yanak yüksek frekans enerjisi 153 → 189, orijinal 335); korunan işaretlere uygulanmaz. Oto ve Pürüzsüz düğmeleri dokuyu da kullanır
+
 ## 0.7.0 — 2026-10-17
 
 Rakip taramasının (replica/rekabet/eksikler-0.6.md) ilk üç maddesi.

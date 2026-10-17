@@ -668,6 +668,7 @@ export function faceUniforms(edits: FaceEdit[], count: number): FaceUniforms {
     u.lid.set(mk('lid', '#8a5a6a'), o)
     u.brow.set(mk('brow', '#4a3426'), o)
     u.sculpt.set([k('contour'), k('highlight'), k('plumpLight'), k('wrinkle')], o)
+    u.skinX.set([k('texture'), 0, 0, 0], o)
   }
   return u
 }
