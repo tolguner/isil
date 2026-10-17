@@ -247,9 +247,9 @@ function BackgroundPanel() {
     <>
       <div className="group-label">{tr('Tuval oranı', 'Canvas ratio')}</div>
       <div className="aspects">
-        <button className={!bg.ratio ? 'on' : ''} onClick={() => update((d) => void (d.background.ratio = null))}><span className="box" style={{ width: 18, height: 14, borderStyle: 'dashed' }} />{tr('Yok', 'None')}</button>
+        <button className={!bg.ratio ? 'on' : ''} onClick={() => update((d) => { d.background.ratio = null; d.background.box = null })}><span className="box" style={{ width: 18, height: 14, borderStyle: 'dashed' }} />{tr('Yok', 'None')}</button>
         {RATIOS.filter((r) => r.r && r.r > 0).map((a) => (
-          <button key={a.id} className={bg.ratio === a.id ? 'on' : ''} onClick={() => update((d) => { d.background.ratio = a.id; if (!d.background.fill) d.background.fill = { type: 'color', color: '#ffffff' } })}>
+          <button key={a.id} className={bg.ratio === a.id ? 'on' : ''} onClick={() => update((d) => { d.background.ratio = a.id; d.background.box = null; if (!d.background.fill) d.background.fill = { type: 'color', color: '#ffffff' } })}>
             <span className="box" style={{ width: a.r! >= 1 ? 22 : 22 * a.r!, height: a.r! >= 1 ? 22 / a.r! : 22 }} />
             {a.label[0]}
           </button>

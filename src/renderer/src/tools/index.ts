@@ -10,10 +10,11 @@ import { TEXT_TOOLS, STICKER_TOOLS, SHAPE_TOOLS, DRAW_TOOLS } from './layers'
 import { RESHAPE_TOOLS } from './reshape'
 import { AI_TOOLS, AIFX_TOOLS } from './ai'
 import { RECIPE_TOOLS } from './recipes'
+import { TEMPLATE_TOOLS } from './templates'
 
 export const TABS: TabDef[] = [
   { id: 'ai', label: ['YZ Editör', 'AI Editor'], icon: Wand2, tools: AI_TOOLS, auto: true },
-  { id: 'recipes', label: ['Tarifler', 'Recipes'], icon: LayoutTemplate, tools: RECIPE_TOOLS, auto: true },
+  { id: 'recipes', label: ['Tarifler', 'Recipes'], icon: LayoutTemplate, tools: [...RECIPE_TOOLS, ...TEMPLATE_TOOLS], auto: true },
   { id: 'retouch', label: ['Rötuş', 'Retouch'], icon: Smile, tools: RETOUCH_TOOLS },
   { id: 'filters', label: ['Filtreler', 'Looks'], icon: Aperture, tools: FILTER_TOOLS },
   { id: 'adjust', label: ['Ayarla', 'Adjust'], icon: SlidersHorizontal, tools: ADJUST_TOOLS },

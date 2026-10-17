@@ -2,6 +2,12 @@
 
 Her yayımlanan yapıda sürümün yalnız son hanesi artırılır (0.8.0 → 0.8.1); ara sürüm (0.9) büyük aşamalarda, 1.0.0 ise yayına hazır tam üründe. Uygulama Ayarlar → Hakkında'da sürümü gösterir.
 
+## 0.8.4 — 2026-10-17
+
+- **Şablonlar**: gönderi, hikâye ve afiş için 12 hazır yerleşim (Anlık, Galeri, Sade çerçeve, Dergi kapağı; Bulanık zemin, Pastel, Gece, Tam ekran; Etkinlik, Film afişi, Davetiye, İndirim). Şablon tuval oranını, zemini, fotoğrafın kutusunu ve metinleri birlikte kurar; fotoğraf kutuya göre ortadan kırpılır. Metinler sıradan metin katmanıdır, tuvalde dokunup değiştirilebilir; başka şablona geçince yalnız şablonun katmanları değişir, kendi eklediklerin kalır. Önizlemeler kendi fotoğrafınla gösterilir. Tarifler sekmesinde ve ana sayfada
+- **Bulanık zemin** artık fotoğrafın büyütülmüş bulanık hali; önceden fotoğraf kenarındaki satırlar uzatılıyordu (dikey tuvallerde şeritlenme)
+- Tarifler aracının simgesi değişti (Şablonlar ile karışmasın)
+
 ## 0.8.3 — 2026-10-17
 
 Cila turu: yeni özellik yok, mevcut ekranlar tutarlı hale getirildi.

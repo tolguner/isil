@@ -312,3 +312,19 @@ kbd { background: var(--c-surface-3); border-radius: 4px; padding: 1px 5px; font
 .hide-glyph.blur { background: radial-gradient(circle, #d9b8a0 0 40%, #8a6f60 75%); filter: blur(5px); }
 .hide-glyph.pixel { border-radius: 2px; background: conic-gradient(#c9a58e 25%, #8f7466 0 50%, #c9a58e 0 75%, #8f7466 0) 0 0 / 13.4px 13.4px; }
 .hide-glyph:not(.blur):not(.pixel) { width: 46px; height: 14px; border-radius: 2px; background: #000; box-shadow: 0 0 0 1px var(--c-border); }
+
+/* şablonlar */
+.tpl-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: var(--sp-3); align-items: start; }
+.tpl { background: none; border: 0; padding: 0; color: var(--c-text-muted); font-size: var(--fs-sm); cursor: pointer; display: flex; flex-direction: column; gap: 6px; text-align: center; }
+.tpl:hover { color: var(--c-text); }
+.tpl.on { color: var(--c-accent); }
+.tpl.on .tpl-card { outline: 2px solid var(--c-accent); outline-offset: 2px; }
+.tpl-card { position: relative; display: block; width: 100%; overflow: hidden; border-radius: var(--r-sm); container-type: size; background: var(--c-surface-3); }
+.tpl-bg { position: absolute; inset: 0; }
+.tpl-photo { position: absolute; background: linear-gradient(170deg, #c9b8a8, #6d5d52) center / cover; }
+.tpl-photo:not([style*="url"])::after { content: ''; position: absolute; left: 32%; right: 32%; top: 22%; bottom: 0; border-radius: 50% 50% 0 0 / 30% 30% 0 0; background: rgba(255, 255, 255, .28); }
+.tpl-shape { position: absolute; }
+.tpl-text { position: absolute; transform: translate(-50%, -50%); white-space: pre; line-height: 1.25; text-align: center; }
+.tpl-row { display: flex; gap: var(--sp-3); align-items: flex-end; overflow-x: auto; padding-bottom: 4px; }
+.tpl-row .tpl { flex: none; color: var(--c-text); font-weight: 600; }
+.tpl-row .tpl-card { height: 240px; width: auto; }

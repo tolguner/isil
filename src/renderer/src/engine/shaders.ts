@@ -338,7 +338,10 @@ void main(){
     guv.y = vv < uRow.x ? vv : (vv < e ? uRow.x + (vv - uRow.x) / (1.0 + uRow.z) : vv - uRow.y * uRow.z);
   }
   vec2 suv = outToSrc(clamp(guv, 0.0, 1.0));
-  vec4 bg = fillAt(cuv, suv);
+  // bulanık zemin: fotoğraf tuvali kaplayacak şekilde büyütülür (kenar şeritleri uzatılmaz)
+  float ca = uOutSize.x / uOutSize.y, pa = (uPlace.z * uOutSize.x) / (uPlace.w * uOutSize.y);
+  vec2 cov = pa > ca ? vec2(0.5 + (cuv.x - 0.5) * ca / pa, cuv.y) : vec2(cuv.x, 0.5 + (cuv.y - 0.5) * pa / ca);
+  vec4 bg = fillAt(cuv, uFill == 3 ? outToSrc(cov) : suv);
   if (!inside) { o = uFill == 0 ? vec4(0.0) : bg; return; }
   if (uWarpOn > 0.5) suv += texture(uWarp, suv).rg;
   if (suv.x < 0.0 || suv.y < 0.0 || suv.x > 1.0 || suv.y > 1.0) { o = uFill == 0 ? vec4(0.0) : bg; return; }

@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { LayoutTemplate } from 'lucide-react'
+import { ChefHat } from 'lucide-react'
 import { emptyAdjust, type EditDoc, type Layer } from '@shared/schema'
 import { useEditor } from '@/store/editor'
 import { useT } from '@/lib/i18n'
@@ -51,7 +51,7 @@ export function applyRecipe(d: EditDoc, r: Recipe, amount = 100) {
   for (const [key, v] of Object.entries(r.adjust ?? {})) (d.adjust as Record<string, number>)[key] = Math.round((v ?? 0) * k)
   d.filter = r.filter ? { id: r.filter[0], amount: Math.round(r.filter[1] * k) } : null
   d.effects = (r.effects ?? []).map(([id, a]) => ({ id, amount: Math.round(a * k) }))
-  if (r.ratio) d.background = { ...d.background, ratio: r.ratio, fill: { type: 'color', color: r.fill ?? '#ffffff' } }
+  if (r.ratio) d.background = { ...d.background, ratio: r.ratio, fill: { type: 'color', color: r.fill ?? '#ffffff' }, box: null }
   d.layers = d.layers.filter((l) => !(l.props as Record<string, unknown>).recipe)
   if (r.text) {
     const layer: Layer = {
@@ -145,4 +145,4 @@ function RecipesPanel() {
   )
 }
 
-export const RECIPE_TOOLS: ToolDef[] = [{ id: 'recipes', label: ['Tarifler', 'Recipes'], icon: LayoutTemplate, Panel: RecipesPanel }]
+export const RECIPE_TOOLS: ToolDef[] = [{ id: 'recipes', label: ['Tarifler', 'Recipes'], icon: ChefHat, Panel: RecipesPanel }]

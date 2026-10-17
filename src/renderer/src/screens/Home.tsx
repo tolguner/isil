@@ -8,6 +8,7 @@ import { openExisting, startEditing } from '@/lib/projects'
 import { confirmDialog } from '@/components/ui'
 import { MOODS, filterById } from '@/engine/presets'
 import { cutRequest } from '@/tools/cutout'
+import { TEMPLATES, TemplateCard, applyTemplateById } from '@/tools/templates'
 
 async function pickAndEdit(tab?: TabId, tool?: string, after?: () => void) {
   const files = await platform.openFiles(false)
@@ -24,6 +25,7 @@ export function Home() {
   const tr = useT()
   const name = useName()
   const go = useEditor((s) => s.go)
+  const lang = useEditor((s) => s.settings.language)
   const [projects, setProjects] = useState<ProjectMeta[] | null>(null)
   const [over, setOver] = useState(false)
   const [selecting, setSelecting] = useState(false)
@@ -115,6 +117,16 @@ export function Home() {
               <span className="qi">{q.icon}</span>
               <b>{q.title}</b>
               <span>{q.sub}</span>
+            </button>
+          ))}
+        </div>
+
+        <div className="section-title"><h2>{tr('Şablonlar', 'Templates')}</h2></div>
+        <div className="tpl-row">
+          {['polaroid', 'story-pastel', 'event', 'gallery', 'story-night', 'invite'].map((id) => TEMPLATES.find((t) => t.id === id)!).map((t) => (
+            <button key={t.id} className="tpl" onClick={() => pickAndEdit('recipes', 'templates', () => void applyTemplateById(t.id))}>
+              <TemplateCard t={t} en={lang === 'en'} />
+              <span className="tpl-name">{tr(t.name[0], t.name[1])}</span>
             </button>
           ))}
         </div>

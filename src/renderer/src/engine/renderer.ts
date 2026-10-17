@@ -216,7 +216,23 @@ export class Renderer {
     let ch = ch0 * (rows ? 1 + rows.band * rows.s : 1)
     let place: [number, number, number, number] = [0, 0, 1, 1]
     const r = opts.skipBackground ? null : ratioValue(doc.background.ratio)
-    if (r) {
+    const box = r ? doc.background.box : null
+    if (r && box) {
+      // şablon: fotoğraf kutunun içine sığdırılır (kırpma kutuyla aynı orandaysa tam doldurur)
+      const [bx, by, bw, bh] = box
+      const ir = cw / ch, br = (bw * r) / bh
+      if (ir > br) {
+        const W = cw / bw, H = W / r
+        place = [bx, by + (bh - ch / H) / 2, bw, ch / H]
+        cw = W
+        ch = H
+      } else {
+        const H = ch / bh, W = H * r
+        place = [bx + (bw - cw / W) / 2, by, cw / W, bh]
+        cw = W
+        ch = H
+      }
+    } else if (r) {
       const ir = cw / ch
       if (r > ir) {
         const W = ch * r

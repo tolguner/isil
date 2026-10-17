@@ -51,7 +51,11 @@ export type Fill =
   | { type: 'image'; file: string }
   | { type: 'transparent' }
 
-export interface Background { ratio: string | null; fill: Fill | null; useCutout: boolean }
+export interface Background {
+  ratio: string | null; fill: Fill | null; useCutout: boolean
+  /** Şablon yerleşimi: fotoğrafın tuvaldeki kutusu [x, y, w, h] (0..1). Yoksa fotoğraf ortalanır. */
+  box?: [number, number, number, number] | null
+}
 
 export type LayerType = 'text' | 'sticker' | 'shape' | 'drawing' | 'image'
 export interface Layer {
