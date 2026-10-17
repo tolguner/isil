@@ -2,6 +2,11 @@
 
 Her yayımlanan yapıda sürümün yalnız son hanesi artırılır (0.8.0 → 0.8.1); ara sürüm (0.9) büyük aşamalarda, 1.0.0 ise yayına hazır tam üründe. Uygulama Ayarlar → Hakkında'da sürümü gösterir.
 
+## 0.8.1 — 2026-10-17
+
+- Rötuş → Toparla → **Dolgunluk**: alın, kaş kemiği, göz çukuru, gözyaşı oluğu, göz altı kesesi, elmacık, yanak, burun tabanı (bölgesel hafif şişirme; en uçta birkaç piksel, doğal dolgu etkisi)
+- Rötuş → Saç → **Saç hacmi**: artı değer saçı dışa kabartır, eksi yatırır; yüz ovalinin içi ve saçın iç kenarı yerinde kalır (yüz derisi saça çekilmez). Araç adı "Saç rengi" → "Saç"
+
 ## 0.8.0 — 2026-10-17
 
 Rakip taramasının sonraki üç maddesi.

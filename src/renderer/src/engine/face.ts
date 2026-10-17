@@ -187,6 +187,15 @@ export function faceOps(g: FaceGeo, shape: Record<string, number>, side: Side): 
         pair(61, 291, (c) => ({ t: 'move', c, r: 0.22 * mw, v: mul(dn, -0.04 * mw * v) }))
         pair(206, 426, (c) => ({ t: 'move', c, r: 0.35 * mw, v: mul(dn, -0.03 * mw * v) }))
         break
+      // dolgunluk: bölgesel hafif şişirme (yerel ölçek). Dolgu etkisi: çöküntüyü doldurur, hacim verir
+      case 'fillForehead': ops.push({ t: 'scale', c: add(g.p(151), mul(dn, -0.03 * Hh)), r: 0.33 * F, sx: 0.07 * v, sy: 0.1 * v }); break
+      case 'fillBrowBone': pair(105, 334, (c) => ({ t: 'scale', c: add(c, mul(dn, -0.015 * Hh)), r: 0.6 * ew, sx: 0.13 * v, sy: 0.208 * v })); break
+      case 'fillEyeHollow': pair(159, 386, (c) => ({ t: 'scale', c: add(c, mul(dn, -0.012 * Hh)), r: 0.5 * ew, sx: 0.078 * v, sy: 0.182 * v })); break
+      case 'fillTearTrough': pair(230, 450, (c) => ({ t: 'scale', c, r: 0.45 * ew, sx: 0.104 * v, sy: 0.208 * v })); break
+      case 'fillAegyo': pair(145, 374, (c) => ({ t: 'scale', c: add(c, mul(dn, 0.012 * Hh)), r: 0.42 * ew, sx: 0.078 * v, sy: 0.234 * v })); break
+      case 'fillApple': pair(117, 346, (c) => ({ t: 'scale', c, r: 0.16 * F, sx: 0.156 * v, sy: 0.156 * v })); break
+      case 'fillCheek': pair(187, 411, (c) => ({ t: 'scale', c, r: 0.18 * F, sx: 0.156 * v, sy: 0.104 * v })); break
+      case 'fillNoseBase': pair(98, 327, (c) => ({ t: 'scale', c: add(c, mul(dn, 0.02 * Hh)), r: 0.6 * nw, sx: 0.13 * v, sy: 0.13 * v })); break
       case 'lipAngle': pair(61, 291, (c, s) => ({ t: 'move', c, r: 0.3 * mw, v: mul(dn, -0.05 * mw * v * s) })); break
     }
   }
@@ -675,4 +684,49 @@ export function faceUniforms(edits: FaceEdit[], count: number): FaceUniforms {
 
 export function faceHasSkinWork(e: FaceEdit) {
   return Object.values(e.skin).some((v) => v) || Object.values(e.makeup).some((m) => m && m.amount)
+}
+
+/**
+ * Saç hacmi: saç bölgesini baş merkezinden dışa iter (v > 0 kabarık, v < 0 yatık). Ağırlık = yumuşatılmış saç
+ * maskesi; yüz derisi sıfır tutulur, böylece yüz kıpırdamaz. Ters eşleme: çıktı p, kaynakta p - itme noktasından.
+ */
+export function addHairVolume(field: Float32Array, gw: number, gh: number, W: number, H: number, g: FaceGeo, v: number,
+  seg: { w: number; h: number; hair: Float32Array; faceSkin: Float32Array }) {
+  const c = add(g.center, mul(g.down, -0.15 * g.height))
+  const R = g.height * 1.1
+  // ızgara çözünürlüğünde saç ağırlığı (kutu bulanıklığı)
+  const wgt = new Float32Array(gw * gh)
+  for (let j = 0; j < gh; j++) for (let i = 0; i < gw; i++) {
+    const sx = Math.min(seg.w - 1, Math.floor(((i + 0.5) / gw) * seg.w)), sy = Math.min(seg.h - 1, Math.floor(((j + 0.5) / gh) * seg.h))
+    const k = sy * seg.w + sx
+    wgt[j * gw + i] = seg.hair[k] > 0.35 && seg.faceSkin[k] < 0.4 ? 1 : 0
+  }
+  const R2 = 3
+  const blur = (a: Float32Array, horiz: boolean) => {
+    const o = new Float32Array(a.length)
+    for (let j = 0; j < gh; j++) for (let i = 0; i < gw; i++) {
+      let s2 = 0, n = 0
+      for (let d = -R2; d <= R2; d++) { const x = horiz ? i + d : i, y = horiz ? j : j + d; if (x >= 0 && x < gw && y >= 0 && y < gh) { s2 += a[y * gw + x]; n++ } }
+      o[j * gw + i] = s2 / n
+    }
+    return o
+  }
+  const w2 = blur(blur(wgt, true), false)
+  for (let j = 0; j < gh; j++) for (let i = 0; i < gw; i++) {
+    const w = w2[j * gw + i]
+    if (w < 0.01) continue
+    const px = ((i + 0.5) / gw) * W, py = ((j + 0.5) / gh) * H
+    const dx = px - c.x, dy = py - c.y, d = Math.hypot(dx, dy) || 1
+    // yüz ovalinin içi hiç oynamaz; ovalden dışarı doğru artan, R'de sönen itme. Saçın iç kenarı yerinde kalır
+    // (yoksa yüz derisi saç bölgesine çekiliyordu), dış kenar kabarır
+    const ex = (dx * g.right.x + dy * g.right.y) / (g.width * 0.55), ey = (dx * g.down.x + dy * g.down.y) / (g.height * 0.62)
+    const inner = Math.hypot(ex, ey)
+    if (inner < 1) continue
+    const t = Math.min(1, (d - g.width * 0.5) / (R - g.width * 0.5))
+    const ramp = Math.min(1, (inner - 1) / 0.35)
+    const amt = v * 0.07 * g.width * w * ramp * ramp * Math.sin(Math.max(0, t) * Math.PI * 0.9 + 0.3)
+    const k = (j * gw + i) * 2
+    field[k] -= ((dx / d) * amt) / W
+    field[k + 1] -= ((dy / d) * amt) / H
+  }
 }

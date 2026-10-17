@@ -422,6 +422,7 @@ const HAIR = [['#7a3b2e', 'Kestane', 'Chestnut'], ['#2b1b14', 'Koyu kahve', 'Dar
 function HairPanel() {
   const tr = useT()
   const hair = useEditor((s) => s.doc.retouch.faces.find((f) => f.index === 0)?.makeup.hair)
+  const volume = useEditor((s) => s.doc.retouch.faces.find((f) => f.index === 0)?.shape.hairVolume ?? 0)
   const update = useEditor((s) => s.update)
   return (
     <>
@@ -433,11 +434,15 @@ function HairPanel() {
       </div>
       <ColorRow value={hair?.color ?? null} colors={[]} onChange={(c) => update((d) => editFace(d, 0, (x) => void (x.makeup.hair = { preset: null, amount: x.makeup.hair?.amount || 70, color: c })))} />
       <Slider label={tr('Yoğunluk', 'Intensity')} value={hair?.amount ?? 0} onChange={(v) => update((d) => editFace(d, 0, (x) => void (x.makeup.hair = { preset: null, amount: v, color: x.makeup.hair?.color ?? '#7a3b2e' })))} />
+      <div className="group-label">{tr('Hacim', 'Volume')}</div>
+      <Slider label={tr('Saç hacmi', 'Hair volume')} bipolar value={volume} onChange={(v) => update((d) => editFace(d, 0, (x) => void (x.shape.hairVolume = v)))} />
+      <p className="note">{tr('Artı değer saçı kabartır, eksi yatırır. Yüz yerinde kalır.', 'Positive adds volume, negative flattens. The face stays put.')}</p>
     </>
   )
 }
 
 // ---------------- Yüz toparlama / dolgun ----------------
+const FILL_KEYS: SliderDef[] = [['fillForehead', 'Alın', 'Forehead'], ['fillBrowBone', 'Kaş kemiği', 'Brow bone'], ['fillEyeHollow', 'Göz çukuru', 'Eye hollow'], ['fillTearTrough', 'Gözyaşı oluğu', 'Tear trough'], ['fillAegyo', 'Göz altı kesesi', 'Under-eye roll'], ['fillApple', 'Elmacık', 'Cheek apple'], ['fillCheek', 'Yanak', 'Cheek'], ['fillNoseBase', 'Burun tabanı', 'Nose base']]
 const LIFT_KEYS: SliderDef[] = [['liftContour', 'Kontur', 'Contour'], ['liftForehead', 'Alın', 'Forehead'], ['liftEyes', 'Gözler', 'Eyes'], ['liftMid', 'Orta yüz', 'Mid-face'], ['liftMouth', 'Ağız köşeleri', 'Mouth corners']]
 function LiftPanel() {
   const tr = useT()
@@ -460,7 +465,7 @@ function LiftPanel() {
       <div className="group-label">{tr('Dolgunluk', 'Fullness')}</div>
       <Slider label={tr('Dolgun ışık', 'Plump glow')} value={f.skin.plumpLight ?? 0} onChange={(v) => sk('plumpLight', v)} />
       <Slider label={tr('Yanak dolgunluğu', 'Cheek fullness')} value={-(f.shape.width ?? 0)} bipolar onChange={(v) => sh('width', -v)} />
-      <Slider label={tr('Alın', 'Forehead')} value={f.shape.hairline ?? 0} bipolar onChange={(v) => sh('hairline', v)} />
+      {FILL_KEYS.map(([k, a, b]) => <Slider key={k} label={tr(a, b)} value={f.shape[k] ?? 0} onChange={(v) => sh(k, v)} />)}
       <Slider label={tr('Dudak', 'Lips')} value={f.shape.plump ?? 0} bipolar onChange={(v) => sh('plump', v)} />
     </>
   )
@@ -1033,9 +1038,9 @@ export const RETOUCH_TOOLS: ToolDef[] = [
   { id: 'faceShape', label: ['Yüz', 'Face'], icon: ScanFace, Panel: FaceShapePanel, Overlay: FaceOverlay, sourceSpace: true, needs: ['faces'], applied: (d) => has(d, (f) => nz(f.shape)), sliders: SHAPE_TABS.flatMap((t) => t.keys.map(([, a, b]) => ({ label: [a, b] as [string, string], sub: t.id }))), selectSub: selectShapeTab },
   { id: 'skin', label: ['Cilt', 'Skin'], icon: Droplet, Panel: SkinPanel, Overlay: SkinOverlay, sourceSpace: true, needs: ['faces', 'seg'], applied: (d) => has(d, (f) => nz(f.skin)), sliders: [...SKIN_KEYS.map(([, a, b]) => ({ label: [a, b] as [string, string] })), { label: ['İşaretleri koru', 'Protect marks'] }] },
   { id: 'makeup', label: ['Makyaj', 'Makeup'], icon: Palette, Panel: MakeupPanel, Overlay: FaceOverlay, sourceSpace: true, needs: ['faces', 'seg'], applied: (d) => has(d, (f) => ['lip', 'blush', 'lid', 'brow'].some((k) => f.makeup[k]?.amount)) },
-  { id: 'lift', label: ['Toparla', 'Lift'], icon: Shell, Panel: LiftPanel, Overlay: FaceOverlay, sourceSpace: true, needs: ['faces', 'seg'], sliders: LIFT_KEYS.map(([, a, b]) => ({ label: [a, b] as [string, string] })) },
+  { id: 'lift', label: ['Toparla', 'Lift'], icon: Shell, Panel: LiftPanel, Overlay: FaceOverlay, sourceSpace: true, needs: ['faces', 'seg'], sliders: [...LIFT_KEYS, ...FILL_KEYS].map(([, a, b]) => ({ label: [a, b] as [string, string] })) },
   { id: 'tone', label: ['Ten tonu', 'Skin tone'], icon: Gem, Panel: TonePanel, Overlay: FaceOverlay, sourceSpace: true, needs: ['faces', 'seg'] },
-  { id: 'hair', label: ['Saç rengi', 'Hair color'], icon: Scissors, Panel: HairPanel, sourceSpace: true, needs: ['faces', 'seg'], applied: (d) => !!d.retouch.faces.find((f) => f.index === 0)?.makeup.hair?.amount },
+  { id: 'hair', label: ['Saç', 'Hair'], icon: Scissors, Panel: HairPanel, sourceSpace: true, needs: ['faces', 'seg'], sliders: [{ label: ['Saç hacmi', 'Hair volume'] }], applied: (d) => !!d.retouch.faces.find((f) => f.index === 0)?.makeup.hair?.amount },
   { id: 'rbrush', label: ['Rötuş fırçası', 'Retouch brush'], icon: Brush, Panel: RetouchBrushPanel, Overlay: RetouchBrushOverlay, sourceSpace: true, noFooter: true },
   { id: 'relight', label: ['Işıklandır', 'Relight'], icon: Sun, Panel: RelightPanel, Overlay: RelightOverlay, sourceSpace: true, noFooter: true },
   { id: 'body', label: ['Vücut', 'Body'], icon: PersonStanding, Panel: BodyPanel, Overlay: BodyOverlay, sourceSpace: true, needs: ['pose', 'seg'], applied: (d) => !!d.body && (nz(d.body.shape) || !!d.body.manual?.stretch || !!d.body.manual?.slim), sliders: [...BODY_KEYS.map(([, a, b]) => ({ label: [a, b] as [string, string] })), { label: ['Arka planı koru', 'Protect background'] }] },

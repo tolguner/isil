@@ -2,7 +2,7 @@
 import type { EditDoc, Project, Settings } from '@shared/schema'
 import { platform } from '@/lib/platform'
 import { Renderer, legCanvasOk, type OutputInfo } from './renderer'
-import { addMlsField, allProtect, buildField, foldGuard, contourPairs, buildMasks, buildProtectMask, faceOps, faceUniforms, FaceGeo, faceHasSkinWork, type MaskSet } from './face'
+import { addHairVolume, addMlsField, allProtect, buildField, foldGuard, contourPairs, buildMasks, buildProtectMask, faceOps, faceUniforms, FaceGeo, faceHasSkinWork, type MaskSet } from './face'
 import { applyBodyBands, applyManualBody, bodyOps, legBand, maskField } from './body'
 import { drawLayers } from './layers'
 import { detectFaces, detectPose, segmentPerson, type PersonParts, type Pt } from '@/ai/vision'
@@ -239,6 +239,14 @@ class Session {
         const gw = base?.gw ?? 192, gh = base?.gh ?? Math.max(16, Math.round((192 * H) / W))
         const field = base ? Float32Array.from(base.field) : new Float32Array(gw * gh * 2)
         for (const pr of pairs) addMlsField(field, gw, gh, W, H, pr)
+        base = { field, gw, gh }
+      }
+      // saç hacmi (bölütleme gerekir)
+      const hv = doc.retouch.faces.filter((e) => e.shape.hairVolume && geos[e.index])
+      if (hv.length && this.seg) {
+        const gw = base?.gw ?? 192, gh = base?.gh ?? Math.max(16, Math.round((192 * H) / W))
+        const field = base ? Float32Array.from(base.field) : new Float32Array(gw * gh * 2)
+        for (const e of hv) addHairVolume(field, gw, gh, W, H, geos[e.index], e.shape.hairVolume / 100, this.seg)
         base = { field, gw, gh }
       }
     }

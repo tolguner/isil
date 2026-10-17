@@ -11,7 +11,7 @@ const BODY = mode === 'govde'
 mkdirSync(outDir, { recursive: true })
 const CASES = BODY
   ? { notr: {}, waist: { waist: 100 }, hips: { hips: 100 }, slim: { slim: 100 }, thighs: { thighs: 100 }, legs: { legs: 100 }, asiri: { slim: 100, waist: 100, hips: -100, thighs: 100, chest: 100, head: -100, arms: 100 }, slimKoru: { slim: 100, _koru: 1 }, waistKoru: { waist: 100, _koru: 1 }, legsKoru: { legs: 100, _koru: 1 } }
-  : { notr: {}, slim: { slim: 100 }, width: { width: 100 }, eyeSize: { eyeSize: 100 }, resize: { resize: -100 }, vshape: { vshape: 100 }, liftContour: { liftContour: 100 }, liftForehead: { liftForehead: 100 }, liftEyes: { liftEyes: 100 }, liftMid: { liftMid: 100 }, liftMouth: { liftMouth: 100 }, asiri: { slim: 100, vshape: 100, jaw: 100, eyeSize: 100, smallFace: 100, chin: 100, noseSize: -100, lipSize: 100 } }
+  : { notr: {}, slim: { slim: 100 }, width: { width: 100 }, eyeSize: { eyeSize: 100 }, resize: { resize: -100 }, vshape: { vshape: 100 }, liftContour: { liftContour: 100 }, liftForehead: { liftForehead: 100 }, liftEyes: { liftEyes: 100 }, liftMid: { liftMid: 100 }, liftMouth: { liftMouth: 100 }, hairVol: { hairVolume: 100 }, fillAll: { fillForehead: 100, fillBrowBone: 100, fillEyeHollow: 100, fillTearTrough: 100, fillAegyo: 100, fillApple: 100, fillCheek: 100, fillNoseBase: 100 }, asiri: { slim: 100, vshape: 100, jaw: 100, eyeSize: 100, smallFace: 100, chin: 100, noseSize: -100, lipSize: 100 } }
 const app = await electron.launch({ args: ['.'], cwd: process.cwd(), env: { ...process.env, ISIL_TEST: '1', ISIL_USERDATA: tempDir('isil-warp-') } })
 const win = await app.firstWindow()
 await win.waitForFunction(() => !!window.__isil, null, { timeout: 20000 })
@@ -21,8 +21,8 @@ const out = await win.evaluate(async ({ b64, name, CASES, BODY }) => {
   const s = (await window.__isil.mod('session')).session
   await window.__isil.openFile(name, b64)
   for (let i = 0; i < 200 && !(s.W > 0 && s.lastOut); i++) await new Promise((r) => setTimeout(r, 100))
-  S().setTab('retouch'); S().openTool(BODY ? 'body' : 'faceShape')
-  for (let i = 0; i < 120 && !(BODY ? s.pose && s.seg : s.faces && s.faces.length); i++) await new Promise((r) => setTimeout(r, 250))
+  S().setTab('retouch'); S().openTool(BODY ? 'body' : 'skin')
+  for (let i = 0; i < 120 && !(BODY ? s.pose && s.seg : s.faces && s.faces.length && s.seg); i++) await new Promise((r) => setTimeout(r, 250))
   const res = {}
   const fold = {}
   for (const [k, shape] of Object.entries(CASES)) {
