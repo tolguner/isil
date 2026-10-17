@@ -292,3 +292,5 @@ kbd { background: var(--c-surface-3); border-radius: 4px; padding: 1px 5px; font
 .my-sticker:hover .del, .my-sticker .del:focus-visible { opacity: 1; }
 
 .feature-presets { grid-template-columns: repeat(4, 1fr); margin: 6px 0 10px; }
+
+.msg-actions { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
