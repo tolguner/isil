@@ -7,7 +7,7 @@ Her şey ücretsiz ve yerel: yapay zekâ araçları bilgisayarında, internetsiz
 ## Özellikler
 
 - **Ayarla:** pozlama, kontrast, vurgular/gölgeler, sıcaklık, HSL, ton eğrileri, netlik, pus giderme, gren, vinyet, akıllı otomatik ayar
-- **Filtreler ve efektler:** 37 filtre, 31 efekt, tek dokunuş tarifleri
+- **Filtreler ve efektler:** 46 filtre (kamera taklidi dahil), 31 efekt, portre bulanıklığı, tek dokunuş tarifleri
 - **Rötuş:** çoklu yüz algılama (MediaPipe + YuNet, grup fotoğrafları dahil), ~50 yüz şekli kaydırıcısı, cilt pürüzsüzleştirme, leke/göz altı, diş beyazlatma, makyaj, ten tonu, saç rengi, ışıklandırma, vücut şekillendirme, rötuş fırçası, yüz gizleme
 - **Temizle:** sihirli silgi (LaMa), yoldan geçenleri bulup silme, dokun-seç, klonlama, mozaik, YZ ile değiştir (FLUX.2 klein inpaint)
 - **Kesim ve arka plan:** yapay zekâyla arka plan kaldırma (ISNet / BiRefNet), maske fırçası, renk/degrade/bulanık/görsel zemin, tuval oranı

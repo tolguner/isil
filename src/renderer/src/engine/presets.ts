@@ -22,7 +22,8 @@ export const FILTER_CATS = [
   { id: 'scenery', tr: 'Manzara', en: 'Scenery' },
   { id: 'food', tr: 'Yemek', en: 'Food' },
   { id: 'cine', tr: 'Sinematik', en: 'Cinematic' },
-  { id: 'bw', tr: 'S/B', en: 'B&W' }
+  { id: 'bw', tr: 'S/B', en: 'B&W' },
+  { id: 'camera', tr: 'Kamera', en: 'Camera' }
 ]
 
 const f = (id: string, tr: string, en: string, cat: string, adjust: FilterDef['adjust'], extra: Partial<FilterDef> = {}, swatch: [string, string] = ['#888', '#444']): FilterDef =>
@@ -73,7 +74,16 @@ export const FILTERS: FilterDef[] = [
   f('sb-klasik', 'Klasik S/B', 'Classic B&W', 'bw', { saturation: -1, contrast: 0.2 }, {}, ['#cfcfcf', '#202020']),
   f('sb-yumusak', 'Yumuşak S/B', 'Soft B&W', 'bw', { saturation: -1, fade: 0.3, contrast: -0.1 }, {}, ['#e0e0e0', '#666']),
   f('sb-sert', 'Sert S/B', 'Hard B&W', 'bw', { saturation: -1, contrast: 0.55, clarity: 0.3, grain: 0.25 }, {}, ['#f0f0f0', '#000']),
-  f('sb-sepya', 'Sepya', 'Sepia', 'bw', { saturation: -1, fade: 0.15 }, { splitS: [0.6, 0.45, 0.3, 0.6], splitH: [1, 0.9, 0.75, 0.5] }, ['#d9c3a0', '#3c2c1a'])
+  f('sb-sepya', 'Sepya', 'Sepia', 'bw', { saturation: -1, fade: 0.15 }, { splitS: [0.6, 0.45, 0.3, 0.6], splitH: [1, 0.9, 0.75, 0.5] }, ['#d9c3a0', '#3c2c1a']),
+  // kamera taklidi: belirli bir cihaz değil, cihaz ailelerinin bilinen görünümü (kendi değerlerimiz)
+  f('kam-sokak', 'Sokak kompaktı', 'Street compact', 'camera', { contrast: 0.3, clarity: 0.2, saturation: -0.15, shadows: -0.1, grain: 0.3, vignette: 0.2 }, { curve: { rgb: [[0, 0.03], [0.25, 0.2], [0.75, 0.82], [1, 0.97]] } }, ['#c9c4b8', '#1d1c1a']),
+  f('kam-tekkullanim', 'Tek kullanımlık', 'Disposable', 'camera', { exposure: 0.1, contrast: 0.15, temperature: 0.12, saturation: 0.1, grain: 0.35, vignette: 0.35, sharpen: -0.2 }, { splitH: [1, 0.85, 0.6, 0.25], curve: { b: [[0, 0.06], [1, 0.92]] } }, ['#f1cf8e', '#4a3a22']),
+  f('kam-ccd', 'Eski CCD dijital', 'Old CCD digital', 'camera', { exposure: 0.08, contrast: 0.2, sharpen: 0.5, temperature: -0.15, tint: 0.05, highlights: 0.15, grain: 0.1 }, { curve: { b: [[0, 0.04], [1, 1]] } }, ['#d7e4f2', '#3b4757']),
+  f('kam-slayt', 'Pozitif film', 'Slide film', 'camera', { contrast: 0.35, saturation: 0.25, vibrance: 0.15, blacks: 0.15, grain: 0.15 }, { curve: { rgb: [[0, 0], [0.3, 0.24], [0.7, 0.78], [1, 1]] } }, ['#4fa0d8', '#1a2a3c']),
+  f('kam-portre-neg', 'Portre negatifi', 'Portrait negative', 'camera', { contrast: -0.05, fade: 0.15, temperature: 0.08, saturation: -0.1, grain: 0.2 }, { curve: { rgb: [[0, 0.06], [0.5, 0.53], [1, 0.95]] }, splitS: [0.35, 0.55, 0.55, 0.2] }, ['#e8c5ae', '#4a3f3a']),
+  f('kam-tungsten', 'Gece sineması', 'Tungsten night', 'camera', { temperature: -0.25, contrast: 0.15, shadows: 0.15, grain: 0.3, glow: 0.25 }, { splitH: [1, 0.55, 0.45, 0.35], splitS: [0.15, 0.4, 0.5, 0.35] }, ['#3f7c8a', '#191f2a']),
+  f('kam-telefon09', 'Eski telefon', 'Old phone', 'camera', { exposure: 0.05, contrast: 0.25, saturation: -0.05, sharpen: -0.3, temperature: 0.1, grain: 0.45, vignette: 0.15 }, { curve: { rgb: [[0, 0.08], [1, 0.9]] } }, ['#cdbf9c', '#5a5240']),
+  f('kam-lomo', 'Oyuncak kamera', 'Toy camera', 'camera', { contrast: 0.35, saturation: 0.35, vignette: 0.6, grain: 0.2 }, { curve: { r: [[0, 0.03], [1, 1]], b: [[0, 0.12], [1, 0.85]] } }, ['#e9634c', '#2b1430']),
 ]
 
 export interface EffectDef { id: string; fx: number; name: { tr: string; en: string }; cat: string; blur?: number; def?: number }
