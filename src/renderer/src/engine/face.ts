@@ -176,6 +176,17 @@ export function faceOps(g: FaceGeo, shape: Record<string, number>, side: Side): 
       case 'lowerLip': ops.push({ t: 'move', c: g.p(17), r: 0.42 * mw, v: mul(dn, 0.06 * mw * v) }); break
       case 'plump': ops.push({ t: 'scale', c: mouth, r: 0.65 * mw, sx: 0.04 * v, sy: 0.2 * v }); break
       case 'mShape': pair(37, 267, (c) => ({ t: 'move', c, r: 0.2 * mw, v: mul(dn, -0.05 * mw * v) })); break
+      // gerdirme (lifting): yer çekimiyle sarkan bölgeleri yukarı ve hafif dışa toplar; yerel ve küçük
+      case 'liftContour':
+        for (const [a, b] of [[172, 397], [136, 365], [150, 379], [58, 288]]) pair(a, b, (c) => ({ t: 'move', c, r: 0.22 * F, v: add(mul(dn, -0.011 * Hh * v), inward(c, 0.004 * F * v)) }))
+        break
+      case 'liftForehead': ops.push({ t: 'move', c: add(g.p(151), mul(dn, -0.02 * Hh)), r: 0.42 * F, v: mul(dn, -0.025 * Hh * v) }); break
+      case 'liftEyes': pair(130, 359, (c) => ({ t: 'move', c: add(c, mul(sub(c, fc), 0.06)), r: 0.5 * ew, v: add(mul(dn, -0.08 * ew * v), inward(c, -0.02 * ew * v)) })); break
+      case 'liftMid': pair(50, 280, (c) => ({ t: 'move', c, r: 0.2 * F, v: add(mul(dn, -0.03 * Hh * v), inward(c, -0.008 * F * v)) })); break
+      case 'liftMouth':
+        pair(61, 291, (c) => ({ t: 'move', c, r: 0.22 * mw, v: mul(dn, -0.04 * mw * v) }))
+        pair(206, 426, (c) => ({ t: 'move', c, r: 0.35 * mw, v: mul(dn, -0.03 * mw * v) }))
+        break
       case 'lipAngle': pair(61, 291, (c, s) => ({ t: 'move', c, r: 0.3 * mw, v: mul(dn, -0.05 * mw * v * s) })); break
     }
   }

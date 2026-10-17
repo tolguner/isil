@@ -4,6 +4,7 @@ Her büyük güncellemede sürüm numarası artırılır (`npm version <x.y.z> -
 
 ## Yayımlanmamış
 
+- Rötuş → Toparla → **Gerdirme**: kontur, alın, gözler, orta yüz, ağız köşeleri (sarkan bölgeleri yukarı toplayan yerel bükmeler); Oto tuşu gerdirmeyi de kullanır, Ctrl+K'da aranabilir
 - Efektler → **Portre bulanıklığı**: konu yapay zekâyla ayrılır (BiRefNet/ISNet), arka plan ya da özne bulanıklaştırılır; Lens (derinlik haritasıyla kademeli), Gauss, Hareket, Dönme, Yakınlaşma. Alfa ağırlıklı bulanıklıkla özne kenarında hale kalmaz
 
 ## 0.6.0 — 2026-10-17

@@ -388,6 +388,7 @@ function HairPanel() {
 }
 
 // ---------------- Yüz toparlama / dolgun ----------------
+const LIFT_KEYS: SliderDef[] = [['liftContour', 'Kontur', 'Contour'], ['liftForehead', 'Alın', 'Forehead'], ['liftEyes', 'Gözler', 'Eyes'], ['liftMid', 'Orta yüz', 'Mid-face'], ['liftMouth', 'Ağız köşeleri', 'Mouth corners']]
 function LiftPanel() {
   const tr = useT()
   const f = useFace()
@@ -398,12 +399,14 @@ function LiftPanel() {
   return (
     <>
       <NoFace />
-      <button className="btn sm primary" onClick={() => update((d) => editFace(d, idx, (x) => { Object.assign(x.skin, { undereye: 50, wrinkle: 40 }); Object.assign(x.shape, { cheekbone: 15, vshape: 20, browHigh: 10 }) }))}><Sparkles size={14} /> {tr('Oto', 'Auto')}</button>
+      <button className="btn sm primary" onClick={() => update((d) => editFace(d, idx, (x) => { Object.assign(x.skin, { undereye: 50, wrinkle: 40 }); Object.assign(x.shape, { cheekbone: 15, vshape: 20, browHigh: 10, liftContour: 35, liftEyes: 25, liftMouth: 20 }) }))}><Sparkles size={14} /> {tr('Oto', 'Auto')}</button>
       <Slider label={tr('Göz altı torbası', 'Under-eye bags')} value={f.skin.undereye ?? 0} onChange={(v) => sk('undereye', v)} />
       <Slider label={tr('Yanak kaldır', 'Cheek lift')} value={f.shape.cheekbone ?? 0} bipolar onChange={(v) => sh('cheekbone', v)} />
       <Slider label={tr('Kaş kaldır', 'Brow lift')} value={f.shape.browHigh ?? 0} bipolar onChange={(v) => sh('browHigh', v)} />
       <Slider label={tr('Yüz hattı', 'Contour line')} value={f.shape.vshape ?? 0} bipolar onChange={(v) => sh('vshape', v)} />
       <Slider label={tr('Kırışıklık', 'Wrinkles')} value={f.skin.wrinkle ?? 0} onChange={(v) => sk('wrinkle', v)} />
+      <div className="group-label">{tr('Gerdirme', 'Lifting')}</div>
+      {LIFT_KEYS.map(([k, a, b]) => <Slider key={k} label={tr(a, b)} value={f.shape[k] ?? 0} onChange={(v) => sh(k, v)} />)}
       <div className="group-label">{tr('Dolgunluk', 'Fullness')}</div>
       <Slider label={tr('Dolgun ışık', 'Plump glow')} value={f.skin.plumpLight ?? 0} onChange={(v) => sk('plumpLight', v)} />
       <Slider label={tr('Yanak dolgunluğu', 'Cheek fullness')} value={-(f.shape.width ?? 0)} bipolar onChange={(v) => sh('width', -v)} />
@@ -980,7 +983,7 @@ export const RETOUCH_TOOLS: ToolDef[] = [
   { id: 'faceShape', label: ['Yüz', 'Face'], icon: ScanFace, Panel: FaceShapePanel, Overlay: FaceOverlay, sourceSpace: true, needs: ['faces'], applied: (d) => has(d, (f) => nz(f.shape)), sliders: SHAPE_TABS.flatMap((t) => t.keys.map(([, a, b]) => ({ label: [a, b] as [string, string], sub: t.id }))), selectSub: selectShapeTab },
   { id: 'skin', label: ['Cilt', 'Skin'], icon: Droplet, Panel: SkinPanel, Overlay: SkinOverlay, sourceSpace: true, needs: ['faces', 'seg'], applied: (d) => has(d, (f) => nz(f.skin)), sliders: [...SKIN_KEYS.map(([, a, b]) => ({ label: [a, b] as [string, string] })), { label: ['İşaretleri koru', 'Protect marks'] }] },
   { id: 'makeup', label: ['Makyaj', 'Makeup'], icon: Palette, Panel: MakeupPanel, Overlay: FaceOverlay, sourceSpace: true, needs: ['faces', 'seg'], applied: (d) => has(d, (f) => ['lip', 'blush', 'lid', 'brow'].some((k) => f.makeup[k]?.amount)) },
-  { id: 'lift', label: ['Toparla', 'Lift'], icon: Shell, Panel: LiftPanel, Overlay: FaceOverlay, sourceSpace: true, needs: ['faces', 'seg'] },
+  { id: 'lift', label: ['Toparla', 'Lift'], icon: Shell, Panel: LiftPanel, Overlay: FaceOverlay, sourceSpace: true, needs: ['faces', 'seg'], sliders: LIFT_KEYS.map(([, a, b]) => ({ label: [a, b] as [string, string] })) },
   { id: 'tone', label: ['Ten tonu', 'Skin tone'], icon: Gem, Panel: TonePanel, Overlay: FaceOverlay, sourceSpace: true, needs: ['faces', 'seg'] },
   { id: 'hair', label: ['Saç rengi', 'Hair color'], icon: Scissors, Panel: HairPanel, sourceSpace: true, needs: ['faces', 'seg'], applied: (d) => !!d.retouch.faces.find((f) => f.index === 0)?.makeup.hair?.amount },
   { id: 'rbrush', label: ['Rötuş fırçası', 'Retouch brush'], icon: Brush, Panel: RetouchBrushPanel, Overlay: RetouchBrushOverlay, sourceSpace: true, noFooter: true },
