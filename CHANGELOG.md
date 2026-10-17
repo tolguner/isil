@@ -2,6 +2,10 @@
 
 Her yayımlanan yapıda sürümün yalnız son hanesi artırılır (0.8.0 → 0.8.1); ara sürüm (0.9) büyük aşamalarda, 1.0.0 ise yayına hazır tam üründe. Uygulama Ayarlar → Hakkında'da sürümü gösterir.
 
+## 0.8.5 — 2026-10-17
+
+- **3B hareket** (Efektler sekmesi): fotoğrafa derinlik verip hafif bir kamera hareketiyle canlandırır; dört hareket (Daire, Yana, Yaklaş, Yukarı), hareket miktarı, odak (sabit kalan derinlik) ve 3/4/6 saniyelik döngü. Derinlik bilgisayarında Depth Anything ile hesaplanır; gölgelendirici derinlik boyunca ışın yürüterek örnekler, ön plan kenarı genişletildiği için yüz kenarında yırtılma olmaz. Düzenlenmiş hali (ayarlar, katmanlar, şablon dahil) kısa döngü video olarak kaydedilir: MP4 (H.264), desteklenmezse WebM. Fotoğrafın kendisi değişmez
+
 ## 0.8.4 — 2026-10-17
 
 - **Şablonlar**: gönderi, hikâye ve afiş için 12 hazır yerleşim (Anlık, Galeri, Sade çerçeve, Dergi kapağı; Bulanık zemin, Pastel, Gece, Tam ekran; Etkinlik, Film afişi, Davetiye, İndirim). Şablon tuval oranını, zemini, fotoğrafın kutusunu ve metinleri birlikte kurar; fotoğraf kutuya göre ortadan kırpılır. Metinler sıradan metin katmanıdır, tuvalde dokunup değiştirilebilir; başka şablona geçince yalnız şablonun katmanları değişir, kendi eklediklerin kalır. Önizlemeler kendi fotoğrafınla gösterilir. Tarifler sekmesinde ve ana sayfada

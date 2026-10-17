@@ -11,7 +11,7 @@ Yeni sohbette ilk mesaj: **"Işıl/DEVAM.md dosyasını oku ve kaldığımız ye
 
 ## Durum
 
-- **Sürüm 0.8.4** (17.10): şablonlar (eksikler 14). Önceki: 0.8.3 (cila turu), 0.8.2 (danışman önerisini uygulama, canlı güzellik kamerası), 0.8.1 (dolgunluk, saç hacmi), 0.8.0 (cilt dokusu, bölge hazır ayarları, kamera filtreleri), 0.7.0 (portre bulanıklığı, gerdirme, dövme), 0.6.0 (çıkartma yapıcı, saç/kıyafet, üretken silme), 0.5.0 (yoldan geçenler, seçmeli, YZ genişlet), 0.4.1, 0.4.0, 0.3.0 (`%LOCALAPPDATA%\Programs\Isil`).
+- **Sürüm 0.8.5** (17.10): 3B hareketli fotoğraf (eksikler 12). Önceki: 0.8.4 (şablonlar), 0.8.3 (cila turu), 0.8.2 (danışman önerisini uygulama, canlı güzellik kamerası), 0.8.1 (dolgunluk, saç hacmi), 0.8.0 (cilt dokusu, bölge hazır ayarları, kamera filtreleri), 0.7.0 (portre bulanıklığı, gerdirme, dövme), 0.6.0 (çıkartma yapıcı, saç/kıyafet, üretken silme), 0.5.0 (yoldan geçenler, seçmeli, YZ genişlet), 0.4.1, 0.4.0, 0.3.0 (`%LOCALAPPDATA%\Programs\Isil`).
 - **Testler (hepsi geçiyor):** `node tests/e2e/smoke.mjs` 11/11 · `audit.mjs` 41/41 · `ui-sweep.mjs` 36/36 · `ai-local.mjs` 11/11 · `gpu-switch.mjs` 12/12. Önce `npm run build` (audit için `python tests/fixtures/make.py`).
 - **0.3.0 plandaki 8 aşama bitti** (`replica/plan-0.3.md`). Doğrulama: `replica/dogrulama-0.3.md` (loş grup 0→4 yüz; yüz onarmada kimlik güç 1'de 0,56→0,88).
 - **Rakip incelemesi (kullanarak, BlueStacks):** `replica/rekabet/inceleme-notlari.md`. Özet: rakiplerin YZ araçlarının çoğu bulutta; Peachy otomatik silmesi sessizce başarısız; FaceApp ücretsizde her şey Pro; PicsArt bulut yumuşatma yanak dövmesini siliyor.
@@ -39,7 +39,7 @@ Büyük işler:
 - ~~Seçmeli ayar~~ **yapıldı (16.10)**: `tools/selective.tsx`, `EditDoc.local`, MAIN gölgelendiricisinde `uLoc*`; test `tests/e2e/selective.mjs`.
 - ~~YZ ile tuval genişletme~~ **yapıldı (17.10)**: `tools/expand.tsx`, test `tests/e2e/expand.mjs [görsel] [klasör] [lama|flux]` (flux için dev-models/engine).
 - ~~Yoldan geçenleri yerel silme~~ **yapıldı (16.10)**: `tools/passersby.tsx`, test `tests/e2e/passersby.mjs <görsel>`, kişi bulma ölçümü `tests/e2e/people.mjs`.
-- ~~Saç/kıyafet akışları~~ **yapıldı (17.10)**: `ai/restyle.ts`, test `tests/e2e/restyle.mjs` (motor gerekir). ~~Üretken silme~~ **yapıldı (17.10)**: `generativeErase` (LaMa + FLUX strength 0,55), `tools/fill.tsx`, kıyas `tests/e2e/gen-erase.mjs`. Aday listesi bitti. **Yeni eksikler listesi (17.10): `replica/rekabet/eksikler-0.6.md`** (15 madde; 1, 3, 8 (0.7.0), 6, 10, 11 (0.8.0), 2, 5 (0.8.1), 13, 15 (0.8.2), 14 (0.8.4) yapıldı; kalanlar için Tolga sıra seçecek). ~~Çıkartma yapıcı~~ **yapıldı (17.10)**: `ai/sticker.ts`, `tools/stickermaker.tsx`, test `tests/e2e/stickermaker.mjs`.
+- ~~Saç/kıyafet akışları~~ **yapıldı (17.10)**: `ai/restyle.ts`, test `tests/e2e/restyle.mjs` (motor gerekir). ~~Üretken silme~~ **yapıldı (17.10)**: `generativeErase` (LaMa + FLUX strength 0,55), `tools/fill.tsx`, kıyas `tests/e2e/gen-erase.mjs`. Aday listesi bitti. **Yeni eksikler listesi (17.10): `replica/rekabet/eksikler-0.6.md`** (15 madde; 1, 3, 8 (0.7.0), 6, 10, 11 (0.8.0), 2, 5 (0.8.1), 13, 15 (0.8.2), 14 (0.8.4), 12 (0.8.5) yapıldı; kalanlar için Tolga sıra seçecek). ~~Çıkartma yapıcı~~ **yapıldı (17.10)**: `ai/sticker.ts`, `tools/stickermaker.tsx`, test `tests/e2e/stickermaker.mjs`.
 
 Not: 0.4 kapsamı seçilmeden sürüm numarası değişmez.
 
