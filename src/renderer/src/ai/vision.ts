@@ -129,6 +129,12 @@ export async function detectFaces(img: TexImageSource): Promise<Pt[][]> {
   return faces.sort((a, b) => a[1].x - b[1].x)
 }
 
+/** Hızlı yüz noktaları (canlı kamera için): yalnız MediaPipe, YuNet ek taraması yok. */
+export async function detectFacesFast(img: TexImageSource): Promise<Pt[][]> {
+  const lm = await landmarker()
+  return lm.detect(img as HTMLCanvasElement).faceLandmarks.map((l: NormalizedLandmark[]) => l.map((p) => ({ x: p.x, y: p.y, z: p.z })))
+}
+
 /** Vücut pozu: 33 nokta, normalize. İlk kişi. */
 export async function detectPose(img: TexImageSource): Promise<Pt[] | null> {
   pose ??= getFileset().then((fs) =>

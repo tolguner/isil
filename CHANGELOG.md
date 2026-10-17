@@ -2,6 +2,11 @@
 
 Her yayımlanan yapıda sürümün yalnız son hanesi artırılır (0.8.0 → 0.8.1); ara sürüm (0.9) büyük aşamalarda, 1.0.0 ise yayına hazır tam üründe. Uygulama Ayarlar → Hakkında'da sürümü gösterir.
 
+## 0.8.2 — 2026-10-17
+
+- **Stil danışmanı → önerileri uygula**: yanıtta geçen Işıl araçları (Cilt, Makyaj, Saç, Portre bulanıklığı, Seçmeli…) düğmeye dönüşür; konuşmadaki fotoğraf düzenleyicide o araçla açılır. Danışmanın araç listesi yeni araçlarla güncellendi
+- **Kamera → canlı güzellik**: pürüzsüz, aydınlat, yüzü incelt ve göz kaydırıcıları canlı görüntüde uygulanır (yüz noktaları saniyede ~6 kez güncellenir, rötuş ve bükme WebGL'de); çekilen fotoğrafa da işlenir. Test sahte kamera akışıyla yapılır, gerçek kamera kullanılmaz
+
 ## 0.8.1 — 2026-10-17
 
 - Rötuş → Toparla → **Dolgunluk**: alın, kaş kemiği, göz çukuru, gözyaşı oluğu, göz altı kesesi, elmacık, yanak, burun tabanı (bölgesel hafif şişirme; en uçta birkaç piksel, doğal dolgu etkisi)
