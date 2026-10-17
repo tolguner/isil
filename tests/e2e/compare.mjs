@@ -23,15 +23,25 @@ await win.evaluate(async () => {
 })
 
 // ekrandaki tuvalin küçük bir parmak izi (ortalama renk ızgarası)
+// arka planda süren yüz/maske hesapları kareyi geciktirebilir: görüntü iki ölçümde aynı kalana dek bekle
 const snap = () => win.evaluate(async () => {
-  await new Promise((r) => setTimeout(r, 400))
-  const c = document.querySelector('canvas')
-  const t = document.createElement('canvas')
-  t.width = 32
-  t.height = 48
-  const ctx = t.getContext('2d')
-  ctx.drawImage(c, 0, 0, 32, 48)
-  return { w: c.width, h: c.height, px: Array.from(ctx.getImageData(0, 0, 32, 48).data) }
+  const grab = () => {
+    const c = document.querySelector('canvas')
+    const t = document.createElement('canvas')
+    t.width = 32
+    t.height = 48
+    const ctx = t.getContext('2d')
+    ctx.drawImage(c, 0, 0, 32, 48)
+    return { w: c.width, h: c.height, px: Array.from(ctx.getImageData(0, 0, 32, 48).data) }
+  }
+  let prev = null
+  for (let i = 0; i < 40; i++) {
+    await new Promise((r) => setTimeout(r, 250))
+    const cur = grab()
+    if (prev && prev.w === cur.w && prev.px.join() === cur.px.join()) return cur
+    prev = cur
+  }
+  return prev
 })
 const diff = (a, b) => {
   if (a.w !== b.w || a.h !== b.h) return 999

@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { Camera, Eraser, ImagePlus, LayoutGrid, Layers, MessageCircleHeart, Scissors, Sparkles, Trash2, Copy, CheckSquare, FolderOpen, Check, Wand2, Smile, PersonStanding, ZoomIn } from 'lucide-react'
+import { Camera, Eraser, ImagePlus, LayoutGrid, Layers, MessageCircleHeart, Scissors, Sparkles, Trash2, Copy, CheckSquare, FolderOpen, Check, Wand2, Smile, PersonStanding, ZoomIn, UserMinus } from 'lucide-react'
 import type { ProjectMeta } from '@shared/schema'
 import { useEditor, type TabId } from '@/store/editor'
 import { platform } from '@/lib/platform'
@@ -54,10 +54,11 @@ export function Home() {
     { icon: <ZoomIn size={20} />, title: tr('Kalite artır', 'Enhance quality'), sub: tr('4× netleştir', 'Upscale 4×'), run: () => pickAndEdit('adjust', 'enhance') },
     { icon: <Smile size={20} />, title: tr('Yüz rötuşu', 'Face retouch'), sub: tr('Tek dokunuş güzellik', 'One-tap beauty'), run: () => pickAndEdit('retouch', 'beauty') },
     { icon: <PersonStanding size={20} />, title: tr('Vücut şekillendir', 'Reshape body'), sub: tr('İncelt, bacak uzat', 'Slim, longer legs'), run: () => pickAndEdit('retouch', 'body') },
+    { icon: <UserMinus size={20} />, title: tr('Yoldan geçenler', 'Passers-by'), sub: tr('Kalabalığı temizle', 'Clear the crowd'), run: () => pickAndEdit('cleanup', 'passersby') },
     { icon: <LayoutGrid size={20} />, title: tr('Kolaj', 'Collage'), sub: tr('2–9 fotoğraf', '2–9 photos'), run: () => go('collage') },
     { icon: <Layers size={20} />, title: tr('Toplu düzenle', 'Batch edit'), sub: tr('Aynı ayar, çok foto', 'One look, many photos'), run: () => go('batch') },
     { icon: <MessageCircleHeart size={20} />, title: tr('Stil danışmanı', 'Style advisor'), sub: tr('Güzellik ve stil sohbeti', 'Beauty & style chat'), run: () => go('stylist') },
-    { icon: <Camera size={20} />, title: tr('Kamera', 'Camera'), sub: tr('Canlı filtreyle çek', 'Shoot with live looks'), run: () => go('camera') }
+    { icon: <Camera size={20} />, title: tr('Kamera', 'Camera'), sub: tr('Canlı güzellik ve filtre', 'Live beauty and looks'), run: () => go('camera') }
   ]
 
   const toggle = (id: string) => {

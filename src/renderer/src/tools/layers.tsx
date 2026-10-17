@@ -243,7 +243,7 @@ function TextPanel() {
           </div>
           <div className="group-label">{tr('Renk', 'Color')}</div>
           <ColorRow value={p.color} onChange={(c) => set((x) => { x.color = c; x.gradient = null })} />
-          <Slider label={tr('Boyut', 'Size')} min={2} max={30} value={Math.round(p.size * 100)} onChange={(v) => set((x) => void (x.size = v / 100))} />
+          <Slider plain label={tr('Boyut', 'Size')} min={2} max={30} value={Math.round(p.size * 100)} onChange={(v) => set((x) => void (x.size = v / 100))} />
           <Segmented items={[{ id: 'left', label: '⟸' }, { id: 'center', label: '≡' }, { id: 'right', label: '⟹' }]} value={p.align} onChange={(v) => set((x) => void (x.align = v))} />
           <Slider label={tr('Harf aralığı', 'Letter spacing')} min={-5} max={40} value={Math.round((p.spacing ?? 0) * 100)} onChange={(v) => set((x) => void (x.spacing = v / 100))} />
           <Slider label={tr('Eğim', 'Slant')} bipolar min={-40} max={40} value={Math.round((p.skew ?? 0) * 100)} onChange={(v) => set((x) => void (x.skew = v / 100))} />
@@ -359,7 +359,7 @@ function DrawPanel() {
           ))}
         </div>
       ) : draw.kind !== 'eraser' && <ColorRow value={draw.color} onChange={(c) => { draw.color = c; r() }} />}
-      <Slider label={tr('Boyut', 'Size')} min={1} max={60} value={Math.round(draw.size * 1000 / 2)} onChange={(v) => { draw.size = (v * 2) / 1000; r() }} />
+      <Slider plain label={tr('Boyut', 'Size')} min={1} max={60} value={Math.round(draw.size * 1000 / 2)} onChange={(v) => { draw.size = (v * 2) / 1000; r() }} />
       {hasDrawing && <button className="btn ghost block" onClick={() => useEditor.getState().update((d) => void (d.layers = d.layers.filter((l) => l.type !== 'drawing')))}>{tr('Çizimi temizle', 'Clear drawing')}</button>}
       <p className="note">{tr('Tuvale doğrudan çiz. Silgi yalnızca çizimi siler, fotoğrafı değil.', 'Draw directly on the canvas. The eraser only erases the drawing, not the photo.')}</p>
     </>

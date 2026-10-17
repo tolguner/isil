@@ -188,6 +188,7 @@ export function Collage() {
           {mode === 'grid' ? (
             <>
               <div className="group-label">{tr('Yerleşim', 'Layout')}</div>
+              {imgs.length === 0 && <p className="note">{tr('Fotoğraf ekleyince sayıya uygun yerleşimler burada çıkar.', 'Layouts for your photo count appear here once you add photos.')}</p>}
               <div className="presets" style={{ gridTemplateColumns: 'repeat(4, 1fr)' }}>
                 {layouts(imgs.length).map((L, i) => (
                   <button key={i} className={'preset' + (i === li ? ' on' : '')} onClick={() => setLi(i)} aria-label={`${i + 1}`}>
@@ -199,14 +200,14 @@ export function Collage() {
               </div>
               <div className="group-label">{tr('Oran', 'Ratio')}</div>
               <Segmented items={Object.keys(RATIO).map((k) => ({ id: k, label: k }))} value={ratio} onChange={setRatio} />
-              <Slider label={tr('Kenar boşluğu', 'Spacing')} value={gap} onChange={setGap} />
-              <Slider label={tr('Köşe yuvarlama', 'Corner radius')} value={radius} onChange={setRadius} />
+              <Slider plain label={tr('Kenar boşluğu', 'Spacing')} value={gap} onChange={setGap} />
+              <Slider plain label={tr('Köşe yuvarlama', 'Corner radius')} value={radius} onChange={setRadius} />
               <p className="note">{tr('Hücredeki fotoğrafı sürükleyerek kaydır, tekerlekle yakınlaştır.', 'Drag a photo inside its cell to reposition; scroll to zoom.')}</p>
             </>
           ) : (
             <>
               <Segmented items={[{ id: 'v', label: tr('Dikey', 'Vertical') }, { id: 'h', label: tr('Yatay', 'Horizontal') }]} value={dir} onChange={setDir} />
-              <Slider label={tr('Aralık', 'Gap')} value={gap} onChange={setGap} />
+              <Slider plain label={tr('Aralık', 'Gap')} value={gap} onChange={setGap} />
             </>
           )}
           <div className="group-label">{tr('Zemin', 'Background')}</div>

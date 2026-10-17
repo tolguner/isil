@@ -114,6 +114,7 @@ function Panel() {
           </div>
         )}
       </div>
+      {toolDef?.noFooter && <div className="panel-foot" id="tool-foot" />}
       {toolDef && !toolDef.noFooter && (
         <div className="panel-foot">
           <button className="btn ghost" onClick={() => useEditor.getState().closeTool(false)}>{tr('İptal', 'Cancel')}</button>

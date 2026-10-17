@@ -139,7 +139,7 @@ function RecipesPanel() {
           </Preset>
         ))}
       </div>
-      {sel && <Slider label={tr('Yoğunluk', 'Intensity')} value={amt} onChange={(v) => { setAmt(v); apply(sel, v) }} />}
+      {sel && <Slider plain label={tr('Yoğunluk', 'Intensity')} value={amt} onChange={(v) => { setAmt(v); apply(sel, v) }} />}
       {sel && <RecipeSummary r={RECIPES.find((x) => x.id === sel)!} amount={amt} />}
     </>
   )

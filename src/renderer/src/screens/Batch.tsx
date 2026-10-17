@@ -125,7 +125,7 @@ export function Batch() {
               </select>
             ) : <p className="note">{tr('Ayarları kopyalanacak bir proje yok.', 'No project to copy settings from.')}</p>
           )}
-          {src !== 'project' && <Slider label={tr('Yoğunluk', 'Intensity')} value={amount} onChange={setAmount} />}
+          {src !== 'project' && <Slider plain label={tr('Yoğunluk', 'Intensity')} value={amount} onChange={setAmount} />}
           {src === 'project' && <p className="note">{tr('Projedeki ayar, HSL, eğri, filtre ve efektler kopyalanır; rötuş ve katmanlar fotoğrafa özel olduğu için kopyalanmaz.', 'Adjustments, HSL, curves, looks and effects are copied; retouch and layers are photo-specific and are not.')}</p>}
           <div className="group-label">{tr('Biçim', 'Format')}</div>
           <Segmented items={[{ id: 'jpeg', label: 'JPG' }, { id: 'png', label: 'PNG' }]} value={fmt} onChange={setFmt} />

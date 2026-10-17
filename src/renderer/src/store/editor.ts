@@ -1,7 +1,7 @@
 import { create } from 'zustand'
 import { emptyDoc, type EditDoc, type Project, type Settings, DEFAULT_SETTINGS } from '@shared/schema'
 
-export type Screen = 'home' | 'editor' | 'projects' | 'settings' | 'collage' | 'batch' | 'stylist' | 'camera'
+export type Screen = 'home' | 'editor' | 'settings' | 'collage' | 'batch' | 'stylist' | 'camera'
 
 export type TabId =
   | 'ai' | 'recipes' | 'retouch' | 'filters' | 'adjust' | 'cleanup' | 'effects' | 'draw'
@@ -47,6 +47,20 @@ interface State {
 
 const clone = <T>(v: T): T => structuredClone(v)
 let toastId = 1
+
+/** Teknik hata iletilerini (bellek, GPU, ağ, disk) kullanıcının anlayacağı bir cümleye çevirir; bilinmeyeni olduğu gibi bırakır. */
+export function friendlyError(msg: string, en = false): string {
+  const m = msg.replace(/^(Uncaught )?(Error|TypeError|RangeError): /, '').trim()
+  const rules: [RegExp, string, string][] = [
+    [/out of memory|bad_alloc|allocation fail|OOM|CUDA error: out|not enough memory/i, 'Bellek yetmedi. Daha küçük bir görselle ya da Ayarlar → Dosya kalitesi: Küçük ile yeniden dene.', 'Ran out of memory. Try a smaller image, or Settings → File quality: Small.'],
+    [/context lost|CONTEXT_LOST/i, 'Ekran kartı bağlantısı koptu. Uygulamayı yeniden başlatman gerekebilir.', 'The graphics card connection was lost. You may need to restart the app.'],
+    [/failed to fetch|network|ENOTFOUND|ECONNRESET|ETIMEDOUT|ERR_INTERNET/i, 'İnternet bağlantısı kurulamadı. Bağlantını kontrol edip yeniden dene.', 'Could not connect to the internet. Check your connection and try again.'],
+    [/ENOSPC|no space left|disk full/i, 'Diskte yer kalmadı. Biraz yer açıp yeniden dene.', 'The disk is full. Free some space and try again.'],
+    [/EACCES|EPERM|permission denied/i, 'Dosyaya erişim izni yok. Başka bir klasör seçmeyi dene.', 'No permission to access the file. Try another folder.']
+  ]
+  for (const [re, tr, enText] of rules) if (re.test(m)) return en ? enText : tr
+  return m || (en ? 'Something went wrong.' : 'Bir şeyler ters gitti.')
+}
 
 export const useEditor = create<State>((set, get) => ({
   screen: 'home',
@@ -128,8 +142,10 @@ export const useEditor = create<State>((set, get) => ({
   setBusy: (busy) => set({ busy }),
   toast: (kind, text, action) => {
     const id = toastId++
+    if (kind === 'error') text = friendlyError(text, get().settings.language === 'en')
     set({ toasts: [...get().toasts, { id, kind, text, action }] })
-    setTimeout(() => get().dismissToast(id), 4500)
+    // hata iletileri okunabilsin diye daha uzun kalır
+    setTimeout(() => get().dismissToast(id), kind === 'error' ? 8000 : 4500)
   },
   dismissToast: (id) => set({ toasts: get().toasts.filter((t) => t.id !== id) }),
   selectFace: (selectedFace) => set({ selectedFace }),

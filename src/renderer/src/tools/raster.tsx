@@ -4,6 +4,7 @@ import { useEditor } from '@/store/editor'
 import { session } from '@/engine/session'
 import { commitRaster } from '@/lib/projects'
 import { useT } from '@/lib/i18n'
+import { ToolFoot } from '@/components/ui'
 import { toCanvas } from '@/ai/ops'
 import type { RasterOpType } from '@shared/schema'
 import type { View } from './types'
@@ -92,7 +93,7 @@ export function WorkFooter({ type, params }: { type: RasterOpType; params?: Reco
   const tr = useT()
   const w = useWork()
   return (
-    <div className="row" style={{ marginTop: 16 }}>
+    <ToolFoot>
       <button className="btn ghost" style={{ flex: 1 }} onClick={() => useEditor.getState().closeTool(false)}>{tr('İptal', 'Cancel')}</button>
       <button className="btn primary" style={{ flex: 1 }} disabled={!w.changed} onClick={async () => {
         const st = useEditor.getState()
@@ -107,7 +108,7 @@ export function WorkFooter({ type, params }: { type: RasterOpType; params?: Reco
           useEditor.getState().setBusy(null)
         }
       }}>{tr('Uygula', 'Apply')}</button>
-    </div>
+    </ToolFoot>
   )
 }
 

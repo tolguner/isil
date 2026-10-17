@@ -20,7 +20,7 @@ function BrushControls() {
   return (
     <>
       <Segmented items={[{ id: 'paint', label: tr('Boya', 'Paint') }, { id: 'erase', label: tr('Sil', 'Erase') }]} value={brush.erase ? 'erase' : 'paint'} onChange={(v) => { brush.erase = v === 'erase'; f((x) => x + 1) }} />
-      <Slider label={tr('Fırça boyutu', 'Brush size')} min={1} max={25} value={Math.round(brush.size * 100)} onChange={(v) => { brush.size = v / 100; f((x) => x + 1); workEmit() }} />
+      <Slider plain label={tr('Fırça boyutu', 'Brush size')} min={1} max={25} value={Math.round(brush.size * 100)} onChange={(v) => { brush.size = v / 100; f((x) => x + 1); workEmit() }} />
     </>
   )
 }
@@ -227,7 +227,7 @@ function MosaicPanel() {
     <>
       <p className="note">{tr('Gizlemek istediğin alanı boya; bırakınca pikselleşir.', 'Paint over what to hide; it pixelates when you release.')}</p>
       <BrushControls />
-      <Slider label={tr('Piksel boyutu', 'Cell size')} min={6} max={80} value={mosaic.cell} onChange={(v) => { mosaic.cell = v; f((x) => x + 1) }} />
+      <Slider plain label={tr('Piksel boyutu', 'Cell size')} min={6} max={80} value={mosaic.cell} onChange={(v) => { mosaic.cell = v; f((x) => x + 1) }} />
       <WorkFooter type="mosaic" />
     </>
   )

@@ -164,7 +164,7 @@ function AutoPanel() {
           </button>
         ))}
       </div>
-      {mode && <Slider label={tr('Yoğunluk', 'Amount')} value={amt} onChange={(v) => { setAmt(v); void apply(mode, v) }} />}
+      {mode && <Slider plain label={tr('Yoğunluk', 'Amount')} value={amt} onChange={(v) => { setAmt(v); void apply(mode, v) }} />}
     </>
   )
 }

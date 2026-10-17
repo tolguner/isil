@@ -1,4 +1,5 @@
-import { useEffect, useId, useRef, useState, type ReactNode } from 'react'
+import { useEffect, useId, useLayoutEffect, useRef, useState, type ReactNode } from 'react'
+import { createPortal } from 'react-dom'
 import { useEditor } from '@/store/editor'
 import { useLang, useT } from '@/lib/i18n'
 
@@ -15,6 +16,8 @@ export function Slider(props: {
   disabled?: boolean
   def?: number
   hideValue?: boolean
+  /** araç ayarı (fırça boyutu, yoğunluk…): fotoğrafı değiştirmediği için "değişti" noktası gösterilmez */
+  plain?: boolean
 }) {
   const { label, value, onChange, onCommit, min = props.bipolar ? -100 : 0, max = 100, step = 1, bipolar, disabled } = props
   const def = props.def ?? (bipolar ? 0 : min)
@@ -35,7 +38,7 @@ export function Slider(props: {
       <div className="slider-top">
         <label id={id}>
           {label}
-          {value !== def && <span className="mod" aria-hidden />}
+          {!props.plain && value !== def && <span className="mod" aria-hidden />}
         </label>
         {!props.hideValue && <output>{bipolar && value > 0 ? '+' : ''}{Math.round(value)}</output>}
       </div>
@@ -81,10 +84,48 @@ export function Slider(props: {
 }
 
 /** mod: o sekmede değişiklik var (kaydırıcılardaki gibi küçük nokta; Peachy'deki kategori noktası). */
+/**
+ * Yatay kayan satır: taştığı kenarda solma sınıfı (fade-l / fade-r), fare tekerleğiyle yatay kaydırma ve
+ * seçili öğeyi görünür tutma.
+ */
+export function useScrollFade<E extends HTMLElement>(selected?: unknown) {
+  const ref = useRef<E>(null)
+  useEffect(() => {
+    const el = ref.current
+    if (!el) return
+    const upd = () => {
+      el.classList.toggle('fade-l', el.scrollLeft > 2)
+      el.classList.toggle('fade-r', el.scrollLeft + el.clientWidth < el.scrollWidth - 2)
+    }
+    const wheel = (e: WheelEvent) => {
+      if (el.scrollWidth <= el.clientWidth || Math.abs(e.deltaX) > Math.abs(e.deltaY)) return
+      e.preventDefault()
+      el.scrollLeft += e.deltaY
+    }
+    upd()
+    el.addEventListener('scroll', upd, { passive: true })
+    el.addEventListener('wheel', wheel, { passive: false })
+    const ro = new ResizeObserver(upd)
+    ro.observe(el)
+    return () => { el.removeEventListener('scroll', upd); el.removeEventListener('wheel', wheel); ro.disconnect() }
+  }, [])
+  useEffect(() => {
+    const el = ref.current
+    const on = el?.querySelector<HTMLElement>('[aria-selected="true"], .on')
+    if (!el || !on) return
+    // yalnız yatay: paneli dikeyde kaydırmasın
+    const r = el.getBoundingClientRect(), o = on.getBoundingClientRect()
+    if (o.left < r.left) el.scrollLeft -= r.left - o.left + 16
+    else if (o.right > r.right) el.scrollLeft += o.right - r.right + 16
+  }, [selected])
+  return ref
+}
+
 export function Tabs<T extends string>(props: { items: { id: T; label: string; mod?: boolean }[]; value: T; onChange: (v: T) => void; label?: string }) {
   const lang = useLang()
+  const ref = useScrollFade<HTMLDivElement>(props.value)
   return (
-    <div className="tabs" role="tablist" aria-label={props.label}>
+    <div ref={ref} className="tabs" role="tablist" aria-label={props.label}>
       {props.items.map((it) => (
         <button key={it.id} role="tab" aria-selected={props.value === it.id} className={props.value === it.id ? 'on' : ''} onClick={() => props.onChange(it.id)}
           aria-label={it.mod ? `${it.label} (${lang === 'en' ? 'edited' : 'değişti'})` : undefined}>
@@ -222,6 +263,16 @@ export function Toasts() {
 export function Busy() {
   const busy = useEditor((s) => s.busy)
   const tr = useT()
+  const active = !!busy
+  const [sec, setSec] = useState(0)
+  // uzun işlerde geçen süre: ilerleme bilinmese de bir şeyin sürdüğü görülsün
+  useEffect(() => {
+    if (!active) return
+    setSec(0)
+    const t0 = Date.now()
+    const id = window.setInterval(() => setSec(Math.floor((Date.now() - t0) / 1000)), 1000)
+    return () => clearInterval(id)
+  }, [active])
   if (!busy) return null
   return (
     <div className="busy" role="alertdialog" aria-busy="true" aria-label={busy.text}>
@@ -231,8 +282,19 @@ export function Busy() {
         {typeof busy.progress === 'number' && (
           <div className="bar"><i style={{ width: `${Math.round(busy.progress * 100)}%` }} /></div>
         )}
+        {sec >= 3 && <div className="busy-time">{typeof busy.progress === 'number' && busy.progress > 0.02 ? `%${Math.round(busy.progress * 100)} · ` : ''}{sec < 60 ? tr(`${sec} sn`, `${sec}s`) : tr(`${Math.floor(sec / 60)} dk ${sec % 60} sn`, `${Math.floor(sec / 60)}m ${sec % 60}s`)}</div>}
         {busy.cancel && <button className="btn ghost sm" style={{ marginTop: 12 }} onClick={busy.cancel}>{tr('İptal', 'Cancel')}</button>}
       </div>
     </div>
   )
+}
+
+/**
+ * Araç alt çubuğu: kendi İptal/Uygula düğmelerini yöneten araçlar (noFooter) düğmelerini paneldeki sabit alt
+ * çubuğa taşır; böylece her araçta eylemler aynı yerde durur.
+ */
+export function ToolFoot({ children }: { children: ReactNode }) {
+  const [slot, setSlot] = useState<HTMLElement | null>(null)
+  useLayoutEffect(() => setSlot(document.getElementById('tool-foot')), [])
+  return slot ? createPortal(children, slot) : null
 }

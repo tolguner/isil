@@ -104,7 +104,7 @@ function AiEditorPanel() {
       <div className="group-label">{tr('Hazır komutlar', 'Quick prompts')}</div>
       <div className="stack">
         {QUICK.map(([a, b, e, protect]) => (
-          <button key={a} className="btn sm" style={{ justifyContent: 'flex-start' }} disabled={!ok} onClick={() => { const t = lang === 'en' ? b : a; setPrompt(t); setKeep(!!protect); void run(t, !!protect) }}>{e} {lang === 'en' ? b : a}</button>
+          <button key={a} className="btn sm wrap" style={{ justifyContent: 'flex-start' }} disabled={!ok} onClick={() => { const t = lang === 'en' ? b : a; setPrompt(t); setKeep(!!protect); void run(t, !!protect) }}>{e} {lang === 'en' ? b : a}</button>
         ))}
       </div>
       {!!history.length && (

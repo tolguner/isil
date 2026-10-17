@@ -2,6 +2,22 @@
 
 Her yayımlanan yapıda sürümün yalnız son hanesi artırılır (0.8.0 → 0.8.1); ara sürüm (0.9) büyük aşamalarda, 1.0.0 ise yayına hazır tam üründe. Uygulama Ayarlar → Hakkında'da sürümü gösterir.
 
+## 0.8.3 — 2026-10-17
+
+Cila turu: yeni özellik yok, mevcut ekranlar tutarlı hale getirildi.
+
+- **Araç alt çubuğu her yerde aynı**: Sihirli silgi, Klonla, Mozaik, YZ ile değiştir, Yoldan geçenler, YZ Editör, YZ efektleri, Kesim, Kalite artır, Portre bulanıklığı, Rötuş fırçası, Işıklandır ve Şekillendir'in İptal/Uygula düğmeleri panelin ortasından alttaki sabit çubuğa taşındı. Kalite artır'daki "Kapat" düğmesi diğerleri gibi "İptal" oldu
+- **Devre dışı düğmeler okunur**: kullanılamayan ana düğme soluk turuncu yerine nötr gri görünür
+- **Kayan sekme satırları**: kenardaki kesik yazı yerine yumuşak solma; fare tekerleği satırı yatay kaydırır, seçili sekme görünür tutulur
+- **"Değişti" noktası yalnız fotoğrafı değiştiren ayarlarda**: fırça boyutu, yoğunluk, kenar boşluğu gibi araç ayarlarında artık çıkmıyor
+- **Bekleme penceresi**: 3 saniyeyi geçen işlerde geçen süre gösterilir; LaMa ile çok parçalı silme ve doldurmada ilerleme çubuğu var
+- **Anlaşılır hata iletileri**: bellek yetmemesi, ekran kartı bağlantısının kopması, ağ, dolu disk ve izin hataları sade bir cümleyle anlatılır; hata iletileri ekranda daha uzun kalır
+- YZ Editör'deki uzun hazır komutlar alt satıra iner (panel yana taşmıyordu)
+- Yüz gizle önizlemeleri büyütüldü (bulanık disk, piksel kareler, sansür bandı)
+- "İfade (YZ)" aracının adı "İfade" oldu (YZ rozeti zaten var)
+- Ana sayfaya "Yoldan geçenler" kısayolu eklendi; ızgara 12 karta tamamlandı
+- Toplu düzenle ve Kolaj'daki "Fotoğraf seç" düğmesinin simgesi hizalandı; Kolaj'da fotoğraf yokken boş "Yerleşim" başlığının altına açıklama eklendi
+
 ## 0.8.2 — 2026-10-17
 
 - **Stil danışmanı → önerileri uygula**: yanıtta geçen Işıl araçları (Cilt, Makyaj, Saç, Portre bulanıklığı, Seçmeli…) düğmeye dönüşür; konuşmadaki fotoğraf düzenleyicide o araçla açılır. Danışmanın araç listesi yeni araçlarla güncellendi

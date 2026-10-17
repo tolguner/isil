@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { Waves } from 'lucide-react'
 import { useEditor } from '@/store/editor'
 import { useT } from '@/lib/i18n'
-import { Slider, Switch } from '@/components/ui'
+import { Slider, Switch, ToolFoot } from '@/components/ui'
 import { session } from '@/engine/session'
 import { Renderer } from '@/engine/renderer'
 import { commitRaster } from '@/lib/projects'
@@ -107,8 +107,8 @@ function ReshapePanel() {
           <button key={m} className={'btn sm' + (st.mode === m ? ' primary' : '')} onClick={() => { st.mode = m; r() }}>{tr(a, b)}</button>
         ))}
       </div>
-      <Slider label={tr('Boyut', 'Size')} min={2} max={50} value={Math.round(st.size * 100)} onChange={(v) => { st.size = v / 100; r() }} />
-      <Slider label={tr('Yoğunluk', 'Strength')} min={5} max={100} value={st.strength} onChange={(v) => { st.strength = v; r() }} />
+      <Slider plain label={tr('Boyut', 'Size')} min={2} max={50} value={Math.round(st.size * 100)} onChange={(v) => { st.size = v / 100; r() }} />
+      <Slider plain label={tr('Yoğunluk', 'Strength')} min={5} max={100} value={st.strength} onChange={(v) => { st.strength = v; r() }} />
       <div className="setting">
         <div><b>{tr('Arka planı koru', 'Protect background')}</b><span>{tr('Bükme yalnızca kişiye uygulanır', 'Warp only affects the person')}</span></div>
         <Switch label="protect" on={st.protect} onChange={async (v) => {
@@ -124,10 +124,10 @@ function ReshapePanel() {
           }
         }} />
       </div>
-      <div className="row" style={{ marginTop: 16 }}>
+      <ToolFoot>
         <button className="btn ghost" style={{ flex: 1 }} onClick={() => { session.liveField = null; session.emit(); useEditor.getState().closeTool(false) }}>{tr('İptal', 'Cancel')}</button>
         <button className="btn primary" style={{ flex: 1 }} onClick={apply}>{tr('Uygula', 'Apply')}</button>
-      </div>
+      </ToolFoot>
     </>
   )
 }

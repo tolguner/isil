@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from 'react'
 import { Aperture } from 'lucide-react'
 import { useEditor } from '@/store/editor'
 import { useT } from '@/lib/i18n'
-import { Segmented, Slider } from '@/components/ui'
+import { Segmented, Slider, ToolFoot } from '@/components/ui'
 import { removeBackground, depthMap, toCanvas } from '@/ai/ops'
 import { commitRaster } from '@/lib/projects'
 import type { ToolDef, View } from './types'
@@ -167,9 +167,9 @@ function PortraitBlurPanel() {
           <button key={id} className={'btn sm' + (st.kind === id ? ' primary' : '')} aria-pressed={st.kind === id} onClick={() => set({ kind: id })}>{tr(a, b)}</button>
         ))}
       </div>
-      <Slider label={tr('Yoğunluk', 'Strength')} min={5} max={100} value={st.amount} onChange={(v) => set({ amount: v })} />
+      <Slider plain label={tr('Yoğunluk', 'Strength')} min={5} max={100} value={st.amount} onChange={(v) => set({ amount: v })} />
       {st.kind === 'motion' && <Slider label={tr('Açı', 'Angle')} min={-90} max={90} def={0} value={st.angle} onChange={(v) => set({ angle: v })} />}
-      <div className="row" style={{ marginTop: 16 }}>
+      <ToolFoot>
         <button className="btn ghost" style={{ flex: 1 }} onClick={() => useEditor.getState().closeTool(false)}>{tr('İptal', 'Cancel')}</button>
         <button className="btn primary" style={{ flex: 1 }} disabled={!st.mask} onClick={() => void busy(tr('Uygulanıyor…', 'Applying…'), async () => {
           if (!work.full || !st.mask) return
@@ -177,7 +177,7 @@ function PortraitBlurPanel() {
           await commitRaster(out, 'paint', { tool: 'portrait-blur', kind: st.kind, target: st.target, amount: st.amount })
           useEditor.getState().closeTool(true)
         })}>{tr('Uygula', 'Apply')}</button>
-      </div>
+      </ToolFoot>
     </>
   )
 }

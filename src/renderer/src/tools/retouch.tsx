@@ -3,7 +3,7 @@ import { Smile, ScanFace, Sparkles, Palette, Droplet, Scissors, PersonStanding, 
 import type { EditDoc, ProtectStroke } from '@shared/schema'
 import { useEditor } from '@/store/editor'
 import { useT } from '@/lib/i18n'
-import { ColorRow, Preset, Slider, Tabs, Segmented, Switch } from '@/components/ui'
+import { ColorRow, Preset, Slider, Tabs, Segmented, Switch, ToolFoot } from '@/components/ui'
 import { session } from '@/engine/session'
 import { FaceGeo, OVAL, allProtect, drawProtect } from '@/engine/face'
 import { BODY_PRESETS, bakeBodyWarp } from '@/engine/body'
@@ -211,7 +211,7 @@ function ProtectSection() {
       {p.on && (
         <>
           <Segmented items={[{ id: 'paint', label: tr('Boya', 'Paint') }, { id: 'erase', label: tr('Sil', 'Erase') }]} value={p.erase ? 'erase' : 'paint'} onChange={(v) => { protectStore.erase = v === 'erase'; protectEmit() }} />
-          <Slider label={tr('Fırça boyutu', 'Brush size')} min={1} max={20} value={Math.round(p.size * 100)} onChange={(v) => { protectStore.size = v / 100; protectEmit() }} />
+          <Slider plain label={tr('Fırça boyutu', 'Brush size')} min={1} max={20} value={Math.round(p.size * 100)} onChange={(v) => { protectStore.size = v / 100; protectEmit() }} />
         </>
       )}
       {!!f.protect?.length && (
@@ -340,7 +340,7 @@ function BeautyPanel() {
           </Preset>
         ))}
       </div>
-      {sel && <Slider label={tr('Yoğunluk', 'Intensity')} value={amt} onChange={(v) => { setAmt(v); apply(sel, v) }} />}
+      {sel && <Slider plain label={tr('Yoğunluk', 'Intensity')} value={amt} onChange={(v) => { setAmt(v); apply(sel, v) }} />}
     </>
   )
 }
@@ -489,7 +489,7 @@ function ImageOverlay({ view, canvas, version }: { view: View; canvas: HTMLCanva
 function RasterFooter({ onApply, disabled }: { onApply: () => Promise<void>; disabled?: boolean }) {
   const tr = useT()
   return (
-    <div className="row" style={{ marginTop: 16 }}>
+    <ToolFoot>
       <button className="btn ghost" style={{ flex: 1 }} onClick={() => useEditor.getState().closeTool(false)}>{tr('İptal', 'Cancel')}</button>
       <button className="btn primary" style={{ flex: 1 }} disabled={disabled} onClick={async () => {
         const st = useEditor.getState()
@@ -504,7 +504,7 @@ function RasterFooter({ onApply, disabled }: { onApply: () => Promise<void>; dis
           useEditor.getState().setBusy(null)
         }
       }}>{tr('Uygula', 'Apply')}</button>
-    </div>
+    </ToolFoot>
   )
 }
 
@@ -581,8 +581,8 @@ function RetouchBrushPanel() {
           <button key={id} className={'btn sm' + (b.mode === id ? ' primary' : '')} onClick={() => { brushStore.mode = id; recompute() }}>{tr(a, c)}</button>
         ))}
       </div>
-      <Slider label={tr('Fırça boyutu', 'Brush size')} min={1} max={25} value={Math.round(b.size * 100)} onChange={(v) => { brushStore.size = v / 100; brushEmit() }} />
-      <Slider label={tr('Yoğunluk', 'Strength')} value={b.strength} onChange={(v) => { brushStore.strength = v; brushEmit() }} onCommit={recompute} />
+      <Slider plain label={tr('Fırça boyutu', 'Brush size')} min={1} max={25} value={Math.round(b.size * 100)} onChange={(v) => { brushStore.size = v / 100; brushEmit() }} />
+      <Slider plain label={tr('Yoğunluk', 'Strength')} value={b.strength} onChange={(v) => { brushStore.strength = v; brushEmit() }} onCommit={recompute} />
       <button className="btn ghost sm block" onClick={() => { brushStore.mask?.clear(); brushStore.preview = null; brushStore.v++; brushEmit() }}>{tr('Temizle', 'Clear')}</button>
       <RasterFooter onApply={async () => {
         if (!brushStore.mask || brushStore.mask.isEmpty()) return
@@ -685,7 +685,7 @@ function FaceHidePanel() {
             } finally {
               st.setBusy(null)
             }
-          }}>{h.emoji ?? (h.id === 'blur' ? '◌' : h.id === 'pixel' ? '▦' : '▬')}</Preset>
+          }}>{h.emoji ? <span className="preset-glyph">{h.emoji}</span> : <span className={'hide-glyph ' + h.id} aria-hidden />}</Preset>
         ))}
       </div>
     </>
@@ -995,7 +995,7 @@ function RelightPanel() {
           <Preset key={l.id} label={tr(l.label[0], l.label[1])} on={r.preset === l.id} bg={`radial-gradient(circle at 30% 30%, ${l.color}, #111 75%)`} onClick={() => { relight.preset = l.id; scheduleRelight(); relightEmit() }} />
         ))}
       </div>
-      <Slider label={tr('Yoğunluk', 'Intensity')} value={r.amount} onChange={(v) => { relight.amount = v; scheduleRelight(); relightEmit() }} />
+      <Slider plain label={tr('Yoğunluk', 'Intensity')} value={r.amount} onChange={(v) => { relight.amount = v; scheduleRelight(); relightEmit() }} />
       <RasterFooter disabled={!r.depth} onApply={async () => {
         if (!relight.depth) return
         const full = await session.fullBase()
@@ -1045,7 +1045,7 @@ export const RETOUCH_TOOLS: ToolDef[] = [
   { id: 'relight', label: ['Işıklandır', 'Relight'], icon: Sun, Panel: RelightPanel, Overlay: RelightOverlay, sourceSpace: true, noFooter: true },
   { id: 'body', label: ['Vücut', 'Body'], icon: PersonStanding, Panel: BodyPanel, Overlay: BodyOverlay, sourceSpace: true, needs: ['pose', 'seg'], applied: (d) => !!d.body && (nz(d.body.shape) || !!d.body.manual?.stretch || !!d.body.manual?.slim), sliders: [...BODY_KEYS.map(([, a, b]) => ({ label: [a, b] as [string, string] })), { label: ['Arka planı koru', 'Protect background'] }] },
   { id: 'facehide', label: ['Yüz gizle', 'Hide face'], icon: EyeOff, Panel: FaceHidePanel, Overlay: FaceOverlay, sourceSpace: true, needs: ['faces'], noFooter: true },
-  { id: 'smile', label: ['İfade (YZ)', 'Expression (AI)'], icon: Smile, Panel: () => <AiRedirect kind="expression" />, noFooter: true, badge: 'YZ' }
+  { id: 'smile', label: ['İfade', 'Expression'], icon: Smile, Panel: () => <AiRedirect kind="expression" />, noFooter: true, badge: 'YZ' }
 ]
 
 function AiRedirect({ kind }: { kind: string }) {

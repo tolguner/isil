@@ -3,7 +3,7 @@ import { Scissors, Square, ImagePlus } from 'lucide-react'
 import type { Fill } from '@shared/schema'
 import { useEditor } from '@/store/editor'
 import { useT } from '@/lib/i18n'
-import { ColorRow, Preset, Segmented, Slider, Switch } from '@/components/ui'
+import { ColorRow, Preset, Segmented, Slider, Switch, ToolFoot } from '@/components/ui'
 import { session, encodeCanvas } from '@/engine/session'
 import { nativeReady } from '@/ai/models'
 import { removeBackground, toCanvas } from '@/ai/ops'
@@ -201,7 +201,7 @@ function CutoutPanel() {
         <>
           <div className="group-label">{tr('Düzelt', 'Refine')}</div>
           <Segmented items={[{ id: 'keep', label: tr('Geri getir', 'Restore') }, { id: 'erase', label: tr('Sil', 'Erase') }]} value={c.brush.erase ? 'erase' : 'keep'} onChange={(v) => { cut.brush.erase = v === 'erase'; cut.mode = 'brush'; emit() }} />
-          <Slider label={tr('Boyut', 'Size')} min={1} max={25} value={Math.round(c.brush.size * 100)} onChange={(v) => { cut.brush.size = v / 100; emit() }} />
+          <Slider plain label={tr('Boyut', 'Size')} min={1} max={25} value={Math.round(c.brush.size * 100)} onChange={(v) => { cut.brush.size = v / 100; emit() }} />
           <Slider label={tr('Sertlik', 'Hardness')} value={Math.round(c.brush.hardness * 100)} onChange={(v) => { cut.brush.hardness = v / 100; emit() }} />
           <div className="setting">
             <div><b>{tr('Kesimi göster', 'Show cutout')}</b></div>
@@ -213,10 +213,10 @@ function CutoutPanel() {
           </div>
         </>
       )}
-      <div className="row" style={{ marginTop: 16 }}>
+      <ToolFoot>
         <button className="btn ghost" style={{ flex: 1 }} onClick={() => useEditor.getState().closeTool(false)}>{tr('İptal', 'Cancel')}</button>
         <button className="btn primary" style={{ flex: 1 }} onClick={apply}>{tr('Uygula', 'Apply')}</button>
-      </div>
+      </ToolFoot>
     </>
   )
 }

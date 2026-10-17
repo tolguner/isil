@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useEditor } from '@/store/editor'
 import { useT } from '@/lib/i18n'
-import { Segmented, Slider } from '@/components/ui'
+import { Segmented, Slider, ToolFoot } from '@/components/ui'
 import { session } from '@/engine/session'
 import { upscale, restoreFaces, toCanvas } from '@/ai/ops'
 import { isDesktop } from '@/lib/platform'
@@ -56,16 +56,16 @@ export function EnhanceTool() {
           <span>{tr('Yüzleri de onar (GFPGAN)', 'Also restore faces (GFPGAN)')}</span>
         </label>
       )}
-      {isDesktop && faces && <Slider label={tr('Onarım gücü', 'Restore strength')} value={power} onChange={setPower} min={20} max={100} />}
+      {isDesktop && faces && <Slider plain label={tr('Onarım gücü', 'Restore strength')} value={power} onChange={setPower} min={20} max={100} />}
       <div className="card">
         <div className="muted">{tr('Şimdi', 'Now')}: {W}×{H}</div>
         <div><b>{tr('Sonra', 'After')}: {outW}×{outH}</b></div>
         {pre < 1 && <div className="note">{tr('Çok büyük görsellerde çıktı 8192 px ile sınırlanır.', 'Very large images are capped at 8192 px.')}</div>}
       </div>
-      <div className="row">
-        <button className="btn ghost" style={{ flex: 1 }} onClick={() => useEditor.getState().closeTool(false)}>{tr('Kapat', 'Close')}</button>
+      <ToolFoot>
+        <button className="btn ghost" style={{ flex: 1 }} onClick={() => useEditor.getState().closeTool(false)}>{tr('İptal', 'Cancel')}</button>
         <button className="btn primary" style={{ flex: 1 }} onClick={run}>{tr('Kaliteyi artır', 'Enhance')}</button>
-      </div>
+      </ToolFoot>
     </>
   )
 }
