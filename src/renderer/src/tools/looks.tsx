@@ -7,6 +7,7 @@ import { Preset, Slider, Tabs } from '@/components/ui'
 import { EFFECTS, EFFECT_CATS, FILTERS, FILTER_CATS, MOODS, effectById } from '@/engine/presets'
 import { thumb } from '@/engine/thumbs'
 import { applyMood } from '@/screens/Home'
+import { PORTRAIT_BLUR_TOOL } from './portraitblur'
 import type { ToolDef } from './types'
 
 function Thumb({ id, variant, fallback }: { id: string; variant: (d: EditDoc) => void; fallback?: string }) {
@@ -113,4 +114,4 @@ export const FILTER_TOOLS: ToolDef[] = [
   { id: 'filters', label: ['Filtreler', 'Looks'], icon: Aperture, Panel: FiltersPanel, applied: (d) => !!d.filter },
   { id: 'moods', label: ['Hızlı hava', 'Moods'], icon: Zap, Panel: MoodsPanel }
 ]
-export const EFFECT_TOOLS: ToolDef[] = [{ id: 'effects', label: ['Efektler', 'Effects'], icon: Sparkle, Panel: EffectsPanel, applied: (d) => d.effects.length > 0 }]
+export const EFFECT_TOOLS: ToolDef[] = [{ id: 'effects', label: ['Efektler', 'Effects'], icon: Sparkle, Panel: EffectsPanel, applied: (d) => d.effects.length > 0 }, PORTRAIT_BLUR_TOOL]

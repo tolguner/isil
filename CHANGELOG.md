@@ -2,6 +2,10 @@
 
 Her büyük güncellemede sürüm numarası artırılır (`npm version <x.y.z> --no-git-tag-version`), uygulama Ayarlar → Hakkında'da sürümü gösterir.
 
+## Yayımlanmamış
+
+- Efektler → **Portre bulanıklığı**: konu yapay zekâyla ayrılır (BiRefNet/ISNet), arka plan ya da özne bulanıklaştırılır; Lens (derinlik haritasıyla kademeli), Gauss, Hareket, Dönme, Yakınlaşma. Alfa ağırlıklı bulanıklıkla özne kenarında hale kalmaz
+
 ## 0.6.0 — 2026-10-17
 
 Çıkartma yapıcı, yüzü değiştirmeyen saç/kıyafet değiştirme ve üretken silme. Hepsi bilgisayarda çalışır.
