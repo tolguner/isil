@@ -67,6 +67,41 @@ function ShapeSliders({ keys }: { keys: SliderDef[] }) {
   )
 }
 
+// Bölgeye özel hazır ayarlar (Peachy "İnce Ayar" benzeri ihtiyaç; adlar ve değerler bizim). Seçilen sekmenin
+// kaydırıcılarını birlikte ayarlar; aynı karta tekrar basınca o bölge sıfırlanır.
+const FEATURE_PRESETS: Record<string, { id: string; label: [string, string]; v: Record<string, number> }[]> = {
+  face: [
+    { id: 'oval', label: ['Oval', 'Oval'], v: { slim: 25, jaw: 15, chin: 8 } },
+    { id: 'heart', label: ['Kalp', 'Heart'], v: { vshape: 35, pointed: 20, temple: 10 } },
+    { id: 'soft', label: ['Yumuşak', 'Soft'], v: { jaw: 20, cheekbone: -10, smallFace: 10 } },
+    { id: 'defined', label: ['Belirgin', 'Defined'], v: { cheekbone: 25, jaw: -10, temple: -10 } }
+  ],
+  eyes: [
+    { id: 'big', label: ['İri', 'Big'], v: { eyeSize: 30, iris: 10 } },
+    { id: 'almond', label: ['Badem', 'Almond'], v: { eyeWidth: 25, eyeHeight: -10, eyeTilt: 15 } },
+    { id: 'round', label: ['Yuvarlak', 'Round'], v: { eyeHeight: 30, eyeSize: 10 } },
+    { id: 'lifted', label: ['Kalkık', 'Lifted'], v: { eyeTilt: 30, eyeOuter: 15 } }
+  ],
+  nose: [
+    { id: 'slim', label: ['İnce', 'Slim'], v: { noseWidth: -30, noseBridge: -20 } },
+    { id: 'small', label: ['Küçük', 'Small'], v: { noseSize: -25, noseLength: -15 } },
+    { id: 'lifted', label: ['Kalkık uç', 'Lifted tip'], v: { noseLift: 30, noseTip: -15 } },
+    { id: 'straight', label: ['Düz', 'Straight'], v: { noseBridge: -15, noseRoot: 10, noseWidth: -10 } }
+  ],
+  brows: [
+    { id: 'arched', label: ['Kavisli', 'Arched'], v: { browHigh: 30, browTilt: 10 } },
+    { id: 'straight', label: ['Düz', 'Straight'], v: { browHigh: -20, browTilt: -15 } },
+    { id: 'thick', label: ['Gür', 'Bold'], v: { browThick: 30, browLength: 10 } },
+    { id: 'lifted', label: ['Kalkık', 'Lifted'], v: { browPos: 25, browTilt: 15 } }
+  ],
+  lips: [
+    { id: 'full', label: ['Dolgun', 'Full'], v: { plump: 35, lipSize: 15 } },
+    { id: 'smile', label: ['Gülümseme', 'Smile'], v: { smile: 35, lipAngle: 10 } },
+    { id: 'heart', label: ['Kalp dudak', 'Heart lips'], v: { mShape: 35, upperLip: 15 } },
+    { id: 'wide', label: ['Geniş', 'Wide'], v: { lipWidth: 25, lowerLip: 10 } }
+  ]
+}
+
 // Alt sekme modül düzeyinde: Ctrl+K paleti bir kaydırıcıya giderken doğru sekmeyi açabilsin
 let shapeTab = 'face'
 const shapeTabListeners = new Set<(t: string) => void>()
@@ -78,6 +113,8 @@ function selectShapeTab(t: string) {
 function FaceShapePanel() {
   const tr = useT()
   const f = useFace()
+  const idx = useEditor((s) => s.selectedFace)
+  const update = useEditor((s) => s.update)
   const [tab, setTabState] = useState(shapeTab)
   useEffect(() => {
     shapeTabListeners.add(setTabState)
@@ -90,6 +127,19 @@ function FaceShapePanel() {
       <NoFace />
       <Tabs items={SHAPE_TABS.map((t) => ({ id: t.id, label: tr(t.label[0], t.label[1]), mod: t.keys.some(([k]) => !!f.shape[k]) }))} value={tab} onChange={setTab} />
       <SidePicker />
+      {FEATURE_PRESETS[tab] && (
+        <div className="presets feature-presets" role="group" aria-label={tr('Hazır ayarlar', 'Presets')}>
+          {FEATURE_PRESETS[tab].map((p) => {
+            const on = Object.entries(p.v).every(([k, v]) => (f.shape[k] ?? 0) === v)
+            return (
+              <button key={p.id} className={'btn sm' + (on ? ' primary' : '')} aria-pressed={on} onClick={() => update((d) => editFace(d, idx, (x) => {
+                for (const [k] of keys) delete x.shape[k]
+                if (!on) Object.assign(x.shape, p.v)
+              }))}>{tr(p.label[0], p.label[1])}</button>
+            )
+          })}
+        </div>
+      )}
       <ShapeSliders keys={keys} />
       <ApplyAll group="shape" keys={keys.map((k) => k[0])} />
       <p className="note">{tr('Kaydırıcıya çift tıklayınca sıfırlanır. Tek tarafı düzenlemek için Sol/Sağ seç.', 'Double-click a slider to reset. Pick Left/Right to edit one side.')}</p>

@@ -4,6 +4,7 @@ Her büyük güncellemede sürüm numarası artırılır (`npm version <x.y.z> -
 
 ## Yayımlanmamış
 
+- Rötuş → Yüz: her sekmede **bölgeye özel hazır ayarlar** (yüz: oval, kalp, yumuşak, belirgin; göz: iri, badem, yuvarlak, kalkık; burun, kaş ve dudak için dörder kart). Kart o sekmenin kaydırıcılarını birlikte ayarlar, ikinci basış sıfırlar
 - Rötuş → Cilt → **Cilt dokusu**: pürüzsüzleştirmenin sildiği gözenek dokusu iki ölçekli yumuşak gürültüyle geri verilir (yanak yüksek frekans enerjisi 153 → 189, orijinal 335); korunan işaretlere uygulanmaz. Oto ve Pürüzsüz düğmeleri dokuyu da kullanır
 
 ## 0.7.0 — 2026-10-17

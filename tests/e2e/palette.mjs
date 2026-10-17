@@ -56,6 +56,15 @@ const dots = await win.evaluate(async () => {
   return [...document.querySelectorAll('.tabs [role="tab"]')].filter((b) => b.querySelector('.mod')).map((b) => b.textContent)
 })
 ok('Değişen sekmede nokta var, diğerlerinde yok', dots.length === 1 && dots[0].startsWith('Göz'), JSON.stringify(dots))
+// 4b) bölgeye özel hazır ayar: Göz → İri
+await win.getByRole('tab', { name: /^Göz/ }).click()
+await win.getByRole('button', { name: 'İri', exact: true }).click()
+await win.waitForTimeout(300)
+const fp = await win.evaluate(async () => (await window.__isil.store()).getState().doc.retouch.faces[0]?.shape)
+await win.getByRole('button', { name: 'İri', exact: true }).click()
+await win.waitForTimeout(300)
+const fp2 = await win.evaluate(async () => (await window.__isil.store()).getState().doc.retouch.faces[0]?.shape)
+ok('Bölge hazır ayarı uygulanıp geri alınıyor', fp?.eyeSize === 30 && fp?.iris === 10 && !fp2?.eyeSize, JSON.stringify([fp, fp2]))
 // 5) tarif özeti: "Altın ışıltı" seçilince değiştirdikleri listelenir; satıra dokununca Ayarla açılır
 await win.evaluate(async () => { const S = (await window.__isil.store()).getState; S().closeTool(false); S().setTab('recipes') })
 await win.waitForTimeout(300)

@@ -290,3 +290,5 @@ kbd { background: var(--c-surface-3); border-radius: 4px; padding: 1px 5px; font
 .my-sticker .pv img { max-width: 100%; max-height: 100%; object-fit: contain; }
 .my-sticker .del { position: absolute; top: 2px; right: 2px; width: 18px; height: 18px; border-radius: 50%; display: grid; place-items: center; padding: 0; background: rgba(0,0,0,.6); color: #fff; border: 0; opacity: 0; }
 .my-sticker:hover .del, .my-sticker .del:focus-visible { opacity: 1; }
+
+.feature-presets { grid-template-columns: repeat(4, 1fr); margin: 6px 0 10px; }
