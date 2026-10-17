@@ -45,7 +45,7 @@ Not: 0.4 kapsamı seçilmeden sürüm numarası değişmez.
 
 ## Kurallar (Tolga)
 
-- Her büyük güncellemede sürümü artır (`npm version x.y.z --no-git-tag-version`) ve CHANGELOG'a yaz. Uygulama sürümü `package.json`'dan okur. Kurulum: `npm run dist`, ardından `release/Isil-Setup-<v>.exe /S`.
+- Sürüm (17.10 güncel kural): her kurulan yapıda yalnız patch artır (`npm version 0.8.1 --no-git-tag-version`), CHANGELOG'a yaz; birkaç özellik bir sürümde toplanabilir. Minor artışını Tolga'ya sor. 1.0.0 = tüm eksik ve kusurlar giderilmiş, tasarım ve özellikler tamamlanmış, yayına hazır ürün. Uygulama sürümü `package.json`'dan okur. Kurulum: `npm run dist`, ardından `release/Isil-Setup-<v>.exe /S`.
 - Commit'lerde yalnız tolguner görünsün: Co-Authored-By satırı **ekleme**. Commit'ler GitHub'a (tolguner/isil, master) gönderilir: Tolga 16.10'da mevcut ve gelecek tüm commit'ler için izin verdi.
 - Puanlama ya da eleme gibi Tolga adına seçim yapan kurallar önce gösterilir, onay alınır.
 - Rakip uygulamaların kaynak kodları incelenebilir arge amacı ile kullanılabilir kopyalanamaz fakat bu uygulamalar mobil olduğu için ve biz masaüstü uygulama yaptığımız için örnek veya referans alınabilir. 
