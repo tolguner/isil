@@ -2,8 +2,11 @@
 
 Her büyük güncellemede sürüm numarası artırılır (`npm version <x.y.z> --no-git-tag-version`), uygulama Ayarlar → Hakkında'da sürümü gösterir.
 
-## Yayımlanmamış
+## 0.7.0 — 2026-10-17
 
+Rakip taramasının (replica/rekabet/eksikler-0.6.md) ilk üç maddesi.
+
+- Çıkartma → **Dövme**: 6 hazır çizgi dövme ya da kendi çizimin; açık zemin saydamlaşır, 4 mürekkep rengi; cilde "çarp" karıştırma ve hafif yumuşatmayla konur, cildin dokusu içinden görünür
 - Rötuş → Toparla → **Gerdirme**: kontur, alın, gözler, orta yüz, ağız köşeleri (sarkan bölgeleri yukarı toplayan yerel bükmeler); Oto tuşu gerdirmeyi de kullanır, Ctrl+K'da aranabilir
 - Efektler → **Portre bulanıklığı**: konu yapay zekâyla ayrılır (BiRefNet/ISNet), arka plan ya da özne bulanıklaştırılır; Lens (derinlik haritasıyla kademeli), Gauss, Hareket, Dönme, Yakınlaşma. Alfa ağırlıklı bulanıklıkla özne kenarında hale kalmaz
 

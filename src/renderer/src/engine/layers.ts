@@ -9,7 +9,7 @@ export interface TextProps {
   bg?: { color: string; opacity: number; radius: number } | null
   italic?: boolean; spacing?: number; lineHeight?: number; gradient?: [string, string] | null; skew?: number
 }
-export interface StickerProps { kind: 'emoji' | 'image'; value: string; size: number }
+export interface StickerProps { kind: 'emoji' | 'image'; value: string; size: number; tattoo?: boolean }
 export interface ShapeProps { kind: 'rect' | 'round' | 'circle' | 'triangle' | 'star' | 'heart' | 'arrow' | 'line'; fill: string | null; stroke: string | null; strokeW: number; w: number; h: number }
 export interface Stroke { pts: number[]; color: string; size: number; kind: 'pen' | 'marker' | 'neon' | 'dash' | 'eraser' | 'stamp'; stamp?: string }
 export interface DrawingProps { strokes: Stroke[] }
@@ -222,7 +222,15 @@ export function drawLayers(ctx: CanvasRenderingContext2D, layers: Layer[], W: nu
         ctx.fillText(p.value, 0, w * 0.04)
       } else {
         const im = stickerImage(p.value, onAsset)
-        if (im) ctx.drawImage(im, -w / 2, -h / 2, w, h)
+        if (im) {
+          if (p.tattoo) {
+            // dövme: çarp karıştırma + çok hafif yumuşatma, mürekkep cildin dokusunu örtmesin
+            ctx.globalCompositeOperation = 'multiply'
+            ctx.filter = `blur(${Math.max(0.4, w * 0.002)}px)`
+            ctx.globalAlpha *= 0.88
+          }
+          ctx.drawImage(im, -w / 2, -h / 2, w, h)
+        }
       }
     } else if (l.type === 'shape') {
       const p = l.props as unknown as ShapeProps

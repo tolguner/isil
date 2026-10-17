@@ -1,4 +1,5 @@
 import { StickerMaker } from './stickermaker'
+import { TattooPanel } from './tattoo'
 import { useEffect, useRef, useState } from 'react'
 import { Type, Sticker, Shapes, Brush, Trash2, Copy, RotateCw, Plus, ImagePlus, ArrowUp, ArrowDown, AlignLeft, AlignCenter, AlignRight } from 'lucide-react'
 import '@fontsource/playfair-display/index.css'
@@ -267,6 +268,7 @@ void AlignLeft; void AlignCenter; void AlignRight
 // ---------- Çıkartmalar ----------
 const STICKER_CATS: { id: string; label: [string, string]; items: string[] }[] = [
   { id: 'mine', label: ['Benim', 'Mine'], items: [] },
+  { id: 'tattoo', label: ['Dövme', 'Tattoo'], items: [] },
   { id: 'love', label: ['Sevgi', 'Love'], items: ['❤️', '🩷', '💖', '💕', '💘', '💌', '🫶', '😍', '🥰', '😘', '🌹', '💐'] },
   { id: 'fun', label: ['Eğlence', 'Fun'], items: ['😂', '🤣', '😎', '🥳', '🤪', '😜', '🙃', '🤩', '👻', '🤡', '💀', '👀'] },
   { id: 'cute', label: ['Tatlı', 'Cute'], items: ['🐱', '🐶', '🐰', '🐻', '🐼', '🦊', '🐥', '🦄', '🐸', '🐨', '🍓', '🧸'] },
@@ -285,7 +287,8 @@ function StickerPanel() {
     <>
       <Tabs items={STICKER_CATS.map((c) => ({ id: c.id, label: tr(c.label[0], c.label[1]) }))} value={cat} onChange={setCat} />
       {cat === 'mine' && <StickerMaker add={(url) => add({ kind: 'image', value: url, size: 0.35 })} />}
-      {cat !== 'mine' && <div className="presets" style={{ gridTemplateColumns: 'repeat(4, 1fr)' }}>
+      {cat === 'tattoo' && <TattooPanel add={(url) => add({ kind: 'image', value: url, size: 0.18, tattoo: true })} />}
+      {cat !== 'mine' && cat !== 'tattoo' && <div className="presets" style={{ gridTemplateColumns: 'repeat(4, 1fr)' }}>
         <button className="preset" onClick={async () => {
           const f = await platform.openFiles(false)
           if (!f[0]) return
@@ -297,7 +300,7 @@ function StickerPanel() {
         ))}
       </div>}
       {l?.type === 'sticker' && <LayerCommon l={l} />}
-      {cat !== 'mine' && <p className="note">{tr('Görsel çıkartma için PNG (şeffaf) dosya seçebilirsin.', 'You can pick a (transparent) PNG as an image sticker.')}</p>}
+      {cat !== 'mine' && cat !== 'tattoo' && <p className="note">{tr('Görsel çıkartma için PNG (şeffaf) dosya seçebilirsin.', 'You can pick a (transparent) PNG as an image sticker.')}</p>}
     </>
   )
 }
