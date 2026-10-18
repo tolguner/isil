@@ -13,6 +13,7 @@ import type { ToolDef, View } from './types'
 import { ApplyAll, FaceOverlay, NoFace, SidePicker, editFace, useFace, useFaceCount } from './faceui'
 import { BrushOverlay, PaintMask, type BrushState } from './brush'
 import { busy } from './raster'
+import { AGEFACE_TOOL } from './ageface'
 
 type SliderDef = [key: string, tr: string, en: string]
 
@@ -1045,17 +1046,6 @@ export const RETOUCH_TOOLS: ToolDef[] = [
   { id: 'relight', label: ['Işıklandır', 'Relight'], icon: Sun, Panel: RelightPanel, Overlay: RelightOverlay, sourceSpace: true, noFooter: true },
   { id: 'body', label: ['Vücut', 'Body'], icon: PersonStanding, Panel: BodyPanel, Overlay: BodyOverlay, sourceSpace: true, needs: ['pose', 'seg'], applied: (d) => !!d.body && (nz(d.body.shape) || !!d.body.manual?.stretch || !!d.body.manual?.slim), sliders: [...BODY_KEYS.map(([, a, b]) => ({ label: [a, b] as [string, string] })), { label: ['Arka planı koru', 'Protect background'] }] },
   { id: 'facehide', label: ['Yüz gizle', 'Hide face'], icon: EyeOff, Panel: FaceHidePanel, Overlay: FaceOverlay, sourceSpace: true, needs: ['faces'], noFooter: true },
-  { id: 'smile', label: ['İfade', 'Expression'], icon: Smile, Panel: () => <AiRedirect kind="expression" />, noFooter: true, badge: 'YZ' }
+  AGEFACE_TOOL
 ]
 
-function AiRedirect({ kind }: { kind: string }) {
-  const tr = useT()
-  useMemo(() => kind, [kind])
-  return (
-    <div className="card">
-      <b>{tr('Üretken yapay zekâ', 'Generative AI')}</b>
-      <p className="note">{tr('İfade değiştirme, kapalı gözü açma ve stil portreleri YZ Editör sekmesinde hazır komutlarla yapılır.', 'Changing expressions, opening closed eyes and style portraits live in the AI Editor tab as ready prompts.')}</p>
-      <button className="btn primary block" onClick={() => { const st = useEditor.getState(); st.setTab('ai') }}>{tr('YZ Editörü aç', 'Open AI Editor')}</button>
-    </div>
-  )
-}

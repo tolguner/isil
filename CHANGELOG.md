@@ -2,6 +2,10 @@
 
 Her yayımlanan yapıda sürümün yalnız son hanesi artırılır (0.8.0 → 0.8.1); ara sürüm (0.9) büyük aşamalarda, 1.0.0 ise yayına hazır tam üründe. Uygulama Ayarlar → Hakkında'da sürümü gösterir.
 
+## 0.8.6 — 2026-10-18
+
+- **Yaş ve ifade** (Rötuş sekmesi, eski "İfade" yönlendirmesinin yerine): seçili yüzde Hafif gülümse, Geniş gülümse, Ciddi, Gözleri aç, Daha genç, Daha yaşlı, Çok yaşlı. Yerel FLUX.2 klein ile çalışır; yüzün çevresi kırpılıp büyütüldüğü için büyük fotoğraflarda da ayrıntı kalır, yüzün dışı birebir aynı kalır. Yaşlandırmada ten rengi korunur, boyun da yüzle birlikte değişir. Etki kaydırıcısı değişimi artırır ya da azaltır. Çok küçük yüzlerde araç uyarır. Kimlik benzerliği ölçülerek ayarlandı (`replica/arge/03-yas-ifade.md`)
+
 ## 0.8.5 — 2026-10-17
 
 - **3B hareket** (Efektler sekmesi): fotoğrafa derinlik verip hafif bir kamera hareketiyle canlandırır; dört hareket (Daire, Yana, Yaklaş, Yukarı), hareket miktarı, odak (sabit kalan derinlik) ve 3/4/6 saniyelik döngü. Derinlik bilgisayarında Depth Anything ile hesaplanır; gölgelendirici derinlik boyunca ışın yürüterek örnekler, ön plan kenarı genişletildiği için yüz kenarında yırtılma olmaz. Düzenlenmiş hali (ayarlar, katmanlar, şablon dahil) kısa döngü video olarak kaydedilir: MP4 (H.264), desteklenmezse WebM. Fotoğrafın kendisi değişmez
