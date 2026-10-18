@@ -33,11 +33,22 @@ const cases = {
   crease: { crease: { preset: null, amount: 80 } },
   iris: { iris: { preset: null, amount: 70, color: '#3a7bd5' } },
   catch: { catch: { preset: 'dot', amount: 90 } },
-  all: { liner: { preset: 'wing', amount: 70, color: '#141012' }, lash: { preset: 'natural', amount: 70 }, crease: { preset: null, amount: 50 }, iris: { preset: null, amount: 55, color: '#5a8a4a' }, catch: { preset: 'dot', amount: 80 } }
+  all: { liner: { preset: 'wing', amount: 70, color: '#141012' }, lash: { preset: 'natural', amount: 70 }, crease: { preset: null, amount: 50 }, iris: { preset: null, amount: 55, color: '#5a8a4a' }, catch: { preset: 'dot', amount: 80 } },
+  // yüz ayrıntıları (kırpım tüm yüz)
+  freckle: { freckle: { preset: null, amount: 70 } },
+  mole: { mole: { preset: 'lip', amount: 90 } },
+  dimple: { dimple: { preset: null, amount: 80 } },
+  lipMatte: { lip: { preset: 'matte', amount: 60, color: '#b8324a' } },
+  lipGloss: { lip: { preset: 'gloss', amount: 60, color: '#b8324a' } },
+  lipGlass: { lip: { preset: 'glass', amount: 60, color: '#d94f5c' } },
+  lipOmbre: { lip: { preset: 'ombre', amount: 70, color: '#b8324a' } },
+  browPowder: { brow: { preset: 'powder', amount: 70, color: '#2e221a' } },
+  browMicro: { brow: { preset: 'micro', amount: 80, color: '#2e221a' } }
 }
+const FACE = new Set(['freckle', 'mole', 'dimple', 'lipMatte', 'lipGloss', 'lipGlass', 'lipOmbre', 'browPowder', 'browMicro'])
 const shots = {}
 for (const [k, makeup] of Object.entries(cases)) {
-  const r = await win.evaluate(async (makeup) => {
+  const r = await win.evaluate(async ({ makeup, face }) => {
     const S = (await window.__isil.store()).getState
     const s = (await window.__isil.mod('session')).session
     S().update((d) => { d.retouch.faces = [{ index: 0, side: 'both', shape: {}, skin: {}, makeup }] })
@@ -45,7 +56,7 @@ for (const [k, makeup] of Object.entries(cases)) {
     const bm = await createImageBitmap(blob)
     const g = s.faceGeos(bm.width, bm.height)[0]
     const F = await window.__isil.mod('face')
-    const eyes = [...F.EYE_R, ...F.EYE_L, ...F.BROW_R, ...F.BROW_L].map((i) => g.p(i))
+    const eyes = (face ? F.OVAL : [...F.EYE_R, ...F.EYE_L, ...F.BROW_R, ...F.BROW_L]).map((i) => g.p(i))
     const x0 = Math.min(...eyes.map((p) => p.x)) - g.width * 0.08, x1 = Math.max(...eyes.map((p) => p.x)) + g.width * 0.08
     const y0 = Math.min(...eyes.map((p) => p.y)) - g.width * 0.05, y1 = Math.max(...eyes.map((p) => p.y)) + g.width * 0.12
     const c = document.createElement('canvas'); c.width = Math.round(x1 - x0); c.height = Math.round(y1 - y0)
@@ -61,10 +72,10 @@ for (const [k, makeup] of Object.entries(cases)) {
     } else window.__orig = px
     const bl = await new Promise((r) => c.toBlob(r, 'image/png')); const u = new Uint8Array(await bl.arrayBuffer()); let s2 = ''; for (let i = 0; i < u.length; i += 0x8000) s2 += String.fromCharCode(...u.subarray(i, i + 0x8000))
     return { crop: btoa(s2), inside: inN ? Math.round(inD / inN * 100) / 100 : 0, outside: outN ? Math.round(outC / outN * 10000) / 100 : 0 }
-  }, makeup)
+  }, { makeup, face: FACE.has(k) })
   shots[k] = r
   if (outDir) writeFileSync(join(outDir, `${k}.png`), Buffer.from(r.crop, 'base64'))
-  if (k !== 'orig') ok(`${k}: göz bölgesinde değişim var, dışında yok`, r.inside > 0.15 && r.outside < 0.05, JSON.stringify({ inside: r.inside, outside: r.outside }))
+  if (k !== 'orig') ok(`${k}: ${FACE.has(k) ? 'yüzde' : 'göz bölgesinde'} değişim var, dışında yok`, r.inside > (FACE.has(k) ? 0.005 : 0.15) && r.outside < 0.05, JSON.stringify({ inside: r.inside, outside: r.outside }))
 }
 // arayüz: Makyaj → Kalem sekmesi, Kanat stili ve renk belgeye yazılıyor
 await win.evaluate(async () => { const S = (await window.__isil.store()).getState(); S.update((d) => { d.retouch.faces = [] }); S.setTab('retouch'); S.openTool('makeup') })

@@ -2,6 +2,16 @@
 
 Her yayımlanan yapıda sürümün yalnız son hanesi artırılır (0.8.0 → 0.8.1); ara sürüm (0.9) büyük aşamalarda, 1.0.0 ise yayına hazır tam üründe. Uygulama Ayarlar → Hakkında'da sürümü gösterir.
 
+## 0.8.10 — 2026-10-18
+
+- **Çil ve ben** (Rötuş → Makyaj → Çil ve ben):
+  - çil (burun sırtı ve yanaklarda, her çizimde aynı yerde);
+  - ben (yanak, dudak üstü, çene, göz altı);
+  - gamze.
+- **Ruj stilleri:** saten, mat, parlak, cam, ombre.
+- **Kaş stilleri:** dolgu, pudra (uçtan kuyruğa koyulaşan yumuşak dolgu), mikro (ince kıl çizgileri).
+- Hazır makyaj görünümleri artık stil alanını doldurmuyor (stil seçimi korunuyor)
+
 ## 0.8.9 — 2026-10-18
 
 - **Göz makyajı** (Rötuş → Makyaj, yeni sekmeler):

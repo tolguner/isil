@@ -1,10 +1,13 @@
-// Göz makyajı: göz kalemi, kirpik, çift göz kapağı, göz ışıltısı (katman) ve göz rengi (iris maskesi).
+// Göz makyajı ve yüz ayrıntıları: göz kalemi, kirpik, çift göz kapağı, göz ışıltısı, çil, ben, gamze, ruj stilleri
+// ve kaş stilleri (katman); göz rengi (iris maskesi).
 // Hepsi yüz noktalarından kaynak uzayında çizilir; rötuş gölgelendiricisi katmanı normal karıştırmayla,
 // iris rengini parlaklığı koruyarak uygular. Kalıplar ve şekiller bizim; çizim yordamsaldır.
 import type { FaceEdit } from '@shared/schema'
-import { EYE_L, EYE_R, UPPER_LID_L, UPPER_LID_R, type FaceGeo } from './face'
+import { BROW_L, BROW_R, EYE_L, EYE_R, LIPS_IN, LIPS_OUT, UPPER_LID_L, UPPER_LID_R, type FaceGeo } from './face'
 
-export const EYE_KEYS = ['liner', 'lash', 'crease', 'iris', 'catch'] as const
+export const EYE_KEYS = ['liner', 'lash', 'crease', 'iris', 'catch', 'freckle', 'mole', 'dimple'] as const
+/** Katmanla çizilen ruj ve kaş stilleri (saten ve dolgu gölgelendiricide). */
+const LIP_FX = ['matte', 'gloss', 'glass', 'ombre'], BROW_FX = ['powder', 'micro']
 export type EyeKey = (typeof EYE_KEYS)[number]
 
 type V = { x: number; y: number }
@@ -54,11 +57,188 @@ export interface EyeFx { fx: HTMLCanvasElement; iris: HTMLCanvasElement }
 
 /** Belgedeki göz makyajı ayarları (anahtar) — değişmedikçe katman yeniden çizilmez. */
 export function eyeFxKey(edits: FaceEdit[]) {
-  return JSON.stringify(edits.map((e) => [e.index, ...EYE_KEYS.map((k) => e.makeup[k] ? [e.makeup[k].amount, e.makeup[k].color ?? '', e.makeup[k].preset ?? ''] : 0)]))
+  return JSON.stringify(edits.map((e) => [e.index, ...[...EYE_KEYS, 'lip', 'brow'].map((k) => e.makeup[k] ? [e.makeup[k].amount, e.makeup[k].color ?? '', e.makeup[k].preset ?? ''] : 0)]))
 }
 
+const lipFx = (e: FaceEdit) => !!e.makeup.lip?.amount && LIP_FX.includes(e.makeup.lip.preset ?? '')
+export const browFx = (e: FaceEdit) => !!e.makeup.brow?.amount && BROW_FX.includes(e.makeup.brow.preset ?? '')
+
 export function hasEyeFx(edits: FaceEdit[]) {
-  return edits.some((e) => EYE_KEYS.some((k) => e.makeup[k]?.amount))
+  return edits.some((e) => EYE_KEYS.some((k) => e.makeup[k]?.amount) || lipFx(e) || browFx(e))
+}
+
+/** Yüz başına sabit tohumlu sözde rastgele (çiller her çizimde aynı yerde kalsın). */
+function rng(seed: number) {
+  let x = seed >>> 0 || 1
+  return () => { x ^= x << 13; x ^= x >>> 17; x ^= x << 5; return ((x >>> 0) % 100000) / 100000 }
+}
+
+/** Çil, ben, gamze, ruj ve kaş stilleri. */
+function drawDetails(f: CanvasRenderingContext2D, g: FaceGeo, e: FaceEdit, s: number) {
+  const F = g.width
+  const m = (k: string) => { const v = e.makeup[k]; return v && v.amount ? { a: v.amount / 100, color: v.color, preset: v.preset } : null }
+  const P = (i: number) => g.p(i)
+  const fr = m('freckle')
+  if (fr) {
+    // burun sırtı ve yanak üstünde, kenara doğru seyrelen küçük lekeler
+    const rand = rng(Math.round(P(1).x * 7 + P(1).y * 13))
+    const zones: [V, number, number][] = [[P(195), F * 0.1, F * 0.05], [P(118), F * 0.15, F * 0.08], [P(347), F * 0.15, F * 0.08]]
+    const [cr, cg, cb] = hexRgb(fr.color ?? '#7a4a2e')
+    f.save()
+    f.filter = `blur(${Math.max(0.4, F * 0.0015 * s)}px)`
+    const n = Math.round(60 + 160 * fr.a)
+    for (const [c, rx, ry] of zones) {
+      for (let i = 0; i < n / 3; i++) {
+        const ang = rand() * Math.PI * 2, rr = Math.sqrt(rand())
+        const x = c.x + Math.cos(ang) * rx * rr, y = c.y + Math.sin(ang) * ry * rr
+        const r = F * (0.0025 + rand() * 0.005)
+        f.fillStyle = `rgba(${cr},${cg},${cb},${(0.18 + rand() * 0.3) * fr.a * (1 - rr * 0.6)})`
+        f.beginPath()
+        f.ellipse(x * s, y * s, r * s, r * (0.75 + rand() * 0.4) * s, rand() * 3, 0, Math.PI * 2)
+        f.fill()
+      }
+    }
+    f.restore()
+  }
+  const mo = m('mole')
+  if (mo) {
+    // ben: seçilen konumda küçük, kenarı yumuşak koyu leke
+    const spots: Record<string, V> = {
+      cheek: add(P(425), mul(sub(P(425), P(1)), 0.25)),
+      lip: add(add(P(291), mul(sub(P(358), P(291)), 0.45)), mul(norm(sub(P(291), P(1))), F * 0.03)),
+      chin: add(P(199), mul(sub(P(424), P(199)), 0.6)),
+      eye: add(P(450), mul(sub(P(450), P(1)), 0.15))
+    }
+    const c = spots[mo.preset ?? 'cheek'] ?? spots.cheek
+    const r = F * 0.013
+    const grd = f.createRadialGradient(c.x * s, c.y * s, 0, c.x * s, c.y * s, r * s)
+    grd.addColorStop(0, `rgba(48,28,20,${0.95 * mo.a})`)
+    grd.addColorStop(0.7, `rgba(70,42,30,${0.75 * mo.a})`)
+    grd.addColorStop(1, 'rgba(70,42,30,0)')
+    f.fillStyle = grd
+    f.beginPath()
+    f.arc(c.x * s, c.y * s, r * s, 0, Math.PI * 2)
+    f.fill()
+  }
+  const di = m('dimple')
+  if (di) {
+    // gamze: ağız köşelerinin dışında küçük hilal gölge
+    f.save()
+    f.filter = `blur(${Math.max(0.8, F * 0.006 * s)}px)`
+    f.strokeStyle = `rgba(80,42,32,${0.6 * di.a})`
+    f.lineWidth = F * 0.016 * s
+    f.lineCap = 'round'
+    for (const [corner, other] of [[61, 291], [291, 61]]) {
+      const out = norm(sub(P(corner), P(other)))
+      const c = add(add(P(corner), mul(out, F * 0.055)), mul(g.down, F * 0.01))
+      const a0 = Math.atan2(out.y, out.x)
+      f.beginPath()
+      f.arc(c.x * s, c.y * s, F * 0.024 * s, a0 - 0.9, a0 + 0.9)
+      f.stroke()
+    }
+    f.restore()
+  }
+  if (lipFx(e)) {
+    const lip = e.makeup.lip
+    const a = lip.amount / 100
+    const [cr, cg, cb] = hexRgb(lip.color ?? '#b8324a')
+    const mw = len(sub(P(291), P(61)))
+    const across = norm(sub(P(291), P(61)))
+    f.save()
+    // dudak alanına kırp (dış − iç)
+    f.beginPath()
+    LIPS_OUT.map(P).forEach((p, i) => (i ? f.lineTo(p.x * s, p.y * s) : f.moveTo(p.x * s, p.y * s)))
+    f.closePath()
+    LIPS_IN.map(P).reverse().forEach((p, i) => (i ? f.lineTo(p.x * s, p.y * s) : f.moveTo(p.x * s, p.y * s)))
+    f.closePath()
+    f.clip('evenodd')
+    const lower = add(P(14), mul(sub(P(17), P(14)), 0.4)), upper = add(P(13), mul(sub(P(0), P(13)), 0.45))
+    const st = lip.preset
+    if (st === 'matte') {
+      // mat: ruj renginde ince örtü parlamayı bastırır
+      f.fillStyle = `rgba(${cr},${cg},${cb},${0.3 * a})`
+      f.fillRect(0, 0, f.canvas.width, f.canvas.height)
+    } else if (st === 'ombre') {
+      // ombre: ortada koyu, kenara doğru açılan renk
+      const mid = mul(add(P(13), P(14)), 0.5)
+      const grd = f.createRadialGradient(mid.x * s, mid.y * s, 0, mid.x * s, mid.y * s, mw * 0.55 * s)
+      grd.addColorStop(0, `rgba(${Math.round(cr * 0.55)},${Math.round(cg * 0.45)},${Math.round(cb * 0.5)},${0.7 * a})`)
+      grd.addColorStop(1, `rgba(${cr},${cg},${cb},0)`)
+      f.fillStyle = grd
+      f.fillRect(0, 0, f.canvas.width, f.canvas.height)
+    } else {
+      // parlak / cam: alt dudak ortasında ve üst dudakta yumuşak beyaz vurgu
+      const k = st === 'glass' ? 0.75 : 0.6
+      f.filter = `blur(${Math.max(0.8, mw * (st === 'glass' ? 0.016 : 0.022) * s)}px)`
+      f.fillStyle = `rgba(255,255,255,${0.55 * k * a})`
+      f.beginPath()
+      f.ellipse(lower.x * s, lower.y * s, mw * 0.16 * s, mw * 0.045 * s, Math.atan2(across.y, across.x), 0, Math.PI * 2)
+      f.fill()
+      f.fillStyle = `rgba(255,255,255,${0.35 * k * a})`
+      for (const side of [-1, 1]) {
+        const u = add(upper, mul(across, side * mw * 0.12))
+        f.beginPath()
+        f.ellipse(u.x * s, u.y * s, mw * 0.06 * s, mw * 0.02 * s, 0, 0, Math.PI * 2)
+        f.fill()
+      }
+      if (st === 'glass') {
+        f.fillStyle = `rgba(255,255,255,${0.08 * a})`
+        f.fillRect(0, 0, f.canvas.width, f.canvas.height)
+      }
+    }
+    f.restore()
+  }
+  if (browFx(e)) {
+    const br = e.makeup.brow
+    const a = br.amount / 100
+    const [cr, cg, cb] = hexRgb(br.color ?? '#4a3426')
+    for (const idx of [BROW_R, BROW_L]) {
+      const pts = idx.map(P)
+      const inner = pts.reduce((b, p) => (len(sub(p, P(168))) < len(sub(b, P(168))) ? p : b))
+      const outer = pts.reduce((b, p) => (len(sub(p, P(168))) > len(sub(b, P(168))) ? p : b))
+      if (br.preset === 'powder') {
+        // pudra: iç uçta açık, kuyruğa doğru koyulaşan yumuşak dolgu
+        f.save()
+        f.filter = `blur(${Math.max(1, F * 0.008 * s)}px)`
+        const grd = f.createLinearGradient(inner.x * s, inner.y * s, outer.x * s, outer.y * s)
+        grd.addColorStop(0, `rgba(${cr},${cg},${cb},${0.15 * a})`)
+        grd.addColorStop(0.4, `rgba(${cr},${cg},${cb},${0.5 * a})`)
+        grd.addColorStop(1, `rgba(${cr},${cg},${cb},${0.6 * a})`)
+        f.fillStyle = grd
+        f.beginPath()
+        pts.forEach((p, i) => (i ? f.lineTo(p.x * s, p.y * s) : f.moveTo(p.x * s, p.y * s)))
+        f.closePath()
+        f.fill()
+        f.restore()
+      } else {
+        // mikro: kaş içinde, dışa ve yukarı yatık ince kıl çizgileri
+        const path = new Path2D()
+        pts.forEach((p, i) => (i ? path.lineTo(p.x * s, p.y * s) : path.moveTo(p.x * s, p.y * s)))
+        path.closePath()
+        const dir = norm(sub(outer, inner))
+        const rand = rng(Math.round(inner.x * 3 + inner.y * 5))
+        f.save()
+        f.clip(path)
+        f.strokeStyle = `rgba(${cr},${cg},${cb},${0.75 * a})`
+        f.lineWidth = Math.max(0.5, F * 0.0022 * s)
+        f.lineCap = 'round'
+        const x0 = Math.min(...pts.map((p) => p.x)), x1 = Math.max(...pts.map((p) => p.x))
+        const y0 = Math.min(...pts.map((p) => p.y)), y1 = Math.max(...pts.map((p) => p.y))
+        for (let i = 0; i < 70; i++) {
+          const x = x0 + rand() * (x1 - x0), y = y0 + rand() * (y1 - y0)
+          const t = len(sub({ x, y }, inner)) / (len(sub(outer, inner)) || 1)
+          // iç uçta dik, kuyrukta kaşa paralel
+          const d = norm(add(mul(dir, 0.35 + 0.6 * t), mul(g.down, -(1 - t) * 0.9 - 0.25)))
+          const L = F * (0.02 + rand() * 0.012)
+          f.beginPath()
+          f.moveTo(x * s, y * s)
+          f.lineTo((x + d.x * L) * s, (y + d.y * L) * s)
+          f.stroke()
+        }
+        f.restore()
+      }
+    }
+  }
 }
 
 /**
@@ -76,6 +256,7 @@ export function buildEyeFx(geos: FaceGeo[], edits: FaceEdit[], W: number, H: num
     const g = geos[e.index]
     if (!g) continue
     const m = (k: EyeKey) => { const v = e.makeup[k]; return v && v.amount ? { a: v.amount / 100, color: v.color, preset: v.preset } : null }
+    drawDetails(f, g, e, s)
     for (const side of [0, 1] as const) {
       const E = eyeGeo(g, side)
       const crease = m('crease')

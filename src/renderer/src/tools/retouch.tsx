@@ -356,7 +356,7 @@ function BeautyPanel() {
 
 // ---------------- Makyaj ----------------
 const MAKEUP_CATS: { id: string; label: [string, string]; colors: string[]; def: string; styles?: [string, string, string][] }[] = [
-  { id: 'lip', label: ['Ruj', 'Lipstick'], colors: ['#b8324a', '#d94f5c', '#e07a8a', '#a83250', '#8e2a3b', '#c46a5a', '#ff6b81', '#9b4a6e', '#d7836a', '#6e1f2e'], def: '#b8324a' },
+  { id: 'lip', label: ['Ruj', 'Lipstick'], colors: ['#b8324a', '#d94f5c', '#e07a8a', '#a83250', '#8e2a3b', '#c46a5a', '#ff6b81', '#9b4a6e', '#d7836a', '#6e1f2e'], def: '#b8324a' , styles: [['satin', 'Saten', 'Satin'], ['matte', 'Mat', 'Matte'], ['gloss', 'Parlak', 'Gloss'], ['glass', 'Cam', 'Glass'], ['ombre', 'Ombre', 'Ombré']] },
   { id: 'blush', label: ['Allık', 'Blush'], colors: ['#f08a8a', '#f7a5a5', '#ff9e7a', '#e6738a', '#d98a6c', '#f2b0c0'], def: '#f08a8a' },
   { id: 'lid', label: ['Far', 'Eyeshadow'], colors: ['#8a5a6a', '#b07a5a', '#6a4a3a', '#a06a8a', '#5a6a8a', '#c49a6a', '#7a3a4a', '#4a3a5a'], def: '#8a5a6a' },
   { id: 'liner', label: ['Kalem', 'Eyeliner'], colors: ['#141012', '#3b2a20', '#1f2f5a', '#2f4f3a', '#6a2a4a'], def: '#141012', styles: [['natural', 'Doğal', 'Natural'], ['thin', 'İnce', 'Thin'], ['wing', 'Kanat', 'Wing']] },
@@ -364,7 +364,7 @@ const MAKEUP_CATS: { id: string; label: [string, string]; colors: string[]; def:
   { id: 'crease', label: ['Çift kapak', 'Double lid'], colors: [], def: '#463026' },
   { id: 'iris', label: ['Göz rengi', 'Eye color'], colors: ['#3a7bd5', '#4f9fd0', '#5a8a4a', '#8a5a2a', '#c08a3a', '#6a6a7a', '#7a4a9a'], def: '#3a7bd5' },
   { id: 'catch', label: ['Işıltı', 'Catchlight'], colors: [], def: '#ffffff', styles: [['dot', 'Nokta', 'Dot'], ['double', 'Çift', 'Double'], ['window', 'Pencere', 'Window'], ['ring', 'Halka', 'Ring']] },
-  { id: 'brow', label: ['Kaş', 'Brows'], colors: ['#4a3426', '#2e221a', '#6a4a32', '#8a6a4a', '#1e1a18'], def: '#4a3426' }
+  { id: 'brow', label: ['Kaş', 'Brows'], colors: ['#4a3426', '#2e221a', '#6a4a32', '#8a6a4a', '#1e1a18'], def: '#4a3426', styles: [['fill', 'Dolgu', 'Fill'], ['powder', 'Pudra', 'Powder'], ['micro', 'Mikro', 'Microblading']] }
 ]
 const FULL_LOOKS: { id: string; label: [string, string]; m: Record<string, [number, string]>; skin?: Record<string, number> }[] = [
   { id: 'gunluk', label: ['Günlük', 'Everyday'], m: { lip: [35, '#c46a5a'], blush: [25, '#f7a5a5'], brow: [25, '#4a3426'] } },
@@ -382,22 +382,35 @@ function MakeupPanel() {
   const update = useEditor((s) => s.update)
   const [cat, setCat] = useState('full')
   const def = MAKEUP_CATS.find((c) => c.id === cat)
+  const setMark = (k: string, v: number, preset?: string) => update((d) => editFace(d, idx, (x) => void (x.makeup[k] = { preset: preset ?? x.makeup[k]?.preset ?? null, amount: v, color: x.makeup[k]?.color })))
   const cur = def ? f.makeup[def.id] : undefined
   return (
     <>
       <NoFace />
-      <Tabs items={[{ id: 'full', label: tr('Tam yüz', 'Full face') }, ...MAKEUP_CATS.map((c) => ({ id: c.id, label: tr(c.label[0], c.label[1]), mod: !!f.makeup[c.id]?.amount }))]} value={cat} onChange={setCat} />
+      <Tabs items={[{ id: 'full', label: tr('Tam yüz', 'Full face') }, ...MAKEUP_CATS.map((c) => ({ id: c.id, label: tr(c.label[0], c.label[1]), mod: !!f.makeup[c.id]?.amount })), { id: 'marks', label: tr('Çil ve ben', 'Freckles'), mod: !!(f.makeup.freckle?.amount || f.makeup.mole?.amount || f.makeup.dimple?.amount) }]} value={cat} onChange={setCat} />
       {cat === 'full' ? (
         <div className="presets">
           <Preset label={tr('Yok', 'None')} onClick={() => update((d) => editFace(d, idx, (x) => { for (const k of ['lip', 'blush', 'lid', 'brow']) delete x.makeup[k] }))}>⊘</Preset>
           {FULL_LOOKS.map((l) => (
             <Preset key={l.id} label={tr(l.label[0], l.label[1])} onClick={() => update((d) => editFace(d, idx, (x) => {
               for (const k of ['lip', 'blush', 'lid', 'brow']) delete x.makeup[k]
-              for (const [k, [a, c]] of Object.entries(l.m)) x.makeup[k] = { preset: l.id, amount: a, color: c }
+              for (const [k, [a, c]] of Object.entries(l.m)) x.makeup[k] = { preset: null, amount: a, color: c }
               if (l.skin) Object.assign(x.skin, l.skin)
             }))} bg={`linear-gradient(135deg, ${Object.values(l.m).map((v) => v[1]).join(', ')})`} />
           ))}
         </div>
+      ) : cat === 'marks' ? (
+        <>
+          <Slider label={tr('Çil', 'Freckles')} value={f.makeup.freckle?.amount ?? 0} onChange={(v) => setMark('freckle', v)} />
+          <Slider label={tr('Ben', 'Beauty mark')} value={f.makeup.mole?.amount ?? 0} onChange={(v) => setMark('mole', v, f.makeup.mole?.preset ?? 'cheek')} />
+          <div className="row wrap" role="group" aria-label={tr('Ben konumu', 'Beauty mark position')} style={{ gap: 6, marginBottom: 8 }}>
+            {([['cheek', 'Yanak', 'Cheek'], ['lip', 'Dudak üstü', 'Above lip'], ['chin', 'Çene', 'Chin'], ['eye', 'Göz altı', 'Under eye']] as const).map(([pid, a, b]) => {
+              const on = (f.makeup.mole?.preset ?? 'cheek') === pid
+              return <button key={pid} className={'btn sm' + (on ? ' primary' : '')} aria-pressed={on} onClick={() => setMark('mole', f.makeup.mole?.amount || 70, pid)}>{tr(a, b)}</button>
+            })}
+          </div>
+          <Slider label={tr('Gamze', 'Dimples')} value={f.makeup.dimple?.amount ?? 0} onChange={(v) => setMark('dimple', v)} />
+        </>
       ) : def ? (
         <>
           {def.styles && (
