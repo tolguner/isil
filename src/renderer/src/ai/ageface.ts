@@ -80,7 +80,7 @@ function regionMask(g: FaceGeo, region: Region, ox: number, oy: number, k: numbe
  * Ten rengini koru: FLUX yaşlandırırken teni soldurup griye çekebiliyor; maskeli alanın ortalama rengi asıl
  * görselinkine kanal kazancıyla (en çok ±%15) yaklaştırılır. Kırışık ve doku kalır, yalnız genel ton düzelir.
  */
-function matchTone(orig: HTMLCanvasElement, edited: HTMLCanvasElement, mask: HTMLCanvasElement) {
+export function matchTone(orig: HTMLCanvasElement, edited: HTMLCanvasElement, mask: HTMLCanvasElement) {
   const W = orig.width, H = orig.height
   const o = orig.getContext('2d', { willReadFrequently: true })!.getImageData(0, 0, W, H).data
   const ectx = edited.getContext('2d', { willReadFrequently: true })!

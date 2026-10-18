@@ -2,6 +2,10 @@
 
 Her yayımlanan yapıda sürümün yalnız son hanesi artırılır (0.8.0 → 0.8.1); ara sürüm (0.9) büyük aşamalarda, 1.0.0 ise yayına hazır tam üründe. Uygulama Ayarlar → Hakkında'da sürümü gösterir.
 
+## 0.8.8 — 2026-10-18
+
+- **Karın kası** (Rötuş sekmesi): karın kasını ışık ve gölgeyle belirginleştirir; kıl, ten ve doku korunur, önizleme anlıktır. Uygula'da isteğe bağlı olarak yerel YZ ile gerçekçileştirilir. Yalnız açık ciltte çalışır; karnın önündeki kol ve el etkilenmez, kıyafetin üstüne kas çizilmez. Göğüs, kol ve köprücük denendi ama sonuç yeterince gerçekçi olmadığı için eklenmedi (`replica/arge/05-vucut-gorunumu.md`)
+
 ## 0.8.7 — 2026-10-18
 
 - **3B yüz yönü** (Rötuş → Yüz → Yön): Sağa-sola çevir, Yukarı-aşağı, Baş eğimi ve Simetri. Yüzün 3B noktaları önden görünüme çevrilip istenen açıyla geri döndürülür ve bükmeyle uygulanır; simetri önden görünümde ayna eşleriyle yapılır, böylece üç çeyrek pozlarda da doğru çalışır. Açılar küçük tutuldu (en çok ±14°); kimlik benzerliği bütün ayarlarda 0,90'ın üstünde ölçüldü (`replica/arge/04-yuz-yonu.md`)

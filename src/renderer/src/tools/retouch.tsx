@@ -14,6 +14,7 @@ import { ApplyAll, FaceOverlay, NoFace, SidePicker, editFace, useFace, useFaceCo
 import { BrushOverlay, PaintMask, type BrushState } from './brush'
 import { busy } from './raster'
 import { AGEFACE_TOOL } from './ageface'
+import { PHYSIQUE_TOOL } from './physique'
 
 type SliderDef = [key: string, tr: string, en: string]
 
@@ -1052,6 +1053,7 @@ export const RETOUCH_TOOLS: ToolDef[] = [
   { id: 'rbrush', label: ['Rötuş fırçası', 'Retouch brush'], icon: Brush, Panel: RetouchBrushPanel, Overlay: RetouchBrushOverlay, sourceSpace: true, noFooter: true },
   { id: 'relight', label: ['Işıklandır', 'Relight'], icon: Sun, Panel: RelightPanel, Overlay: RelightOverlay, sourceSpace: true, noFooter: true },
   { id: 'body', label: ['Vücut', 'Body'], icon: PersonStanding, Panel: BodyPanel, Overlay: BodyOverlay, sourceSpace: true, needs: ['pose', 'seg'], applied: (d) => !!d.body && (nz(d.body.shape) || !!d.body.manual?.stretch || !!d.body.manual?.slim), sliders: [...BODY_KEYS.map(([, a, b]) => ({ label: [a, b] as [string, string] })), { label: ['Arka planı koru', 'Protect background'] }] },
+  PHYSIQUE_TOOL,
   { id: 'facehide', label: ['Yüz gizle', 'Hide face'], icon: EyeOff, Panel: FaceHidePanel, Overlay: FaceOverlay, sourceSpace: true, needs: ['faces'], noFooter: true },
   AGEFACE_TOOL
 ]
