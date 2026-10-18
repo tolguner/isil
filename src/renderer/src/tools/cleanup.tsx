@@ -6,6 +6,7 @@ import { Slider, Segmented, Switch } from '@/components/ui'
 import { inpaint, toCanvas } from '@/ai/ops'
 import { tapSelect, resetTapSelect } from '@/ai/vision'
 import { localMaskedEdit, grayToAlpha, generativeErase } from '@/ai/generative'
+import { TEXT_REMOVE_TOOL } from './textremove'
 import type { ToolDef, View } from './types'
 import { BrushOverlay, type BrushState } from './brush'
 import { PASSERSBY_TOOL } from './passersby'
@@ -278,5 +279,6 @@ export const CLEANUP_TOOLS: ToolDef[] = [
   PASSERSBY_TOOL,
   { id: 'clone', label: ['Klonla', 'Clone'], icon: Stamp, Panel: ClonePanel, Overlay: CloneOverlay, sourceSpace: true, noFooter: true },
   { id: 'mosaic', label: ['Mozaik', 'Mosaic'], icon: Grid3x3, Panel: MosaicPanel, Overlay: MosaicOverlay, sourceSpace: true, noFooter: true },
-  { id: 'replace', label: ['YZ ile değiştir', 'AI replace'], icon: WandSparkles, Panel: ReplacePanel, Overlay: PaintOverlay, sourceSpace: true, noFooter: true, badge: 'YZ' }
+  { id: 'replace', label: ['YZ ile değiştir', 'AI replace'], icon: WandSparkles, Panel: ReplacePanel, Overlay: PaintOverlay, sourceSpace: true, noFooter: true, badge: 'YZ' },
+  TEXT_REMOVE_TOOL
 ]

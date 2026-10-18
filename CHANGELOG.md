@@ -2,6 +2,14 @@
 
 Her yayımlanan yapıda sürümün yalnız son hanesi artırılır (0.8.0 → 0.8.1); ara sürüm (0.9) büyük aşamalarda, 1.0.0 ise yayına hazır tam üründe. Uygulama Ayarlar → Hakkında'da sürümü gösterir.
 
+## 0.8.13 — 2026-10-18
+
+- **Gökyüzü değiştirme** (Arka plan → Gökyüzü):
+  - Gökyüzü yapay zekâyla ayrılır: skyseg (U²-Net, MIT), görüntü kılavuzlu süzgeçle kenara oturtulur. Kararsız kenarlar gökyüzü rengiyle tamamlanır, kişi bölütlemesiyle kişi korunur.
+  - Altı hazır gökyüzü var (açık mavi, bulutlu, gün batımı, alacakaranlık, fırtına, yıldızlı gece); hepsi yerel FLUX ile üretildi. Kendi görselini de seçebilirsin.
+  - Gökyüzü ufka oturtulur. Parlaklık, ufuk konumu ve ön planın yeni ışığa renk uyumu ayarlanabilir.
+- **Metin silme** (Temizle → Metin sil): fotoğraftaki yazılar PP-OCRv4 algılayıcıyla (Apache-2.0, 4,7 MB) bulunur ve kutu olarak gösterilir. Tıklayarak seçim değiştirilir. Seçilenler LaMa ya da üretken doldurmayla silinir. Başkasına ait filigranları silmek için kullanılmaması uyarısı var.
+
 ## 0.8.12 — 2026-10-18
 
 - **Kayıtlı görünümler** (Tarifler → Benim): şu anki ışık, renk, eğri, filtre ve efektleri ad vererek kaydet; başka fotoğraflara tek dokunuşla uygula. Rötuş ve katmanlar kaydedilmez. Önizlemeler o anki fotoğrafla gösterilir, görünümler silinebilir.

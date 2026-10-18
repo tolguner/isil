@@ -8,6 +8,7 @@ import { session, encodeCanvas } from '@/engine/session'
 import { nativeReady } from '@/ai/models'
 import { removeBackground, toCanvas } from '@/ai/ops'
 import { segmentPerson, maskToCanvas, tapSelect } from '@/ai/vision'
+import { SKY_TOOL } from './sky'
 import { commitMask, putImageAsset } from '@/lib/projects'
 import { platform } from '@/lib/platform'
 import { RATIOS } from './crop'
@@ -290,6 +291,7 @@ export const CUTOUT_TOOLS: ToolDef[] = [
   { id: 'cutout', label: ['Kesim', 'Cutout'], icon: Scissors, Panel: CutoutPanel, Overlay: CutoutOverlay, sourceSpace: true, noFooter: true, applied: (d) => !!d.mask }
 ]
 export const BACKGROUND_TOOLS: ToolDef[] = [
-  { id: 'background', label: ['Arka plan', 'Backdrop'], icon: Square, Panel: BackgroundPanel, applied: (d) => !!d.background.fill || !!d.background.ratio }
+  { id: 'background', label: ['Arka plan', 'Backdrop'], icon: Square, Panel: BackgroundPanel, applied: (d) => !!d.background.fill || !!d.background.ratio },
+  SKY_TOOL
 ]
 void Preset
