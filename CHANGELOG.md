@@ -2,6 +2,10 @@
 
 Her yayımlanan yapıda sürümün yalnız son hanesi artırılır (0.8.0 → 0.8.1); ara sürüm (0.9) büyük aşamalarda, 1.0.0 ise yayına hazır tam üründe. Uygulama Ayarlar → Hakkında'da sürümü gösterir.
 
+## 0.8.7 — 2026-10-18
+
+- **3B yüz yönü** (Rötuş → Yüz → Yön): Sağa-sola çevir, Yukarı-aşağı, Baş eğimi ve Simetri. Yüzün 3B noktaları önden görünüme çevrilip istenen açıyla geri döndürülür ve bükmeyle uygulanır; simetri önden görünümde ayna eşleriyle yapılır, böylece üç çeyrek pozlarda da doğru çalışır. Açılar küçük tutuldu (en çok ±14°); kimlik benzerliği bütün ayarlarda 0,90'ın üstünde ölçüldü (`replica/arge/04-yuz-yonu.md`)
+
 ## 0.8.6 — 2026-10-18
 
 - **Yaş ve ifade** (Rötuş sekmesi, eski "İfade" yönlendirmesinin yerine): seçili yüzde Hafif gülümse, Geniş gülümse, Ciddi, Gözleri aç, Daha genç, Daha yaşlı, Çok yaşlı. Yerel FLUX.2 klein ile çalışır; yüzün çevresi kırpılıp büyütüldüğü için büyük fotoğraflarda da ayrıntı kalır, yüzün dışı birebir aynı kalır. Yaşlandırmada ten rengi korunur, boyun da yüzle birlikte değişir. Etki kaydırıcısı değişimi artırır ya da azaltır. Çok küçük yüzlerde araç uyarır. Kimlik benzerliği ölçülerek ayarlandı (`replica/arge/03-yas-ifade.md`)

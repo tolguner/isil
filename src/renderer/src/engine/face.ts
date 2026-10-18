@@ -25,8 +25,11 @@ const mean = (pts: V[]): V => mul(pts.reduce(add, { x: 0, y: 0 }), 1 / pts.lengt
 /** Piksel uzayında yüz geometrisi. */
 export class FaceGeo {
   P: V[]
+  /** Derinlik (piksel, MediaPipe ölçeği: x ile aynı birim, küçük = kameraya yakın). */
+  Z: number[]
   constructor(lm: Pt[], public W: number, public H: number) {
     this.P = lm.map((p) => ({ x: p.x * W, y: p.y * H }))
+    this.Z = lm.map((p) => ((p as Pt & { z?: number }).z ?? 0) * W)
   }
   p(i: number) { return this.P[i] }
   m(idx: number[]) { return mean(idx.map((i) => this.P[i])) }
@@ -253,6 +256,111 @@ export function contourPairs(g: FaceGeo, shape: Record<string, number>, side: Si
   for (let k = 0; k < 20; k++) {
     const a = (k / 20) * Math.PI * 2
     const o = add(fc, add(mul(e, Math.cos(a) * F * 0.95), mul(dn, Math.sin(a) * Hh * 0.95)))
+    p.push(o); q.push(o)
+  }
+  return { p, q }
+}
+
+export const ORIENT_KEYS = ['yaw', 'pitch', 'roll', 'symmetry']
+/** Denetim noktaları: tüm ağın seyreltilmiş hali + kontur ve özellikler (MLS maliyeti makul kalsın). */
+export const ORIENT_PTS = [...new Set([...OVAL, ...EYE_R, ...EYE_L, ...BROW_R, ...BROW_L, ...LIPS_OUT, 1, 4, 5, 6, 168, 197, 195, 2, 98, 327, 129, 358, 50, 280, 205, 425, 101, 330, 118, 347, 36, 266, 152, 175, 199, 200, 18, ...Array.from({ length: 156 }, (_, i) => i * 3)])].filter((i) => i < 468)
+type V3 = { x: number; y: number; z: number }
+let mirrorCache: { key: string; map: number[] } | null = null
+
+/** Kafa duruşu (radyan): sağa-sola (y ekseni), yukarı-aşağı (x ekseni), eğim (görüntü düzlemi). */
+export function headPose(g: FaceGeo) {
+  const L = g.p(234), R = g.p(454), T = g.p(10), B = g.p(152)
+  const yaw = Math.atan2(g.Z[454] - g.Z[234], Math.hypot(R.x - L.x, R.y - L.y))
+  const pitch = Math.atan2(g.Z[152] - g.Z[10], Math.hypot(B.x - T.x, B.y - T.y))
+  const roll = Math.atan2(R.y - L.y, R.x - L.x)
+  return { yaw, pitch, roll }
+}
+
+/** Döndürme: önce eğim geri, sonra yukarı-aşağı, sonra sağa-sola (frontal = önden görünüm). */
+function rot(v: V3, yaw: number, pitch: number, roll: number, inverse: boolean): V3 {
+  let { x, y, z } = v
+  const R = (a: number, b: number, t: number): [number, number] => [a * Math.cos(t) - b * Math.sin(t), a * Math.sin(t) + b * Math.cos(t)]
+  if (inverse) {
+    ;[x, y] = R(x, y, -roll)
+    ;[y, z] = R(y, z, -pitch)
+    ;[x, z] = R(x, z, -yaw)
+  } else {
+    ;[x, z] = R(x, z, yaw)
+    ;[y, z] = R(y, z, pitch)
+    ;[x, y] = R(x, y, roll)
+  }
+  return { x, y, z }
+}
+
+/** Yüzü önden görünüme çevir (merkez ve dönme noktası çıkarılmış 3B noktalar). */
+export function frontalize(g: FaceGeo) {
+  const pose = headPose(g)
+  const fc = g.center
+  const mz = ORIENT_PTS.reduce((s, i) => s + g.Z[i], 0) / ORIENT_PTS.length
+  const pz = mz + g.width * 0.55 // dönme merkezi: yüz yüzeyinin arkasında (baş ortası)
+  const F = g.P.slice(0, 468).map((p, i) => rot({ x: p.x - fc.x, y: p.y - fc.y, z: g.Z[i] - pz }, pose.yaw, pose.pitch, pose.roll, true))
+  return { F, pose, fc, pz }
+}
+
+/** Önden görünümde ayna eşleri: orta düzleme göre yansıyan noktaya en yakın nokta. */
+function mirrorMap(F: V3[], key: string): number[] {
+  if (mirrorCache?.key === key) return mirrorCache.map
+  const mx = [1, 4, 6, 168, 152, 10, 0, 17, 199].reduce((s, i) => s + F[i].x, 0) / 9
+  const map = F.map((p, i) => {
+    const rx = 2 * mx - p.x
+    let best = i, bd = Infinity
+    for (let j = 0; j < F.length; j++) { const dd = (F[j].x - rx) ** 2 + (F[j].y - p.y) ** 2 + ((F[j].z - p.z) ** 2) * 0.25; if (dd < bd) { bd = dd; best = j } }
+    return best
+  })
+  mirrorCache = { key, map }
+  return map
+}
+
+/** Önden görünümde asimetri: ayna eşleri arasındaki ortalama sapma, yüz genişliğine oranla. */
+export function asymmetry(g: FaceGeo): number {
+  const { F } = frontalize(g)
+  const map = mirrorMap(F, 'a' + Math.round(g.width))
+  const mx = [1, 4, 6, 168, 152, 10, 0, 17, 199].reduce((s, i) => s + F[i].x, 0) / 9
+  let s = 0
+  for (const i of ORIENT_PTS) { const j = map[i]; s += Math.hypot(F[i].x - (2 * mx - F[j].x), F[i].y - F[j].y) }
+  return s / ORIENT_PTS.length / g.width
+}
+
+/**
+ * 3B yüz yönü (Ar-Ge 4): MediaPipe'ın 3B yüz ağı önden görünüme çevrilir, istenirse ayna eşiyle ortalanarak
+ * simetrikleştirilir, sonra kendi duruşuna ek açılarla (sağa-sola, yukarı-aşağı, eğim) geri döndürülüp dik
+ * izdüşümle düzleme indirilir. Eski ve yeni konumlar MLS katı bükmesine çift olarak verilir; dış halka sabittir.
+ */
+export function orientPairs(g: FaceGeo, shape: Record<string, number>): { p: V[]; q: V[] } | null {
+  const dyaw = ((shape.yaw ?? 0) / 100) * (14 * Math.PI) / 180
+  const dpitch = ((shape.pitch ?? 0) / 100) * (10 * Math.PI) / 180
+  const droll = ((shape.roll ?? 0) / 100) * (10 * Math.PI) / 180
+  const sym = Math.max(0, Math.min(1, (shape.symmetry ?? 0) / 100))
+  if (!dyaw && !dpitch && !droll && !sym) return null
+  if (g.P.length < 468) return null
+  const { F, pose, fc } = frontalize(g)
+  const map = sym ? mirrorMap(F, 'a' + Math.round(g.width)) : null
+  const mx = [1, 4, 6, 168, 152, 10, 0, 17, 199].reduce((s, i) => s + F[i].x, 0) / 9
+  const p: V[] = [], q: V[] = []
+  for (const i of ORIENT_PTS) {
+    let f = F[i]
+    if (map) {
+      const m = F[map[i]]
+      const t = { x: (f.x + 2 * mx - m.x) / 2, y: (f.y + m.y) / 2, z: (f.z + m.z) / 2 }
+      f = { x: f.x + (t.x - f.x) * sym, y: f.y + (t.y - f.y) * sym, z: f.z + (t.z - f.z) * sym }
+    }
+    const r = rot(f, pose.yaw + dyaw, pose.pitch + dpitch, pose.roll + droll, false)
+    p.push({ x: fc.x + r.x, y: fc.y + r.y })
+    q.push(g.p(i))
+  }
+  // dönme yüzü toptan kaydırmasın: denetim noktalarının ortalama kayması geri alınır (yüz yerinde döner)
+  const dx = p.reduce((s, v, k) => s + v.x - q[k].x, 0) / p.length, dy = p.reduce((s, v, k) => s + v.y - q[k].y, 0) / p.length
+  for (const v of p) { v.x -= dx; v.y -= dy }
+  const Fw = g.width, Hh = g.height, dn = g.down
+  const e = mul(sub(g.p(454), g.p(234)), 1 / (len(sub(g.p(454), g.p(234))) || 1))
+  for (let k = 0; k < 28; k++) {
+    const ang = (k / 28) * Math.PI * 2
+    const o = add(fc, add(mul(e, Math.cos(ang) * Fw * 1.5), mul(dn, Math.sin(ang) * Hh * 1.4)))
     p.push(o); q.push(o)
   }
   return { p, q }

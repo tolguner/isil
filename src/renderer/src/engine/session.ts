@@ -2,7 +2,7 @@
 import type { EditDoc, Project, Settings } from '@shared/schema'
 import { platform } from '@/lib/platform'
 import { Renderer, legCanvasOk, type OutputInfo } from './renderer'
-import { addHairVolume, addMlsField, allProtect, buildField, foldGuard, contourPairs, buildMasks, buildProtectMask, faceOps, faceUniforms, FaceGeo, faceHasSkinWork, type MaskSet } from './face'
+import { addHairVolume, addMlsField, orientPairs, allProtect, buildField, foldGuard, contourPairs, buildMasks, buildProtectMask, faceOps, faceUniforms, FaceGeo, faceHasSkinWork, type MaskSet } from './face'
 import { applyBodyBands, applyManualBody, bodyOps, legBand, maskField } from './body'
 import { drawLayers } from './layers'
 import { detectFaces, detectPose, segmentPerson, type PersonParts, type Pt } from '@/ai/vision'
@@ -234,7 +234,7 @@ class Session {
     let base = this.liveField
     if (this.faces) {
       const geos = this.faceGeos()
-      const pairs = doc.retouch.faces.map((e) => (geos[e.index] ? contourPairs(geos[e.index], e.shape, e.side) : null)).filter((x) => !!x)
+      const pairs = doc.retouch.faces.flatMap((e) => (geos[e.index] ? [orientPairs(geos[e.index], e.shape), contourPairs(geos[e.index], e.shape, e.side)] : [])).filter((x) => !!x)
       if (pairs.length) {
         const gw = base?.gw ?? 192, gh = base?.gh ?? Math.max(16, Math.round((192 * H) / W))
         const field = base ? Float32Array.from(base.field) : new Float32Array(gw * gh * 2)

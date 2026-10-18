@@ -51,8 +51,15 @@ const SHAPE_TABS: { id: string; label: [string, string]; keys: SliderDef[] }[] =
       ['lipSize', 'Boyut', 'Size'], ['plump', 'Dolgun', 'Plump'], ['lipWidth', 'Genişlik', 'Width'], ['lipPos', 'Konum', 'Position'],
       ['smile', 'Gülümseme', 'Smile'], ['mShape', 'M biçimi', 'M-shape'], ['upperLip', 'Üst dudak', 'Upper lip'], ['lowerLip', 'Alt dudak', 'Lower lip'], ['lipAngle', 'Açı', 'Angle']
     ]
+  },
+  {
+    id: 'pose', label: ['Yön', 'Pose'], keys: [
+      ['yaw', 'Sağa-sola çevir', 'Turn left-right'], ['pitch', 'Yukarı-aşağı', 'Tilt up-down'], ['roll', 'Baş eğimi', 'Head tilt'], ['symmetry', 'Simetri', 'Symmetry']
+    ]
   }
 ]
+/** Tek yönlü (0..100) yüz kaydırıcıları. */
+const UNIPOLAR = new Set(['symmetry'])
 
 function ShapeSliders({ keys }: { keys: SliderDef[] }) {
   const tr = useT()
@@ -62,7 +69,7 @@ function ShapeSliders({ keys }: { keys: SliderDef[] }) {
   return (
     <>
       {keys.map(([k, a, b]) => (
-        <Slider key={k} label={tr(a, b)} bipolar value={f.shape[k] ?? 0} onChange={(v) => update((d) => editFace(d, idx, (x) => void (x.shape[k] = v)))} />
+        <Slider key={k} label={tr(a, b)} bipolar={!UNIPOLAR.has(k)} value={f.shape[k] ?? 0} onChange={(v) => update((d) => editFace(d, idx, (x) => void (x.shape[k] = v)))} />
       ))}
     </>
   )
