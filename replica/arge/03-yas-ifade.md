@@ -12,7 +12,7 @@
 
 Benzerlik ArcFace (InsightFace w600k_r50) ile ölçüldü. Bu model yalnız ölçüm düzeneğinde (`isil-olcum/kimlik/benzerlik.py`) kullanılır, uygulamaya girmez; lisansı ticari olmayan araştırma içindir. Kaba ölçek: 0,6 üstü aynı kişi kesin, 0,4–0,6 büyük olasılıkla aynı, 0,3 altı farklı kişi. Yaşlandırma ArcFace benzerliğini doğal olarak da düşürür.
 
-Test portresi (`src/renderer/public/test/portrait.jpg`), RTX ekran kartında:
+Test portresi (`src/renderer/public/test/portrait.jpg`), geliştirme bilgisayarında:
 
 | dönüşüm | güç | benzerlik | süre |
 |---|---|---|---|
