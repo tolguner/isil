@@ -2,6 +2,12 @@
 
 Her yayımlanan yapıda sürümün yalnız son hanesi artırılır (0.8.0 → 0.8.1); ara sürüm (0.9) büyük aşamalarda, 1.0.0 ise yayına hazır tam üründe. Uygulama Ayarlar → Hakkında'da sürümü gösterir.
 
+## 0.8.12 — 2026-10-18
+
+- **Kayıtlı görünümler** (Tarifler → Benim): şu anki ışık, renk, eğri, filtre ve efektleri ad vererek kaydet; başka fotoğraflara tek dokunuşla uygula. Rötuş ve katmanlar kaydedilmez. Önizlemeler o anki fotoğrafla gösterilir, görünümler silinebilir.
+- **Sanatsal efektler** (Efektler → Sanat): suluboya, guaş, neon, karakalem, çizgi roman. Hepsi anlık gölgelendirici.
+- Bir panel seçicisinde boş liste her çizimde yeniden oluşup arayüzü kilitleyebiliyordu (önceden yakalanmış hata türü); sabit boş liste kullanıldı
+
 ## 0.8.11 — 2026-10-18
 
 - **Öneri kartı** (Rötuş → Tek dokunuş): gözler kapalı görünüyorsa "Gözleri aç", ifade ciddiyse "Hafif gülümset" önerilir. Bir dokunuşla Yaş ve ifade aracında çalıştırılır; kart kapatılabilir.

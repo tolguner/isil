@@ -330,3 +330,8 @@ kbd { background: var(--c-surface-3); border-radius: 4px; padding: 1px 5px; font
 .tpl-row .tpl-card { height: 240px; width: auto; }
 .hint-card { border-color: color-mix(in srgb, var(--c-accent) 45%, var(--c-border)); }
 .badge-inline { font-size: 10px; font-weight: 700; margin-left: 4px; opacity: .8; }
+
+/* kayıtlı görünümler */
+.my-look { position: relative; display: block; }
+.my-look-del { position: absolute; top: 2px; right: 2px; width: 20px; height: 20px; border-radius: 10px; background: var(--c-surface-3); opacity: 0; }
+.my-look:hover .my-look-del, .my-look-del:focus-visible { opacity: 1; }

@@ -530,6 +530,43 @@ void main(){
     vec2 off = vec2(hash12(cell + 1.7), hash12(cell + 3.1)) - 0.5;
     float circ = smoothstep(0.32, 0.28, length(f - off * 0.4)) * step(0.72, hsh);
     r = screenB(mix(c, b, 0.5), hsv2rgb(vec3(0.08 + hsh * 0.12, 0.5, 1.0)) * circ * 0.5);
+  } else if (uFx >= 32 && uFx <= 36) {
+    // sanatsal efektler için ortak: kenar (Sobel, ışıklılık) ve yumuşatılmış renk
+    vec2 q = px * max(1.0, uSize.y / 900.0);
+    float tl = luma(tap(uv + vec2(-q.x, -q.y)).rgb), tc = luma(tap(uv + vec2(0.0, -q.y)).rgb), tr = luma(tap(uv + vec2(q.x, -q.y)).rgb);
+    float ml = luma(tap(uv + vec2(-q.x, 0.0)).rgb), mr = luma(tap(uv + vec2(q.x, 0.0)).rgb);
+    float bl = luma(tap(uv + vec2(-q.x, q.y)).rgb), bc = luma(tap(uv + vec2(0.0, q.y)).rgb), br = luma(tap(uv + vec2(q.x, q.y)).rgb);
+    float gx = -tl - 2.0 * ml - bl + tr + 2.0 * mr + br, gy = -tl - 2.0 * tc - tr + bl + 2.0 * bc + br;
+    float edge = clamp(length(vec2(gx, gy)) * 1.6, 0.0, 1.0);
+    vec3 soft = texture(uBlur, uv).rgb;
+    float grain = hash12(floor(uv * uSize / 2.0)) - 0.5;
+    if (uFx == 32) { // suluboya: renk lekeleri, kenarda koyulaşan pigment, kâğıt dokusu
+      vec3 w = mix(c, soft, 0.65);
+      w = floor(w * 7.0 + 0.5) / 7.0 * 0.35 + w * 0.65;
+      float rim = smoothstep(0.08, 0.5, edge);
+      w = mix(w, w * w, rim * 0.6);
+      w = mix(w, vec3(1.0), 0.12) + grain * 0.06;
+      r = w;
+    } else if (uFx == 33) { // guaş: düz, mat renk alanları
+      vec3 g = mix(c, soft, 0.5);
+      vec3 hsv = rgb2hsv(g);
+      hsv.z = floor(hsv.z * 6.0 + 0.5) / 6.0;
+      hsv.y = min(1.0, hsv.y * 1.15);
+      r = hsv2rgb(hsv) * (1.0 - smoothstep(0.25, 0.7, edge) * 0.35) + grain * 0.03;
+    } else if (uFx == 34) { // neon: koyu zemin üzerinde parlayan kenarlar, kaynak renginde
+      vec3 hue = hsv2rgb(vec3(rgb2hsv(c).x, 1.0, 1.0));
+      float e2 = smoothstep(0.2, 0.6, edge);
+      r = c * 0.1 + hue * e2 * 1.4 + hue * smoothstep(0.12, 0.35, edge) * 0.2;
+    } else if (uFx == 35) { // karakalem: kâğıt üzerinde çizgi ve tarama
+      float L = luma(c);
+      float hatch = step(fract((uv.x + uv.y) * uSize.y / 6.0), 0.5) * (1.0 - smoothstep(0.25, 0.55, L));
+      float ink = smoothstep(0.12, 0.5, edge);
+      float v = 1.0 - ink * 0.85 - hatch * 0.18 - (1.0 - L) * 0.15 + grain * 0.05;
+      r = vec3(v) * vec3(1.0, 0.98, 0.94);
+    } else { // çizgi roman: düz renk + siyah kontur
+      vec3 g = floor(mix(c, soft, 0.3) * 5.0 + 0.5) / 5.0;
+      r = g * (1.0 - smoothstep(0.2, 0.45, edge));
+    }
   }
   o = vec4(mix(c, clamp(r, 0.0, 1.0), clamp(A, 0.0, 1.0)), base.a);
 }`

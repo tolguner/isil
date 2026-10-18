@@ -118,6 +118,18 @@ export interface Project extends ProjectMeta {
   version: 1
 }
 
+/** Kullanıcının kaydettiği görünüm (Tarifler → Benim): ışık, renk, filtre ve efektler; rötuş ve katmanlar hariç. */
+export interface MyLook {
+  id: string
+  name: string
+  createdAt: string
+  adjust: Adjust
+  hsl: HSL
+  curves: Curves
+  filter: EffectRef | null
+  effects: EffectRef[]
+}
+
 export interface Settings {
   language: 'tr' | 'en'
   exportFormat: 'jpeg' | 'png' | 'webp'
@@ -125,6 +137,7 @@ export interface Settings {
   exportMaxSide: number   // 0 = orijinal
   genQuality: 'fast' | 'best'   // FLUX.2 klein 4B / 9B
   autosave: boolean
+  myLooks?: MyLook[]
 }
 
 export const DEFAULT_SETTINGS: Settings = {

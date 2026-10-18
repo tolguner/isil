@@ -127,6 +127,11 @@ export const EFFECTS: EffectDef[] = [
   e('negatif', 27, 'Negatif', 'Invert', 'art'),
   e('sb-kontrast', 28, 'Sert S/B', 'Hard mono', 'art'),
   e('cift', 30, 'Çift pozlama', 'Double', 'art'),
+  e('suluboya', 32, 'Suluboya', 'Watercolor', 'art', { blur: 0.006 }),
+  e('guas', 33, 'Guaş', 'Gouache', 'art', { blur: 0.004 }),
+  e('neon', 34, 'Neon', 'Neon', 'art'),
+  e('karakalem', 35, 'Karakalem', 'Pencil', 'art'),
+  e('cizgi-roman', 36, 'Çizgi roman', 'Comic', 'art', { blur: 0.003 }),
   e('ayna-y', 11, 'Yatay ayna', 'Mirror H', 'mirror'),
   e('ayna-d', 12, 'Dikey ayna', 'Mirror V', 'mirror'),
   e('kaleydoskop', 23, 'Kaleydoskop', 'Kaleidoscope', 'mirror')

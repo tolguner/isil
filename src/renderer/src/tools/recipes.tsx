@@ -1,6 +1,8 @@
 import { useEffect, useState } from 'react'
+import { X } from 'lucide-react'
 import { ChefHat } from 'lucide-react'
-import { emptyAdjust, type EditDoc, type Layer } from '@shared/schema'
+import { emptyAdjust, type EditDoc, type Layer, type MyLook } from '@shared/schema'
+import { platform } from '@/lib/platform'
 import { useEditor } from '@/store/editor'
 import { useT } from '@/lib/i18n'
 import { Preset, Slider, Tabs } from '@/components/ui'
@@ -60,6 +62,74 @@ export function applyRecipe(d: EditDoc, r: Recipe, amount = 100) {
     }
     d.layers.push(layer)
   }
+}
+
+const clone = <T,>(v: T): T => JSON.parse(JSON.stringify(v))
+
+/** Kaydedilmiş görünümü belgeye uygula (rötuş, kırpma ve katmanlar korunur). */
+export function applyMyLook(d: EditDoc, l: MyLook) {
+  d.adjust = clone(l.adjust)
+  d.hsl = clone(l.hsl)
+  d.curves = clone(l.curves)
+  d.filter = l.filter ? { ...l.filter } : null
+  d.effects = clone(l.effects)
+}
+
+/** Şu anki belgenin görünümünü ad vererek kaydet. */
+export async function saveMyLook(name: string) {
+  const st = useEditor.getState()
+  const d = st.doc
+  const look: MyLook = { id: crypto.randomUUID(), name: name.trim().slice(0, 40), createdAt: new Date().toISOString(), adjust: clone(d.adjust), hsl: clone(d.hsl), curves: clone(d.curves), filter: d.filter ? { ...d.filter } : null, effects: clone(d.effects) }
+  const next = await platform.setSettings({ myLooks: [look, ...(st.settings.myLooks ?? [])].slice(0, 60) })
+  useEditor.getState().setSettings(next)
+  return look
+}
+
+function MyLookThumb({ l }: { l: MyLook }) {
+  const [url, setUrl] = useState<string | null>(null)
+  const rev = useEditor((s) => s.revision)
+  useEffect(() => {
+    let live = true
+    thumb('m:' + l.id, (d) => applyMyLook(d, l)).then((u) => live && setUrl(u))
+    return () => void (live = false)
+  }, [l.id, rev])
+  return url ? <img src={url} alt="" /> : null
+}
+
+/** Sabit boş liste: seçicide `?? []` her çağrıda yeni dizi döndürüp sonsuz çizime yol açar. */
+const NO_LOOKS: MyLook[] = []
+
+function MyLooks() {
+  const tr = useT()
+  const looks = useEditor((s) => s.settings.myLooks ?? NO_LOOKS)
+  const [name, setName] = useState('')
+  const [sel, setSel] = useState<string | null>(null)
+  const update = useEditor((s) => s.update)
+  const del = async (id: string) => {
+    const next = await platform.setSettings({ myLooks: looks.filter((l) => l.id !== id) })
+    useEditor.getState().setSettings(next)
+  }
+  return (
+    <>
+      <form className="row" style={{ gap: 6, marginBottom: 10 }} onSubmit={(e) => { e.preventDefault(); if (name.trim()) void saveMyLook(name).then((l) => { setName(''); setSel(l.id) }) }}>
+        <input className="input" style={{ flex: 1 }} value={name} maxLength={40} placeholder={tr('Görünüme ad ver', 'Name this look')} aria-label={tr('Görünüm adı', 'Look name')} onChange={(e) => setName(e.target.value)} />
+        <button className="btn sm primary" type="submit" disabled={!name.trim()}>{tr('Kaydet', 'Save')}</button>
+      </form>
+      <p className="note">{tr('Şu anki ışık, renk, filtre ve efektleri saklar; başka fotoğraflara tek dokunuşla uygularsın. Rötuş ve katmanlar kaydedilmez.', 'Saves the current light, color, look and effects to apply to other photos in one tap. Retouching and layers are not saved.')}</p>
+      {looks.length === 0 ? <p className="muted">{tr('Henüz kayıtlı görünüm yok.', 'No saved looks yet.')}</p> : (
+        <div className="presets">
+          {looks.map((l) => (
+            <span key={l.id} className="my-look">
+              <Preset label={l.name} on={sel === l.id} onClick={() => { setSel(l.id); update((d) => applyMyLook(d, l)) }}>
+                <MyLookThumb l={l} />
+              </Preset>
+              <button className="icon-btn my-look-del" aria-label={tr(`${l.name} görünümünü sil`, `Delete ${l.name}`)} title={tr('Sil', 'Delete')} onClick={() => void del(l.id)}><X size={12} /></button>
+            </span>
+          ))}
+        </div>
+      )}
+    </>
+  )
 }
 
 function RecipeThumb({ r }: { r: Recipe }) {
@@ -131,14 +201,15 @@ function RecipesPanel() {
   return (
     <>
       <p className="note">{tr('Hazır tarifler ışık, filtre, efekt ve çerçeveyi tek dokunuşta uygular; sonra her şeyi ayrı ayrı düzenleyebilirsin.', 'Recipes apply light, look, effects and framing in one tap; everything stays editable afterwards.')}</p>
-      <Tabs items={[{ id: 'glow', label: tr('Işıltı', 'Glow') }, { id: 'retro', label: tr('Retro', 'Retro') }, { id: 'mood', label: tr('Hava', 'Mood') }, { id: 'frame', label: tr('Çerçeve', 'Frame') }]} value={cat} onChange={setCat} />
-      <div className="presets">
+      <Tabs items={[{ id: 'glow', label: tr('Işıltı', 'Glow') }, { id: 'retro', label: tr('Retro', 'Retro') }, { id: 'mood', label: tr('Hava', 'Mood') }, { id: 'frame', label: tr('Çerçeve', 'Frame') }, { id: 'mine', label: tr('Benim', 'Mine') }]} value={cat} onChange={setCat} />
+      {cat === 'mine' && <MyLooks />}
+      {cat !== 'mine' && <div className="presets">
         {RECIPES.filter((r) => r.cat === cat).map((r) => (
           <Preset key={r.id} label={tr(r.name[0], r.name[1])} on={sel === r.id} onClick={() => { setSel(r.id); apply(r.id, amt) }}>
             <RecipeThumb r={r} />
           </Preset>
         ))}
-      </div>
+      </div>}
       {sel && <Slider plain label={tr('Yoğunluk', 'Intensity')} value={amt} onChange={(v) => { setAmt(v); apply(sel, v) }} />}
       {sel && <RecipeSummary r={RECIPES.find((x) => x.id === sel)!} amount={amt} />}
     </>
