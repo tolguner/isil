@@ -20,6 +20,7 @@ const sub = (a: V, b: V): V => ({ x: a.x - b.x, y: a.y - b.y })
 const add = (a: V, b: V): V => ({ x: a.x + b.x, y: a.y + b.y })
 const mul = (a: V, k: number): V => ({ x: a.x * k, y: a.y * k })
 const len = (a: V) => Math.hypot(a.x, a.y)
+const dot = (a: V, b: V) => a.x * b.x + a.y * b.y
 const mean = (pts: V[]): V => mul(pts.reduce(add, { x: 0, y: 0 }), 1 / pts.length)
 
 /** Piksel uzayında yüz geometrisi. */
@@ -261,7 +262,22 @@ export function contourPairs(g: FaceGeo, shape: Record<string, number>, side: Si
   return { p, q }
 }
 
-export const ORIENT_KEYS = ['yaw', 'pitch', 'roll', 'symmetry']
+/**
+ * Yüz durumu (öneri için): göz açıklık oranı (kapak arası / göz genişliği), gülümseme (ağız köşelerinin dudak
+ * ortasına göre yüksekliği, ağız genişliğine oranla). Ölçüm: açık göz ~0,31; ciddi ~0, hafif gülümseme ~0,1,
+ * geniş gülümseme ~0,13 (test portresi ve YZ ile üretilmiş ifadeleri). Kesin değil, yalnız öneri içindir.
+ */
+export function faceState(g: FaceGeo) {
+  const ear = (a: number, b: number, c: number, d: number) => len(sub(g.p(a), g.p(b))) / (len(sub(g.p(c), g.p(d))) || 1)
+  const open = Math.min(ear(159, 145, 33, 133), ear(386, 374, 263, 362))
+  const mw = len(sub(g.p(291), g.p(61))) || 1
+  const mid = mul(add(g.p(13), g.p(14)), 0.5)
+  const corners = mul(add(g.p(61), g.p(291)), 0.5)
+  const smile = (dot(sub(mid, corners), mul(g.down, 1)) ) / mw
+  return { open, smile, eyesClosed: open < 0.12, serious: smile < 0.03 }
+}
+
+export const ORIENT_KEYS = ['yaw', 'pitch', 'roll', 'symmetry', 'selfie']
 /** Denetim noktaları: tüm ağın seyreltilmiş hali + kontur ve özellikler (MLS maliyeti makul kalsın). */
 export const ORIENT_PTS = [...new Set([...OVAL, ...EYE_R, ...EYE_L, ...BROW_R, ...BROW_L, ...LIPS_OUT, 1, 4, 5, 6, 168, 197, 195, 2, 98, 327, 129, 358, 50, 280, 205, 425, 101, 330, 118, 347, 36, 266, 152, 175, 199, 200, 18, ...Array.from({ length: 156 }, (_, i) => i * 3)])].filter((i) => i < 468)
 type V3 = { x: number; y: number; z: number }
@@ -336,7 +352,8 @@ export function orientPairs(g: FaceGeo, shape: Record<string, number>): { p: V[]
   const dpitch = ((shape.pitch ?? 0) / 100) * (10 * Math.PI) / 180
   const droll = ((shape.roll ?? 0) / 100) * (10 * Math.PI) / 180
   const sym = Math.max(0, Math.min(1, (shape.symmetry ?? 0) / 100))
-  if (!dyaw && !dpitch && !droll && !sym) return null
+  const selfie = Math.max(0, Math.min(1, (shape.selfie ?? 0) / 100))
+  if (!dyaw && !dpitch && !droll && !sym && !selfie) return null
   if (g.P.length < 468) return null
   const { F, pose, fc } = frontalize(g)
   const map = sym ? mirrorMap(F, 'a' + Math.round(g.width)) : null
@@ -352,6 +369,16 @@ export function orientPairs(g: FaceGeo, shape: Record<string, number>): { p: V[]
     const r = rot(f, pose.yaw + dyaw, pose.pitch + dpitch, pose.roll + droll, false)
     p.push({ x: fc.x + r.x, y: fc.y + r.y })
     q.push(g.p(i))
+  }
+  if (selfie) {
+    // selfie düzeltme: yakın çekimde kameraya yakın bölgeler (burun, yüz ortası) büyük görünür. Kamera kol
+    // mesafesinden (yüz genişliğinin ~2,5 katı) uzağa alınmış gibi her nokta (D + z) / (D + z_ort) ile ölçeklenir.
+    const D = g.width * 2.5
+    const zm = ORIENT_PTS.reduce((s, i) => s + g.Z[i], 0) / ORIENT_PTS.length
+    ORIENT_PTS.forEach((i, k) => {
+      const sc = 1 + selfie * ((D + g.Z[i]) / (D + zm) - 1)
+      p[k] = add(fc, mul(sub(p[k], fc), sc))
+    })
   }
   // dönme yüzü toptan kaydırmasın: denetim noktalarının ortalama kayması geri alınır (yüz yerinde döner)
   const dx = p.reduce((s, v, k) => s + v.x - q[k].x, 0) / p.length, dy = p.reduce((s, v, k) => s + v.y - q[k].y, 0) / p.length

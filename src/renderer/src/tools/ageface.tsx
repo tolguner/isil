@@ -15,6 +15,8 @@ import type { ToolDef, View } from './types'
 /** Yüz bu genişlikten (px, tam çözünürlük) küçükse sonuç uydurma olur; araç uyarır. */
 const MIN_FACE = 90
 let original: HTMLCanvasElement | null = null
+/** Başka bir yerden (öneri kartı) açılırken uygulanacak dönüşüm. */
+export const ageRequest = { change: null as FaceChange | null }
 
 function AgeFacePanel() {
   const tr = useT()
@@ -45,6 +47,12 @@ function AgeFacePanel() {
       useEditor.getState().toast('error', String((e as Error).message ?? e))
     }
   }
+  useEffect(() => {
+    if (!ageRequest.change || !w.full || !g || small) return
+    const c = ageRequest.change
+    ageRequest.change = null
+    void run(c)
+  }, [!!w.full, !!g])
   const group = (gid: 'expr' | 'age', title: string) => (
     <>
       <div className="group-label">{title}</div>

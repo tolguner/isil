@@ -10,6 +10,18 @@ import { detectFaces, detectPose, segmentPerson, type PersonParts, type Pt } fro
 
 export const PREVIEW_MAX = 2048
 
+/** Gerçek gözenek dokusu (yerel FLUX ile üretilip dikişsiz döşemeye çevrildi; public/textures). */
+let skinTile: Promise<HTMLImageElement | null> | null = null
+function skinTexture() {
+  skinTile ??= new Promise((res) => {
+    const im = new Image()
+    im.onload = () => res(im)
+    im.onerror = () => res(null)
+    im.src = 'textures/skin-pores.png'
+  })
+  return skinTile
+}
+
 async function decode(blob: Blob, maxSide?: number): Promise<ImageBitmap> {
   const full = await createImageBitmap(blob, { imageOrientation: 'from-image' })
   if (!maxSide || Math.max(full.width, full.height) <= maxSide) return full
@@ -79,6 +91,8 @@ class Session {
     if (this.preview) this.renderer.setBase(this.preview)
     if (this.maskBitmap) this.renderer.setSubjectMask(this.maskBitmap)
     if (this.original) this.renderer.setOriginal(this.originalFitted())
+    const r = this.renderer
+    void skinTexture().then((im) => { if (im && this.renderer === r) { r.setSkinTex(im); this.emit() } })
     this.masksKey = this.protectKey = this.eyeKey = ''
     this.bgKey = ''
   }
@@ -381,6 +395,8 @@ class Session {
         r.setEyeFx(fx?.fx ?? null, fx?.iris ?? null)
       }
       r.setProtectMask(buildProtectMask(allProtect(doc.retouch.faces), this.W, this.H))
+      const tile = await skinTexture()
+      if (tile) r.setSkinTex(tile)
       this.masksKey = this.masksKey // maskeler normalize uv ile örneklenir; aynı kalır
       const saved = this.masks
       this.prepareExport(r, doc, saved)

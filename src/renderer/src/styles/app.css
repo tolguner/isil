@@ -328,3 +328,5 @@ kbd { background: var(--c-surface-3); border-radius: 4px; padding: 1px 5px; font
 .tpl-row { display: flex; gap: var(--sp-3); align-items: flex-end; overflow-x: auto; padding-bottom: 4px; }
 .tpl-row .tpl { flex: none; color: var(--c-text); font-weight: 600; }
 .tpl-row .tpl-card { height: 240px; width: auto; }
+.hint-card { border-color: color-mix(in srgb, var(--c-accent) 45%, var(--c-border)); }
+.badge-inline { font-size: 10px; font-weight: 700; margin-left: 4px; opacity: .8; }

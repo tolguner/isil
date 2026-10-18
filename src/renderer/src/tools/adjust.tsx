@@ -117,8 +117,38 @@ const AUTO_MODES: { id: string; label: [string, string] }[] = [
   { id: 'haze', label: ['Pus kaldır', 'Remove haze'] },
   { id: 'soft', label: ['Yumuşat', 'Soften'] },
   { id: 'denoise', label: ['Gürültü azalt', 'Reduce noise'] },
-  { id: 'brighten', label: ['Karanlığı aç', 'Brighten dark'] }
+  { id: 'brighten', label: ['Karanlığı aç', 'Brighten dark'] },
+  { id: 'night', label: ['Gece', 'Night'] }
 ]
+
+/**
+ * Yüzlerin ortalama parlaklığı (önizlemede, oval içinden örnek). Karşı ışık ve gece modunda yüze, genel ayarın
+ * üstüne yerel bir aydınlatma noktası eklemek için kullanılır.
+ */
+async function faceLights(): Promise<{ x: number; y: number; r: number; L: number }[]> {
+  const pv = session.preview
+  if (!pv) return []
+  await session.ensureFaces().catch(() => null)
+  const geos = session.faceGeos(1, 1)
+  if (!geos.length) return []
+  const c = document.createElement('canvas')
+  c.width = pv.width
+  c.height = pv.height
+  const ctx = c.getContext('2d', { willReadFrequently: true })!
+  ctx.drawImage(pv, 0, 0)
+  return geos.map((g) => {
+    const b = g.bbox(0)
+    const x0 = Math.max(0, Math.round((b.x + b.w * 0.2) * pv.width)), y0 = Math.max(0, Math.round((b.y + b.h * 0.25) * pv.height))
+    const w = Math.max(1, Math.round(b.w * 0.6 * pv.width)), h = Math.max(1, Math.round(b.h * 0.5 * pv.height))
+    const d = ctx.getImageData(x0, y0, Math.min(w, pv.width - x0), Math.min(h, pv.height - y0)).data
+    let s = 0
+    for (let i = 0; i < d.length; i += 4) s += (0.299 * d[i] + 0.587 * d[i + 1] + 0.114 * d[i + 2]) / 255
+    const c0 = g.center
+    // yarıçap kısa kenara oranla: yüz yüksekliğinin ~0,9'u
+    const r = Math.min(0.6, Math.max(0.05, ((b.h * pv.height) / Math.min(pv.width, pv.height)) * 0.9))
+    return { x: c0.x, y: c0.y, r, L: s / (d.length / 4) }
+  })
+}
 
 function AutoPanel() {
   const tr = useT()
@@ -148,9 +178,21 @@ function AutoPanel() {
     else if (id === 'soft') { t.clarity = -30; t.glow = 18; t.contrast = -10 }
     else if (id === 'denoise') { t.structure = -35; t.sharpen = 0; t.clarity = -10 }
     else if (id === 'brighten') { t.exposure = Math.max(20, exp * 120); t.shadows = 50; t.highlights = -20; t.dehaze = 10 }
+    else if (id === 'night') { t.exposure = Math.max(25, exp * 120); t.shadows = 45; t.highlights = -25; t.structure = -30; t.clarity = -5; t.temperature = 8; t.dehaze = 8 }
+    // karşı ışık ve gecede yüz ayrıca aydınlatılır (yerel nokta); genel ayar arka planı patlatmasın diye ılımlı
+    const faces = id === 'backlight' || id === 'night' ? await faceLights() : []
     update((d) => {
       for (const key of Object.keys(d.adjust) as AdjustKey[]) d.adjust[key] = base.current![key]
       for (const [key, v] of Object.entries(t)) d.adjust[key as AdjustKey] = Math.max(-100, Math.min(100, Math.round(base.current![key as AdjustKey] + (v ?? 0) * k)))
+      d.local = (d.local ?? []).filter((p) => !p.id.startsWith('auto-face'))
+      faces.forEach((f, i) => {
+        // genel ayarın getirdiği aydınlanma kabaca hesaba katılır; yüz hedefi ~0,5 parlaklık
+        const lift = (t.exposure ?? 0) / 100 * 0.25 + (t.shadows ?? 0) / 100 * 0.12
+        const b = Math.round(Math.max(0, Math.min(60, (0.5 - f.L - lift * k) * 220)) * k)
+        if (b < 4) return
+        d.local!.push({ id: `auto-face-${i}`, x: f.x, y: f.y, r: f.r, color: [0.5, 0.5, 0.5], tol: 0, adj: { b, c: 0, s: 0, w: id === 'night' ? 5 : 0 } })
+      })
+      if (!d.local.length) delete d.local
     })
   }
 

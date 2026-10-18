@@ -2,6 +2,13 @@
 
 Her yayımlanan yapıda sürümün yalnız son hanesi artırılır (0.8.0 → 0.8.1); ara sürüm (0.9) büyük aşamalarda, 1.0.0 ise yayına hazır tam üründe. Uygulama Ayarlar → Hakkında'da sürümü gösterir.
 
+## 0.8.11 — 2026-10-18
+
+- **Öneri kartı** (Rötuş → Tek dokunuş): gözler kapalı görünüyorsa "Gözleri aç", ifade ciddiyse "Hafif gülümset" önerilir. Bir dokunuşla Yaş ve ifade aracında çalıştırılır; kart kapatılabilir.
+- **Selfie düzeltme** (Rötuş → Yüz → Yön): yakın çekimde büyük görünen burun ve yüz ortası, kamera uzağa alınmış gibi küçültülür. Yüz noktalarının derinliğiyle hesaplanır.
+- **Karşı ışık ve yeni Gece modu** (Ayarla → Akıllı): yüz karanlıksa genel ayarın üstüne yüze yerel aydınlatma eklenir. Yeniden uygulanınca eski nokta silinir.
+- **Gerçek cilt dokusu:** cilt dokusu ayarı yordamsal gürültü yerine gerçek bir gözenek dokusu döşemesi kullanıyor. Doku, yerel FLUX ile üretilmiş bir cilt makro görselinden dikişsiz döşemeye çevrildi; iki ölçek ve yönde örneklenir, tekrar deseni görünmez.
+
 ## 0.8.10 — 2026-10-18
 
 - **Çil ve ben** (Rötuş → Makyaj → Çil ve ben):

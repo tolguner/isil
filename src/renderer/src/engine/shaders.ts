@@ -49,7 +49,8 @@ void main(){ o = texture(uTex, vUv); }`
 export const RETOUCH = `#version 300 es
 precision highp float;
 in vec2 vUv; out vec4 o;
-uniform sampler2D uBase, uBlurS, uBlurM, uMaskA, uMaskB, uMaskC, uMaskP, uEyeFx, uIris;
+uniform sampler2D uBase, uBlurS, uBlurM, uMaskA, uMaskB, uMaskC, uMaskP, uEyeFx, uIris, uSkinTex;
+uniform float uSkinTexOn; // gerçek gözenek dokusu döşemesi yüklü mü
 uniform float uEyeOn;    // göz makyajı katmanı (kalem, kirpik, kapak, ışıltı) ve iris rengi
 uniform vec4 uSkin[8];   // pürüzsüz, leke, beyazlat, gözenek
 uniform vec4 uSkin2[8];  // göz altı, diş, göz parlat, ten tonu miktarı
@@ -107,6 +108,15 @@ void main(){
       f2 = f2 * f2 * (3.0 - 2.0 * f2);
       float n2 = mix(mix(hash12(i2), hash12(i2 + vec2(1, 0)), f2.x), mix(hash12(i2 + vec2(0, 1)), hash12(i2 + vec2(1, 1)), f2.x), f2.y) - 0.5;
       float pore = n1 * 0.8 + n2 * 0.35;
+      if (uSkinTexOn > 0.5) {
+        // gözenek döşemesi: iki farklı ölçek ve yönde örnekle, tekrar deseni görünmesin
+        // döşeme boyu görüntü çözünürlüğüyle orantılı (gözenek yüz genişliğinin ~1/300'ü; portrede yüz ~kısa kenarın 1/3'ü)
+        float span = max(64.0, float(max(textureSize(uBase, 0).x, textureSize(uBase, 0).y)) * 0.11);
+        vec2 ra = vec2(px.x * 0.8 - px.y * 0.6, px.x * 0.6 + px.y * 0.8);
+        float t1 = texture(uSkinTex, px / span).r - 0.5;
+        float t2 = texture(uSkinTex, ra / (span * 0.83) + 0.37).r - 0.5;
+        pore = (t1 + t2) * 1.3 + n1 * 0.25 + n2 * 0.2;
+      }
       col *= 1.0 + pore * 0.26 * tx * keep * (0.4 + luma(col));
     }
     // cilt aydınlatma

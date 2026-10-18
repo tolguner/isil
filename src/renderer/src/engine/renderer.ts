@@ -59,7 +59,7 @@ export class Renderer {
   /** Karşılaştırmada gösterilecek ilk kaynak (kalıcı işlem yoksa null: base kullanılır). */
   private orig: Tex | null = null
   private mask: Tex | null = null
-  private maskA: Tex | null = null; private maskB: Tex | null = null; private maskC: Tex | null = null; private maskP: Tex | null = null; private eyeFx: Tex | null = null; private iris: Tex | null = null
+  private maskA: Tex | null = null; private maskB: Tex | null = null; private maskC: Tex | null = null; private maskP: Tex | null = null; private eyeFx: Tex | null = null; private iris: Tex | null = null; private skinTex: Tex | null = null
   private warp: Tex | null = null
   private bgImg: Tex | null = null
   private curve: Tex
@@ -93,7 +93,7 @@ export class Renderer {
   dispose() {
     this.pool.dispose()
     const gl = this.gl
-    for (const t of [this.base, this.orig, this.mask, this.maskA, this.maskB, this.maskC, this.maskP, this.eyeFx, this.iris, this.warp, this.bgImg, this.curve, this.blank]) if (t) gl.deleteTexture(t.tex)
+    for (const t of [this.base, this.orig, this.mask, this.maskA, this.maskB, this.maskC, this.maskP, this.eyeFx, this.iris, this.skinTex, this.warp, this.bgImg, this.curve, this.blank]) if (t) gl.deleteTexture(t.tex)
     gl.getExtension('WEBGL_lose_context')?.loseContext()
   }
 
@@ -115,6 +115,15 @@ export class Renderer {
     this.maskA = this.replace(this.maskA, a)
     this.maskB = this.replace(this.maskB, b)
     this.maskC = this.replace(this.maskC, c)
+  }
+  /** Gerçek gözenek dokusu döşemesi (tekrarlanır). */
+  setSkinTex(src: TexImageSource) {
+    const gl = this.gl
+    if (this.skinTex) gl.deleteTexture(this.skinTex.tex)
+    this.skinTex = createTexture(gl, src)
+    gl.bindTexture(gl.TEXTURE_2D, this.skinTex.tex)
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.REPEAT)
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.REPEAT)
   }
   /** Göz makyajı: fx normal karıştırılan katman, iris (rgb renk, a ağırlık); null = yok. */
   setEyeFx(fx: TexImageSource | null, iris: TexImageSource | null) {
@@ -188,6 +197,7 @@ export class Renderer {
       .tex('uMaskA', 3, this.maskA.tex).tex('uMaskB', 4, (this.maskB ?? this.blank).tex).tex('uMaskC', 5, (this.maskC ?? this.blank).tex)
       .tex('uMaskP', 6, (this.maskP ?? this.blank).tex)
       .tex('uEyeFx', 7, (this.eyeFx ?? this.blank).tex).tex('uIris', 8, (this.iris ?? this.blank).tex).f('uEyeOn', this.eyeFx ? 1 : 0)
+      .tex('uSkinTex', 9, (this.skinTex ?? this.blank).tex).f('uSkinTexOn', this.skinTex ? 1 : 0)
       .fv('uSkin', f.skin, 4).fv('uSkin2', f.skin2, 4).fv('uTone', f.tone, 4).fv('uLip', f.lip, 4)
       .fv('uBlush', f.blush, 4).fv('uLid', f.lid, 4).fv('uBrow', f.brow, 4).fv('uSculpt', f.sculpt, 4).fv('uSkinX', f.skinX, 4)
     if (this.hair && this.hair.amount > 0) p.f('uHair', ...this.hair.rgb, this.hair.amount).f('uHairOn', 1)

@@ -5,7 +5,7 @@ import { useEditor } from '@/store/editor'
 import { useT } from '@/lib/i18n'
 import { ColorRow, Preset, Slider, Tabs, Segmented, Switch, ToolFoot } from '@/components/ui'
 import { session } from '@/engine/session'
-import { FaceGeo, OVAL, allProtect, drawProtect } from '@/engine/face'
+import { FaceGeo, OVAL, allProtect, drawProtect, faceState } from '@/engine/face'
 import { BODY_PRESETS, bakeBodyWarp } from '@/engine/body'
 import { depthMap, inpaintTiles, toCanvas } from '@/ai/ops'
 import { commitRaster } from '@/lib/projects'
@@ -13,7 +13,7 @@ import type { ToolDef, View } from './types'
 import { ApplyAll, FaceOverlay, NoFace, SidePicker, editFace, useFace, useFaceCount } from './faceui'
 import { BrushOverlay, PaintMask, type BrushState } from './brush'
 import { busy } from './raster'
-import { AGEFACE_TOOL } from './ageface'
+import { AGEFACE_TOOL, ageRequest } from './ageface'
 import { PHYSIQUE_TOOL } from './physique'
 
 type SliderDef = [key: string, tr: string, en: string]
@@ -55,12 +55,12 @@ const SHAPE_TABS: { id: string; label: [string, string]; keys: SliderDef[] }[] =
   },
   {
     id: 'pose', label: ['Yön', 'Pose'], keys: [
-      ['yaw', 'Sağa-sola çevir', 'Turn left-right'], ['pitch', 'Yukarı-aşağı', 'Tilt up-down'], ['roll', 'Baş eğimi', 'Head tilt'], ['symmetry', 'Simetri', 'Symmetry']
+      ['yaw', 'Sağa-sola çevir', 'Turn left-right'], ['pitch', 'Yukarı-aşağı', 'Tilt up-down'], ['roll', 'Baş eğimi', 'Head tilt'], ['symmetry', 'Simetri', 'Symmetry'], ['selfie', 'Selfie düzeltme', 'Selfie fix']
     ]
   }
 ]
 /** Tek yönlü (0..100) yüz kaydırıcıları. */
-const UNIPOLAR = new Set(['symmetry'])
+const UNIPOLAR = new Set(['symmetry', 'selfie'])
 
 function ShapeSliders({ keys }: { keys: SliderDef[] }) {
   const tr = useT()
@@ -330,6 +330,35 @@ function useBeautyPreviews(idx: number) {
   return pv
 }
 
+/**
+ * Yüz durumuna göre öneri: kapalı göz → Gözleri aç, ciddi ifade → Hafif gülümse (Yaş ve ifade aracı, YZ).
+ * Kullanıcı kartı kapatabilir; aynı fotoğrafta bir daha gösterilmez.
+ */
+const hintsClosed = new Set<string>()
+function FaceHints() {
+  const tr = useT()
+  const n = useFaceCount()
+  const sel = useEditor((s) => s.selectedFace)
+  const key = useEditor((s) => s.project?.id ?? '') + ':' + sel
+  const [, force] = useState(0)
+  const g = n > 0 ? session.faceGeos()[sel] : undefined
+  if (!g || hintsClosed.has(key)) return null
+  const st = faceState(g)
+  const hint = st.eyesClosed
+    ? { change: 'eyes' as const, text: tr('Gözler kapalı görünüyor.', 'The eyes look closed.'), btn: tr('Gözleri aç', 'Open eyes') }
+    : st.serious ? { change: 'smile' as const, text: tr('İfade ciddi görünüyor.', 'The expression looks serious.'), btn: tr('Hafif gülümset', 'Add a soft smile') } : null
+  if (!hint) return null
+  return (
+    <div className="card hint-card" role="status">
+      <div className="row" style={{ justifyContent: 'space-between', alignItems: 'center', gap: 8 }}>
+        <span>{hint.text}</span>
+        <button className="icon-btn" aria-label={tr('Öneriyi kapat', 'Dismiss')} onClick={() => { hintsClosed.add(key); force((x) => x + 1) }}>×</button>
+      </div>
+      <button className="btn sm primary" style={{ marginTop: 8 }} onClick={() => { ageRequest.change = hint.change; const S = useEditor.getState(); S.openTool('ageface') }}>{hint.btn} <span className="badge-inline">YZ</span></button>
+    </div>
+  )
+}
+
 function BeautyPanel() {
   const tr = useT()
   const idx = useEditor((s) => s.selectedFace)
@@ -341,6 +370,7 @@ function BeautyPanel() {
   return (
     <>
       <NoFace />
+      <FaceHints />
       <p className="note">{tr('Cilt, şekil ve hafif makyajı tek dokunuşta birleştirir. Tümü bilgisayarında, anında çalışır.', 'Combines skin, shape and light makeup in one tap. Runs instantly on your computer.')}</p>
       <div className="presets">
         {BEAUTY.map((b) => (
