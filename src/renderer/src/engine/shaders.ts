@@ -49,7 +49,8 @@ void main(){ o = texture(uTex, vUv); }`
 export const RETOUCH = `#version 300 es
 precision highp float;
 in vec2 vUv; out vec4 o;
-uniform sampler2D uBase, uBlurS, uBlurM, uMaskA, uMaskB, uMaskC, uMaskP;
+uniform sampler2D uBase, uBlurS, uBlurM, uMaskA, uMaskB, uMaskC, uMaskP, uEyeFx, uIris;
+uniform float uEyeOn;    // göz makyajı katmanı (kalem, kirpik, kapak, ışıltı) ve iris rengi
 uniform vec4 uSkin[8];   // pürüzsüz, leke, beyazlat, gözenek
 uniform vec4 uSkin2[8];  // göz altı, diş, göz parlat, ten tonu miktarı
 uniform vec4 uTone[8];   // ten rengi rgb + doku(ayrıntı)
@@ -148,6 +149,18 @@ void main(){
     vec3 dyed = uHair.rgb * (0.35 + L * 1.5);
     dyed = mix(dyed, softLight(vec3(L), uHair.rgb), 0.5);
     col = mix(col, dyed, h);
+  }
+  if (uEyeOn > 0.5) {
+    // göz rengi: irisin parlaklığı korunur, renk hedefe çekilir; parlak yansımalar olduğu gibi kalır
+    vec4 ir = texture(uIris, vUv);
+    if (ir.a > 0.001) {
+      float L = luma(col);
+      vec3 rec = ir.rgb * (L / max(luma(ir.rgb), 0.05));
+      rec = mix(rec, softLight(vec3(L), ir.rgb), 0.35);
+      col = mix(col, clamp(rec, 0.0, 1.0), ir.a * (1.0 - smoothstep(0.62, 0.9, L)));
+    }
+    vec4 fx = texture(uEyeFx, vUv);
+    col = mix(col, fx.rgb, fx.a);
   }
   o = vec4(clamp(col, 0.0, 1.0), c4.a);
 }`

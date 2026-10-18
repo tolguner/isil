@@ -1,5 +1,5 @@
 {
-  "at": "2026-10-18T14:39:17.803Z",
+  "at": "2026-10-18T15:45:46.553Z",
   "gpu": {
     "webgpu": true,
     "vendor": "nvidia",
@@ -36,17 +36,17 @@
     {
       "name": "Arka plan kesme (ISNet)",
       "pass": true,
-      "info": "{\"ok\":true,\"firstMs\":2942,\"secondMs\":394,\"provider\":\"webgpu\"}"
+      "info": "{\"ok\":true,\"firstMs\":3392,\"secondMs\":383,\"provider\":\"webgpu\"}"
     },
     {
       "name": "Nesne silme (LaMa)",
       "pass": true,
-      "info": "{\"ok\":true,\"ms\":17275,\"provider\":\"webgpu\"}"
+      "info": "{\"ok\":true,\"ms\":19730,\"provider\":\"webgpu\"}"
     },
     {
       "name": "Kalite artırma 4× (UltraSharp V2 / Real-ESRGAN)",
       "pass": true,
-      "info": "{\"ok\":true,\"w\":1024,\"ms\":985}"
+      "info": "{\"ok\":true,\"w\":1024,\"ms\":990}"
     },
     {
       "name": "Tam çözünürlükte dışa aktarma",

@@ -2,6 +2,17 @@
 
 Her yayımlanan yapıda sürümün yalnız son hanesi artırılır (0.8.0 → 0.8.1); ara sürüm (0.9) büyük aşamalarda, 1.0.0 ise yayına hazır tam üründe. Uygulama Ayarlar → Hakkında'da sürümü gösterir.
 
+## 0.8.9 — 2026-10-18
+
+- **Göz makyajı** (Rötuş → Makyaj, yeni sekmeler):
+  - **Kalem:** doğal, ince ve kanatlı; beş renk.
+  - **Kirpik:** doğal ve hacimli.
+  - **Çift kapak:** kapak kıvrımına yumuşak gölge.
+  - **Göz rengi:** yedi renk; irisin parlaklığı ve yansımaları korunur, gözbebeği değişmez.
+  - **Işıltı:** gözbebeğine yansıma; nokta, çift, pencere ve halka biçimleri.
+  - Hepsi yüz noktalarından yordamsal çizilir; dışa aktarmada tam çözünürlükte (en çok 4096 px) yeniden çizildiği için kirpik ve kalem ince kalır.
+- Dışa aktarma, önizleme henüz çizilmeden başlatılırsa yüz maskelerini kendisi kurar (önceden rötuş atlanabiliyordu)
+
 ## 0.8.8 — 2026-10-18
 
 - **Karın kası** (Rötuş sekmesi): karın kasını ışık ve gölgeyle belirginleştirir; kıl, ten ve doku korunur, önizleme anlıktır. Uygula'da isteğe bağlı olarak yerel YZ ile gerçekçileştirilir. Yalnız açık ciltte çalışır; karnın önündeki kol ve el etkilenmez, kıyafetin üstüne kas çizilmez. Göğüs, kol ve köprücük denendi ama sonuç yeterince gerçekçi olmadığı için eklenmedi (`replica/arge/05-vucut-gorunumu.md`)

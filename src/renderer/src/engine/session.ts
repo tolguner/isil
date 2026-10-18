@@ -2,6 +2,7 @@
 import type { EditDoc, Project, Settings } from '@shared/schema'
 import { platform } from '@/lib/platform'
 import { Renderer, legCanvasOk, type OutputInfo } from './renderer'
+import { buildEyeFx, eyeFxKey } from './eyes'
 import { addHairVolume, addMlsField, orientPairs, allProtect, buildField, foldGuard, contourPairs, buildMasks, buildProtectMask, faceOps, faceUniforms, FaceGeo, faceHasSkinWork, type MaskSet } from './face'
 import { applyBodyBands, applyManualBody, bodyOps, legBand, maskField } from './body'
 import { drawLayers } from './layers'
@@ -55,6 +56,7 @@ class Session {
   masksKey = ''
   protect: ImageData | null = null
   protectKey = ''
+  eyeKey = ''
   liveField: { field: Float32Array; gw: number; gh: number } | null = null
   bgImage: ImageBitmap | null = null
   bgKey = ''
@@ -77,7 +79,7 @@ class Session {
     if (this.preview) this.renderer.setBase(this.preview)
     if (this.maskBitmap) this.renderer.setSubjectMask(this.maskBitmap)
     if (this.original) this.renderer.setOriginal(this.originalFitted())
-    this.masksKey = this.protectKey = ''
+    this.masksKey = this.protectKey = this.eyeKey = ''
     this.bgKey = ''
   }
 
@@ -89,7 +91,7 @@ class Session {
 
   reset() {
     this.project = null
-    this.baseKey = this.maskKey = this.facesKey = this.segKey = this.poseKey = this.masksKey = this.protectKey = this.bgKey = ''
+    this.baseKey = this.maskKey = this.facesKey = this.segKey = this.poseKey = this.masksKey = this.protectKey = this.eyeKey = this.bgKey = ''
     this.preview?.close()
     this.preview = null
     this.baseBlob = null
@@ -154,7 +156,7 @@ class Session {
       this.pose = null
       this.seg = null
       this.masks = null
-      this.masksKey = this.protectKey = ''
+      this.masksKey = this.protectKey = this.eyeKey = ''
       this.liveField = null
     }
     // karşılaştırma: belge kalıcı işlem içeriyorsa ilk kaynağı ayrıca yükle
@@ -187,7 +189,7 @@ class Session {
     if (!this.preview) return []
     this.faces = await detectFaces(this.preview)
     this.facesKey = this.baseKey
-    this.masksKey = this.protectKey = ''
+    this.masksKey = this.protectKey = this.eyeKey = ''
     this.emit()
     return this.faces
   }
@@ -202,7 +204,7 @@ class Session {
       this.seg = null
     }
     this.segKey = this.baseKey
-    this.masksKey = this.protectKey = ''
+    this.masksKey = this.protectKey = this.eyeKey = ''
     return this.seg
   }
 
@@ -320,6 +322,13 @@ class Session {
       const hair = doc.retouch.faces[0]?.makeup.hair
       r.hair = hair && hair.amount ? { rgb: hexToRgb(hair.color || '#7a3b2e'), amount: hair.amount / 100 } : null
       this.syncProtect(r, doc)
+      // göz makyajı katmanı: ayarlar değişince yeniden çizilir
+      const ek = this.baseKey + ':' + geos.length + ':' + eyeFxKey(doc.retouch.faces)
+      if (ek !== this.eyeKey) {
+        const fx = buildEyeFx(geos, doc.retouch.faces, this.W, this.H)
+        r.setEyeFx(fx?.fx ?? null, fx?.iris ?? null)
+        this.eyeKey = ek
+      }
     } else {
       r.faces = null
       r.hair = null
@@ -360,7 +369,17 @@ class Session {
       r.setBase(full)
       if (this.maskBitmap && this.project && doc.mask) r.setSubjectMask(await decode(await platform.getFile(this.project.id, doc.mask)))
       if (this.bgImage && this.project && doc.background.fill?.type === 'image') r.setBgImage(await decode(await platform.getFile(this.project.id, doc.background.fill.file)))
+      // önizleme henüz çizilmediyse maskeler burada kurulur
+      if (!this.masks && this.faces && doc.retouch.faces.some(faceHasSkinWork)) {
+        const hairAmt = (doc.retouch.faces[0]?.makeup.hair?.amount ?? 0) / 100
+        this.masks = buildMasks(this.faceGeos(), this.W, this.H, this.seg, hairAmt > 0)
+      }
       if (this.masks) r.setFaceMasks(this.masks.a, this.masks.b, this.masks.c)
+      // göz makyajı tam çözünürlükte çizilir (kirpik ve kalem ince ayrıntı)
+      if (this.faces) {
+        const fx = buildEyeFx(this.faceGeos(full.width, full.height), doc.retouch.faces, full.width, full.height, 4096)
+        r.setEyeFx(fx?.fx ?? null, fx?.iris ?? null)
+      }
       r.setProtectMask(buildProtectMask(allProtect(doc.retouch.faces), this.W, this.H))
       this.masksKey = this.masksKey // maskeler normalize uv ile örneklenir; aynı kalır
       const saved = this.masks

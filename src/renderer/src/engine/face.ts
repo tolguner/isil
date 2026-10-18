@@ -10,10 +10,10 @@ export const EYE_R = [33, 7, 163, 144, 145, 153, 154, 155, 133, 173, 157, 158, 1
 export const EYE_L = [263, 249, 390, 373, 374, 380, 381, 382, 362, 398, 384, 385, 386, 387, 388, 466] // görüntüde sağda
 export const BROW_R = [46, 53, 52, 65, 55, 107, 66, 105, 63, 70]
 export const BROW_L = [276, 283, 282, 295, 285, 336, 296, 334, 293, 300]
-const LOWER_LID_R = [33, 7, 163, 144, 145, 153, 154, 155, 133]
-const LOWER_LID_L = [263, 249, 390, 373, 374, 380, 381, 382, 362]
-const UPPER_LID_R = [33, 246, 161, 160, 159, 158, 157, 173, 133]
-const UPPER_LID_L = [263, 466, 388, 387, 386, 385, 384, 398, 362]
+export const LOWER_LID_R = [33, 7, 163, 144, 145, 153, 154, 155, 133]
+export const LOWER_LID_L = [263, 249, 390, 373, 374, 380, 381, 382, 362]
+export const UPPER_LID_R = [33, 246, 161, 160, 159, 158, 157, 173, 133]
+export const UPPER_LID_L = [263, 466, 388, 387, 386, 385, 384, 398, 362]
 
 type V = { x: number; y: number }
 const sub = (a: V, b: V): V => ({ x: a.x - b.x, y: a.y - b.y })
