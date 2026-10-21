@@ -62,4 +62,11 @@ Işıl'ın kaynak kodu [MIT lisansı](LICENSE) ile açıktır. Modeller, kütüp
 
 Bu lisanslar uygulamada **Ayarlar → Hakkında** bölümünde listelenir: MediaPipe (Apache-2.0), EfficientDet-Lite2 (Apache-2.0), YuNet (MIT), ONNX Runtime (MIT), libheif (LGPL-3.0, WebAssembly), PyTorch (BSD-3), diffusers / transformers (Apache-2.0), FLUX.2 klein 4B (Apache-2.0), Qwen3 / Qwen3-VL (Apache-2.0), ISNet (MIT), BiRefNet (MIT), LaMa (Apache-2.0), Real-ESRGAN (BSD-3), gökyüzü bölütleme skyseg / U²-Net (MIT), PP-OCRv4 yazı algılama (Apache-2.0), GFPGAN 1.4 (Apache-2.0), Depth Anything V2 Small (Apache-2.0), Lucide (ISC), yazı tipleri (OFL).
 
-Bazı modeller yalnızca **ticari olmayan / kişisel kullanım** içindir: FLUX.2 klein 9B (FLUX Non-Commercial), 4x-UltraSharp V2 (CC BY-NC-SA 4.0), Depth Anything V2 Base (CC BY-NC 4.0), AnimeGANv2. Işıl kişisel ve portfolyo projesidir; bu modeller ticari bir dağıtımda kullanılmamalı.
+Bazı modeller yalnızca **ticari olmayan / kişisel kullanım** içindir: FLUX.2 klein 9B (FLUX Non-Commercial), 4x-UltraSharp V2 (CC BY-NC-SA 4.0), Depth Anything V2 Base (CC BY-NC 4.0), AnimeGANv2. Bunlar varsayılan olarak kapalıdır; Ayarlar'daki "Kişisel kullanım modelleri" anahtarı ve uyarı onayıyla açılır. Tam liste: [THIRD_PARTY_LICENSES.md](THIRD_PARTY_LICENSES.md).
+
+## Belgeler
+
+- [Kullanım kılavuzu](docs/KILAVUZ.md)
+- [Gizlilik notu ve kabul edilebilir kullanım](docs/GIZLILIK.md)
+- [Kod imzalama politikası](docs/CODE_SIGNING.md)
+- [Sürüm geçmişi](CHANGELOG.md)
