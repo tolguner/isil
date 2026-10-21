@@ -1,4 +1,5 @@
-import { BlockedError, blockedPrompt } from './safety'
+import { ensureModel } from './models'
+import { BlockedError, NSFW_LIMIT, blockedPrompt, nsfwScore } from './safety'
 // Yerel üretken YZ: FLUX.2 klein (görsel düzenleme) ve Qwen3-VL (stil danışmanı).
 // Hepsi bilgisayarda çalışır; fotoğraflar dışarı gönderilmez. Motor main süreçte yönetilir.
 import { platform, type EngineStatus } from '@/lib/platform'
@@ -34,7 +35,9 @@ export async function ensureEngine(parts: string[]): Promise<boolean> {
     return false
   }
   const missing = parts.filter((p) => !s.installed[p])
-  if (!missing.length) return true
+  // üretken araçların güvenlik denetimi modeli (88 MB) motorla birlikte gelir; eksikse sessizce indirilir
+  const safety = async () => { if (parts.some((p) => p.startsWith('flux'))) await ensureModel('nsfw', false).catch(() => false) }
+  if (!missing.length) { await safety(); return true }
   const { confirmDialog } = await import('@/components/ui')
   const lang = st.settings.language
   const list = missing.map((p) => `${PARTS[p].name[lang === 'en' ? 1 : 0]} (${PARTS[p].size})`).join(', ')
@@ -55,6 +58,7 @@ export async function ensureEngine(parts: string[]): Promise<boolean> {
       return false
     }
   }
+  await safety()
   return true
 }
 
@@ -116,6 +120,20 @@ function guardPrompt(prompt: string) {
   if (blockedPrompt(prompt)) throw new BlockedError(tNow('Bu istek uygulanamaz: Işıl çıplak ya da cinsel içerikli görüntü üretmez, kişilerin kıyafetlerini çıkarmaz.', 'This request cannot be done: Işıl does not create nude or sexual images or remove people’s clothes.'))
 }
 
+/**
+ * Üretken çıktıyı göstermeden önce denetle: çıplak ya da cinsel içerik olasılığı eşiği aşarsa sonuç atılır.
+ * Kaynak fotoğraf zaten aynı içerikteyse (ör. mayolu plaj fotoğrafı) yalnız çıktının belirgin artışı engellenir.
+ */
+async function guardOutput(src: Src, res: HTMLCanvasElement | null) {
+  if (!res) return res
+  const after = await nsfwScore(res)
+  if (after === null) throw new BlockedError(tNow('Güvenlik denetimi modeli indirilemedi; üretken sonuç gösterilmiyor. İnternet bağlantını kontrol edip yeniden dene.', 'The safety check model could not be downloaded, so the generated result is not shown. Check your connection and try again.'))
+  if (after < NSFW_LIMIT) return res
+  const before = await nsfwScore(src as HTMLCanvasElement)
+  if (before !== null && before >= NSFW_LIMIT && after <= before + 0.1) return res
+  throw new BlockedError(tNow('Sonuç uygunsuz içerik denetimine takıldı ve gösterilmedi. Işıl çıplak ya da cinsel içerikli görüntü üretmez.', 'The result failed the content check and was not shown. Işıl does not create nude or sexual images.'))
+}
+
 /** Görseli yazılı komutla düzenle; sonuç kaynak boyutuna ölçeklenir. */
 export async function localEdit(src: Src, prompt: string, refs: Src[] = []): Promise<HTMLCanvasElement | null> {
   guardPrompt(prompt)
@@ -137,7 +155,7 @@ export async function localEdit(src: Src, prompt: string, refs: Src[] = []): Pro
   const res = toCanvas(bm, src.width, src.height)
   bm.close()
   if (isGrayscale(src) && !wantsColor(prompt)) toGray(res)
-  return res
+  return guardOutput(src, res)
 }
 
 /**
@@ -217,7 +235,7 @@ export async function localMaskedEdit(src: Src, mask: HTMLCanvasElement, what: s
   pc.drawImage(soft, 0, 0)
   res.getContext('2d')!.drawImage(edited, 0, 0)
   if (isGrayscale(src) && !wantsColor(what)) toGray(res)
-  return res
+  return guardOutput(src, res)
 }
 
 /**

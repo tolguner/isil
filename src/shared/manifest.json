@@ -1,4 +1,44 @@
 {
+ "AdamCodd/vit-base-nsfw-detector/config.json": {
+  "rev": "8587de998f441aac03fdd57a85d2e4cb808c7d64",
+  "size": 715,
+  "sha256": "604d1da5e3cc8b6dc3f2768a911ed61a44a331cfcee9ecde2ce2cba9a1e7972b"
+ },
+ "AdamCodd/vit-base-nsfw-detector/model.safetensors": {
+  "rev": "8587de998f441aac03fdd57a85d2e4cb808c7d64",
+  "size": 344391328,
+  "sha256": "266efb8bf67c1e865a577222fbbd6ddb149b9e00ba0d2b50466a034837f026a4"
+ },
+ "AdamCodd/vit-base-nsfw-detector/onnx/config.json": {
+  "rev": "8587de998f441aac03fdd57a85d2e4cb808c7d64",
+  "size": 691,
+  "sha256": "5f54e0e96c0b5b77caba7e79aebe0b4fa5c154cabf6df65eb1b939ae8b265cfa"
+ },
+ "AdamCodd/vit-base-nsfw-detector/onnx/model.onnx": {
+  "rev": "8587de998f441aac03fdd57a85d2e4cb808c7d64",
+  "size": 344569044,
+  "sha256": "dce8f5af8509fee39c453b78a66076ead5c97321ddcee0ddfa16f67dc8286384"
+ },
+ "AdamCodd/vit-base-nsfw-detector/onnx/model_fp16.onnx": {
+  "rev": "8587de998f441aac03fdd57a85d2e4cb808c7d64",
+  "size": 172385122,
+  "sha256": "e9693884a06af5d9bef115f730e128deeb39c1850a3c43c21f3f49103d32a77f"
+ },
+ "AdamCodd/vit-base-nsfw-detector/onnx/model_quantized.onnx": {
+  "rev": "8587de998f441aac03fdd57a85d2e4cb808c7d64",
+  "size": 88500985,
+  "sha256": "432763a6899ebc418c55f784b98f90565e5fc694c778d2ffcb0294b12f6a7404"
+ },
+ "AdamCodd/vit-base-nsfw-detector/onnx/preprocessor_config.json": {
+  "rev": "8587de998f441aac03fdd57a85d2e4cb808c7d64",
+  "size": 327,
+  "sha256": "d77ca5b19fe076679f60e57a1a684cfcfd39a626d50cfabf06a915d039f794ed"
+ },
+ "AdamCodd/vit-base-nsfw-detector/preprocessor_config.json": {
+  "rev": "8587de998f441aac03fdd57a85d2e4cb808c7d64",
+  "size": 232,
+  "sha256": "f2ca775909d2237bd31440280cefcaceb3ac66753c19f7a344e385e68982a9b2"
+ },
  "Carve/LaMa-ONNX/lama_fp32.onnx": {
   "rev": "c3c0c9e468934d62e79c329e35d82dd09ff8c444",
   "size": 208044816,
@@ -199,6 +239,11 @@
   "size": 194570657,
   "sha256": "822e6c12f36cd46753dcf229ce87199310533de2d533a527756b8ef30a76d158"
  },
+ "onnx-community/depth-anything-v2-base/onnx/model_quantized.onnx": {
+  "rev": "dd4557d492cd7b563738ac8d9ccff9094620983c",
+  "size": 102391398,
+  "sha256": "3a824ff306ee3e9d6771c2200c27ef41eb65c73e3f96382e75191b1cace70ddf"
+ },
  "onnx-community/depth-anything-v2-base/preprocessor_config.json": {
   "rev": "dd4557d492cd7b563738ac8d9ccff9094620983c",
   "size": 461,
@@ -218,6 +263,11 @@
   "rev": "4472b7362082ad9968fee890ca0f1e5aca36b93d",
   "size": 49642442,
   "sha256": "2df6223f206b5164e21f664ace61dabeb9bb6a49b8b5a3e00510b4807d0f5b04"
+ },
+ "onnx-community/depth-anything-v2-small/onnx/model_quantized.onnx": {
+  "rev": "4472b7362082ad9968fee890ca0f1e5aca36b93d",
+  "size": 27258801,
+  "sha256": "fcf51f1b230362b28690bb9d1809bf0431f29cad20534e3f589bd7285547f20d"
  },
  "onnx-community/depth-anything-v2-small/preprocessor_config.json": {
   "rev": "4472b7362082ad9968fee890ca0f1e5aca36b93d",

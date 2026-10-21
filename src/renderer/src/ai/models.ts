@@ -46,6 +46,8 @@ export const MODELS: ModelDef[] = [
   { id: 'depth-small', name: ['Depth Anything V2 Small', 'Depth Anything V2 Small'], task: ['Derinlik (tarayıcı)', 'Depth (browser)'], file: 'depth_anything_v2_small_fp16.onnx', url: `${HF}/onnx-community/depth-anything-v2-small/resolve/main/onnx/model_fp16.onnx`, size: 49642442, license: 'Apache-2.0' },
   { id: 'textdet', name: ['Yazı algılama (PP-OCRv4)', 'Text detection (PP-OCRv4)'], task: ['Metin silme', 'Text removal'], file: 'ppocr_det_v4.onnx', url: `${HF}/SWHL/RapidOCR/resolve/main/PP-OCRv4/ch_PP-OCRv4_det_infer.onnx`, size: 4745517, license: 'Apache-2.0' },
   { id: 'skyseg', name: ['Gökyüzü bölütleme (U²-Net)', 'Sky segmentation (U²-Net)'], task: ['Gökyüzü değiştirme', 'Sky replacement'], file: 'skyseg.onnx', url: `${HF}/JianyuanWang/skyseg/resolve/main/skyseg.onnx`, size: 175997079, license: 'MIT' },
+  // üretken çıktı denetimi (kötüye kullanım koruması): yalnız YZ motoruyla birlikte, motor içinde çalışır
+  { id: 'nsfw', name: ['Çıplaklık denetimi (ViT)', 'Nudity check (ViT)'], task: ['Üretken çıktı denetimi', 'Generative output check'], file: 'nsfw_vit_int8.onnx', url: `${HF}/AdamCodd/vit-base-nsfw-detector/resolve/main/onnx/model_quantized.onnx`, size: 88500985, license: 'Apache-2.0', native: true },
   { id: 'anime', nc: true, name: ['AnimeGANv2 (yüz boyama)', 'AnimeGANv2 (face paint)'], task: ['Anime/çizim stili', 'Anime/paint style'], file: 'animegan_face_paint_v2.onnx', url: `${HF}/akhaliq/AnimeGANv2-ONNX/resolve/main/face_paint_512_v2_0.onnx`, size: 8594990, license: 'Kişisel kullanım / personal use' }
 ]
 
