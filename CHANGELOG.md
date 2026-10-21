@@ -2,6 +2,15 @@
 
 Her yayımlanan yapıda sürümün yalnız son hanesi artırılır (0.8.0 → 0.8.1); ara sürüm (0.9) büyük aşamalarda, 1.0.0 ise yayına hazır tam üründe. Uygulama Ayarlar → Hakkında'da sürümü gösterir.
 
+## 0.8.16 — 2026-10-22
+
+Kötüye kullanım korumasının üç katmanı tamamlandı:
+
+- **Komut engeli:** çıplaklık, soyma ve cinsel içerik isteyen komutlar motora hiç gitmiyor (0.8.15'te geldi).
+- **Çıktıda çıplaklık denetimi:** her üretken sonuç gösterilmeden önce yerel bir modelle (AdamCodd ViT, Apache-2.0, 88 MB) puanlanıyor; çıplak ya da cinsel içerik olasılığı %70'i aşarsa sonuç atılıyor. Model motorla birlikte iniyor; indirilemezse üretken sonuç gösterilmiyor. 20 sıradan fotoğrafta yanlış alarm yok (en yüksek puan %6).
+- **Yaş kapısı:** fotoğrafta 18 yaşından küçük görünen biri varsa vücut, karın kası ve kıyafet değiştirme araçları kapanıyor. Karar yerel görsel dil modeline (Qwen3-VL) soruluyor; "evet" ya da "emin değilim" derse araç kapanıyor. Üretken kıyafet ve vücut araçları bu denetim olmadan çalışmıyor; motor kurulu değilse yalnız bükme tabanlı vücut aracı açık kalıyor. 20 yetişkin fotoğrafında yanlış alarm yok.
+- Gizlilik notu ([docs/GIZLILIK.md](docs/GIZLILIK.md)) ve kod imzalama politikası ([docs/CODE_SIGNING.md](docs/CODE_SIGNING.md)) eklendi.
+
 ## 0.8.15 — 2026-10-22
 
 1.0 öncesi "ürün olma" işleri (araştırma raporundaki P0 listesi), birinci bölüm:

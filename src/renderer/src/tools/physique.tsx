@@ -1,3 +1,4 @@
+import { MinorGate } from '@/components/MinorGate'
 // Karın kası: poz noktalarından ışık-gölgeyle karın kası belirginleştirilir (anlık önizleme); Uygula'da sonuç
 // isteğe bağlı olarak yerel FLUX ile gerçekçileştirilir. Yalnız açık ciltte, öndeki kol ve el hariç.
 import { useEffect, useRef, useState } from 'react'
@@ -14,6 +15,10 @@ import { toCanvas } from '@/ai/ops'
 import type { ToolDef } from './types'
 
 const MIN_SKIN = 0.25
+
+function GatedPhysiquePanel() {
+  return <MinorGate><PhysiquePanel /></MinorGate>
+}
 
 function PhysiquePanel() {
   const tr = useT()
@@ -85,6 +90,6 @@ function PhysiquePanel() {
 }
 
 export const PHYSIQUE_TOOL: ToolDef = {
-  id: 'abs', label: ['Karın kası', 'Abs'], icon: Dumbbell, Panel: PhysiquePanel, Overlay: WorkOverlayImage,
+  id: 'abs', label: ['Karın kası', 'Abs'], icon: Dumbbell, Panel: GatedPhysiquePanel, Overlay: WorkOverlayImage,
   sourceSpace: true, noFooter: true, badge: 'YZ', sliders: [{ label: ['Belirginlik', 'Definition'] }]
 }

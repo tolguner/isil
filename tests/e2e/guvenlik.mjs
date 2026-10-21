@@ -45,6 +45,23 @@ if (dir) {
   check('Çıplaklık modeli çalıştı', vals.every((v) => v.s !== null))
   const flagged = Object.entries(scores).filter(([, v]) => v.s >= 0.7).map(([k]) => k)
   check('Sıradan fotoğraflarda yanlış alarm yok', flagged.length === 0, JSON.stringify(flagged))
+  if (process.env.YAS === '1') {
+    // yaş denetimi: test setinde yalnız yetişkinler var; "küçük" kararı yanlış alarmdır
+    const ages = {}
+    for (const f of files) {
+      ages[f] = await win.evaluate(async ({ b64, key }) => {
+        const A = await window.__isil.mod('agecheck')
+        const bm = await createImageBitmap(new Blob([Uint8Array.from(atob(b64), (c) => c.charCodeAt(0))]))
+        const c = document.createElement('canvas'); c.width = bm.width; c.height = bm.height; c.getContext('2d').drawImage(bm, 0, 0)
+        const t0 = performance.now()
+        const v = await A.ageVerdict(c, { key })
+        return { v, ms: Math.round(performance.now() - t0) }
+      }, { b64: readFileSync(join(dir, f)).toString('base64'), key: f })
+      console.log('  yaş', f, JSON.stringify(ages[f]))
+    }
+    const wrong = Object.entries(ages).filter(([, a]) => a.v !== 'adult').map(([k]) => k)
+    check('Yetişkin fotoğraflarında yaş kapısı açık', wrong.length <= 1, JSON.stringify(wrong))
+  }
 }
 await app.close()
 console.log(`\n${results.filter(Boolean).length}/${results.length} geçti`)

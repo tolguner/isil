@@ -1,3 +1,4 @@
+import { MinorGate } from '@/components/MinorGate'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { Smile, ScanFace, Sparkles, Palette, Droplet, Scissors, PersonStanding, Brush, EyeOff, Sun, Wand, Shell, Gem } from 'lucide-react'
 import type { EditDoc, ProtectStroke } from '@shared/schema'
@@ -854,6 +855,11 @@ export async function fillBodyGap() {
   })
 }
 
+/** Çocuk görünen kişide vücut aracı kapalı (MinorGate). */
+function GatedBodyPanel() {
+  return <MinorGate><BodyPanel /></MinorGate>
+}
+
 function BodyPanel() {
   const tr = useT()
   const body = useEditor((s) => s.doc.body)
@@ -1108,7 +1114,7 @@ export const RETOUCH_TOOLS: ToolDef[] = [
   { id: 'hair', label: ['Saç', 'Hair'], icon: Scissors, Panel: HairPanel, sourceSpace: true, needs: ['faces', 'seg'], sliders: [{ label: ['Saç hacmi', 'Hair volume'] }], applied: (d) => !!d.retouch.faces.find((f) => f.index === 0)?.makeup.hair?.amount },
   { id: 'rbrush', label: ['Rötuş fırçası', 'Retouch brush'], icon: Brush, Panel: RetouchBrushPanel, Overlay: RetouchBrushOverlay, sourceSpace: true, noFooter: true },
   { id: 'relight', label: ['Işıklandır', 'Relight'], icon: Sun, Panel: RelightPanel, Overlay: RelightOverlay, sourceSpace: true, noFooter: true },
-  { id: 'body', label: ['Vücut', 'Body'], icon: PersonStanding, Panel: BodyPanel, Overlay: BodyOverlay, sourceSpace: true, needs: ['pose', 'seg'], applied: (d) => !!d.body && (nz(d.body.shape) || !!d.body.manual?.stretch || !!d.body.manual?.slim), sliders: [...BODY_KEYS.map(([, a, b]) => ({ label: [a, b] as [string, string] })), { label: ['Arka planı koru', 'Protect background'] }] },
+  { id: 'body', label: ['Vücut', 'Body'], icon: PersonStanding, Panel: GatedBodyPanel, Overlay: BodyOverlay, sourceSpace: true, needs: ['pose', 'seg'], applied: (d) => !!d.body && (nz(d.body.shape) || !!d.body.manual?.stretch || !!d.body.manual?.slim), sliders: [...BODY_KEYS.map(([, a, b]) => ({ label: [a, b] as [string, string] })), { label: ['Arka planı koru', 'Protect background'] }] },
   PHYSIQUE_TOOL,
   { id: 'facehide', label: ['Yüz gizle', 'Hide face'], icon: EyeOff, Panel: FaceHidePanel, Overlay: FaceOverlay, sourceSpace: true, needs: ['faces'], noFooter: true },
   AGEFACE_TOOL

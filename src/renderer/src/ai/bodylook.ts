@@ -1,3 +1,4 @@
+import { requireAdult } from './agecheck'
 // Vücut görünümü: kas belirginliği ışık-gölgeyle (kontür makyajı gibi) çizilir. Poz noktalarından anatomik bir
 // kabartma haritası (gölge −, ışık +) çıkarılır, yalnız açık ciltte ve öndeki kol/el hariç uygulanır; kıl, doku,
 // ten rengi ve ışık kalır, anlık çalışır. Uygula'da sonuç isteğe bağlı olarak FLUX'a başlangıç görüntüsü olarak
@@ -199,6 +200,7 @@ function torsoArms(a: LookAmounts) {
  * işlenir (yapı korunur, doku ve geçişler gerçekçi olur). Bölge kırpılıp ~1024 px'e büyütülür.
  */
 export async function refineBodyLook(full: HTMLCanvasElement, shaded: HTMLCanvasElement, mask: HTMLCanvasElement, box: { x: number; y: number; w: number; h: number }, looks: BodyLook[], strength = 0.5): Promise<HTMLCanvasElement | null> {
+  await requireAdult(full) // çocuk görünen kişide vücut üretken olarak değiştirilmez
   const W0 = full.width, H0 = full.height
   const side = Math.max(box.w, box.h) * 1.3
   const cx = box.x + box.w / 2, cy = box.y + box.h / 2

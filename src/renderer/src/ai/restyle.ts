@@ -1,3 +1,4 @@
+import { requireAdult } from './agecheck'
 // Saç ve kıyafet değiştirme: yalnız saç (ya da kıyafet) bölgesi FLUX ile yeniden çizilir, yüz ve arka plan
 // piksel piksel korunur. Rakiplerde bu iş bulutta ve tüm görüntüyü yeniden üretiyor (kimlik kayabiliyor).
 import { segmentPerson } from './vision'
@@ -64,6 +65,7 @@ export async function restyleMask(src: Src, kind: RestyleKind, grow = 1): Promis
 
 /** Saç ya da kıyafeti tarif edilen stile çevir; maskenin dışı (yüz, arka plan) birebir korunur. */
 export async function restyle(src: Src, kind: RestyleKind, what: string): Promise<HTMLCanvasElement | null> {
+  if (kind === 'outfit') await requireAdult(src) // çocuk görünen kişide kıyafet değiştirilmez
   const mk = await restyleMask(src, kind)
   if (!mk) throw new Error(kind === 'hair' ? 'no-hair' : 'no-outfit')
   const prompt = kind === 'hair'
