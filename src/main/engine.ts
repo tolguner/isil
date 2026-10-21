@@ -4,23 +4,20 @@
 // Windows Akıllı Uygulama Denetimi onları engelliyor; python.org ve PyPI paketleri çalışıyor.
 import { app, ipcMain, net, type WebContents } from 'electron'
 import { spawn, type ChildProcessWithoutNullStreams } from 'child_process'
-import { promises as fs, createWriteStream, existsSync } from 'fs'
+import { promises as fs, existsSync, readFileSync } from 'fs'
 import { join, dirname } from 'path'
 import { tmpdir } from 'os'
 import { randomUUID } from 'crypto'
 import { createInterface } from 'readline'
+import { downloadFile, ensureSpace, knownSize } from './download'
 
 const PY_VERSION = '3.12.10'
-const PIP_PACKAGES = [
-  'diffusers==0.41.0',
-  'transformers==5.19.0',
-  'accelerate==1.15.0',
-  'gguf==0.19.0',
-  'bitsandbytes==0.50.2',
-  'onnxruntime-gpu==1.23.2', // CUDA 12 derlemesi (torch cu128 ile aynı DLL'ler)
-  'safetensors',
-  'pillow'
-]
+const PY_SHA256 = 'e4acbed6dd1c744b0376e3b1cf57ce906f9dc9e95e68824584c8099a63025a3c3'
+// get-pip sabit sürümden (bootstrap.pypa.io adresi her pip sürümünde değişir)
+const GET_PIP_URL = 'https://raw.githubusercontent.com/pypa/get-pip/37ae3c4daaf63a0c203176251fb99c0e238562b5/public/get-pip.py'
+const GET_PIP_SHA256 = 'f4448a01e3ab2914c65f4ca59d4cacba6b2dbde19a483fbac46587f8bbaff424'
+// Python paketleri engine/requirements.lock'ta tam sürümleriyle (diffusers, transformers, accelerate, gguf,
+// bitsandbytes, onnxruntime-gpu CUDA 12 derlemesi ve bütün alt bağımlılıklar)
 const TORCH = ['torch==2.11.0', 'torchvision==0.26.0', '--index-url', 'https://download.pytorch.org/whl/cu128']
 
 const HF = 'https://huggingface.co'
@@ -72,12 +69,25 @@ const PARTS: Record<string, PartSpec> = {
 
 type Progress = { stage: 'download' | 'load' | 'generate' | 'chat'; part?: string; got?: number; total?: number; step?: number; steps?: number; text?: string }
 
+const normalizeDir = (d: string) => d.replace(/[\/]+$/, '').toLowerCase()
+
 export function registerEngineHandlers({ root, onnxDir }: { root: () => string; onnxDir: () => string }) {
-  const engineDir = () => process.env.ISIL_ENGINE_DIR || join(root(), 'engine')
+  // motor konumu: Ayarlar'dan başka bir diske taşınabilir; yol root/engine-location.txt'te tutulur
+  // (kaldırıcı da bu dosyayı okuyup motoru bulur)
+  const locFile = () => join(root(), 'engine-location.txt')
+  let locCache: string | null = null
+  const engineDir = () => {
+    if (process.env.ISIL_ENGINE_DIR) return process.env.ISIL_ENGINE_DIR
+    if (locCache === null) {
+      try { locCache = readFileSync(locFile(), 'utf8').trim() } catch { locCache = '' }
+    }
+    return locCache || join(root(), 'engine')
+  }
   const modelsDir = () => join(engineDir(), 'models')
   const pyDir = () => join(engineDir(), 'python')
   const pythonExe = () => process.env.ISIL_PYTHON || join(pyDir(), 'python.exe')
   const serverPy = () => (app.isPackaged ? join(process.resourcesPath, 'engine', 'server.py') : join(app.getAppPath(), 'engine', 'server.py'))
+  const lockFile = () => (app.isPackaged ? join(process.resourcesPath, 'engine', 'requirements.lock') : join(app.getAppPath(), 'engine', 'requirements.lock'))
   const supported = process.platform === 'win32' && process.arch === 'x64'
 
   const runtimeOk = () => (process.env.ISIL_PYTHON ? existsSync(process.env.ISIL_PYTHON) : existsSync(join(pyDir(), '.ok')))
@@ -87,40 +97,26 @@ export function registerEngineHandlers({ root, onnxDir }: { root: () => string; 
   let installAbort: AbortController | null = null
   let device: string | undefined
 
-  async function download(url: string, target: string, onBytes: (n: number, total: number) => void, signal: AbortSignal) {
-    await fs.mkdir(dirname(target), { recursive: true })
-    const tmp = target + '.part'
-    const res = await net.fetch(url, { signal })
-    if (!res.ok || !res.body) throw new Error(`indirme başarısız (${res.status}): ${url.split('/').pop()}`)
-    const total = Number(res.headers.get('content-length') || 0)
-    const out = createWriteStream(tmp)
-    const reader = res.body.getReader()
-    try {
-      for (;;) {
-        const { done, value } = await reader.read()
-        if (done) break
-        if (!out.write(value)) await new Promise((r) => out.once('drain', r))
-        onBytes(value.length, total)
-      }
-    } finally {
-      await new Promise<void>((r) => out.end(() => r()))
-    }
-    await fs.rename(tmp, target)
+  async function download(url: string, target: string, onBytes: (n: number, total: number) => void, signal: AbortSignal, sha256?: string) {
+    await downloadFile(url, target, { signal, onBytes, sha256 })
   }
 
   async function installPart(part: string, send: (p: Progress) => void, signal: AbortSignal) {
     const spec = PARTS[part]
     for (const dep of spec.needs ?? []) if (!partOk(dep)) await installPart(dep, send, signal)
     const dir = join(modelsDir(), spec.dir)
-    // toplam boyut için önce HEAD (yönlendirmeleri izler)
+    // toplam boyut: sabit sürüm listesinden (yoksa HEAD isteği)
     const sizes = await Promise.all(
       spec.files.map(async (f) => {
         if (existsSync(join(dir, f.to))) return 0
+        const k = knownSize(f.url)
+        if (k) return k
         const r = await net.fetch(f.url, { method: 'HEAD', signal }).catch(() => null)
         return Number(r?.headers.get('content-length') || 0)
       })
     )
     const total = sizes.reduce((a, b) => a + b, 0)
+    await ensureSpace(dir, total)
     let got = 0
     let last = 0
     for (const f of spec.files) {
@@ -169,10 +165,12 @@ export function registerEngineHandlers({ root, onnxDir }: { root: () => string; 
     const zip = join(dir, 'python.zip')
     let got = 0
     send({ stage: 'download', part: 'runtime', text: 'Python indiriliyor…' })
+    // Python + PyTorch (CUDA) + paketler diskte yaklaşık 5,5 GB tutar; indirme önbelleğiyle birlikte 7 GB iste
+    await ensureSpace(dir, 7 * 1024 ** 3)
     await download(`https://www.python.org/ftp/python/${PY_VERSION}/python-${PY_VERSION}-embed-amd64.zip`, zip, (n, t) => {
       got += n
       send({ stage: 'download', part: 'runtime', got, total: t })
-    }, signal)
+    }, signal, PY_SHA256)
     // Windows'un kendi tar'ı zip açabilir
     await run(join(process.env.SystemRoot || 'C:\\Windows', 'System32', 'tar.exe'), ['-xf', zip, '-C', dir], () => {}, signal)
     await fs.rm(zip)
@@ -182,15 +180,16 @@ export function registerEngineHandlers({ root, onnxDir }: { root: () => string; 
       const s = await fs.readFile(join(dir, pth), 'utf8')
       await fs.writeFile(join(dir, pth), s.replace(/^#\s*import site/m, 'import site') + '\nLib\\site-packages\n')
     }
-    await download('https://bootstrap.pypa.io/get-pip.py', join(dir, 'get-pip.py'), () => {}, signal)
+    await download(GET_PIP_URL, join(dir, 'get-pip.py'), () => {}, signal, GET_PIP_SHA256)
     const py = join(dir, 'python.exe')
     const pipLine = (l: string) => {
       const m = l.match(/^(Collecting|Downloading|Installing collected packages|Successfully installed)\s*(.*)$/)
       if (m) send({ stage: 'download', part: 'runtime', text: `${m[1]} ${m[2].slice(0, 80)}` })
     }
     await run(py, [join(dir, 'get-pip.py'), '--no-warn-script-location'], pipLine, signal)
-    await run(py, ['-m', 'pip', 'install', '--no-warn-script-location', ...TORCH], pipLine, signal)
-    await run(py, ['-m', 'pip', 'install', '--no-warn-script-location', ...PIP_PACKAGES], pipLine, signal)
+    // sürümleri kilitli: önce PyTorch (CUDA dizininden), sonra kilit dosyasındaki tam liste, bağımlılık çözümü olmadan
+    await run(py, ['-m', 'pip', 'install', '--no-warn-script-location', '--no-deps', ...TORCH], pipLine, signal)
+    await run(py, ['-m', 'pip', 'install', '--no-warn-script-location', '--no-deps', '-r', lockFile()], pipLine, signal)
     await run(py, ['-c', 'import torch, diffusers, transformers, bitsandbytes; print(torch.cuda.is_available())'], () => {}, signal)
     await fs.rm(join(dir, 'get-pip.py'), { force: true })
     await fs.writeFile(join(dir, '.ok'), new Date().toISOString())
@@ -300,6 +299,65 @@ export function registerEngineHandlers({ root, onnxDir }: { root: () => string; 
     } finally {
       installAbort = null
     }
+  })
+
+  /** Motoru durdur (taşıma ve kaldırma öncesi; dosyalar kullanımdayken silinemez). */
+  async function stopEngine() {
+    if (!proc) return
+    const p = proc
+    await new Promise<void>((r) => { p.once('close', () => r()); p.kill(); setTimeout(r, 5000) })
+  }
+
+  async function dirSize(d: string): Promise<number> {
+    let n = 0
+    const walk = async (x: string) => {
+      for (const e of await fs.readdir(x, { withFileTypes: true }).catch(() => [])) {
+        const f = join(x, e.name)
+        if (e.isDirectory()) await walk(f)
+        else n += (await fs.stat(f).catch(() => ({ size: 0 }))).size
+      }
+    }
+    await walk(d)
+    return n
+  }
+
+  ipcMain.handle('engine:location', async () => {
+    const dir = engineDir()
+    const size = existsSync(dir) ? await dirSize(dir) : 0
+    return { dir, size, custom: !!locCache, movable: !process.env.ISIL_ENGINE_DIR }
+  })
+
+  // Motoru (Python + modeller) seçilen klasöre taşı. Aynı diskteyse anında, değilse kopyalanıp eskisi silinir.
+  ipcMain.handle('engine:move', async (e, parent: string) => {
+    if (installAbort) throw new Error('kurulum sürerken taşınamaz')
+    const from = engineDir()
+    const to = join(parent, 'Isil-motor')
+    if (normalizeDir(to) === normalizeDir(from)) return { dir: from }
+    if (existsSync(to) && (await fs.readdir(to)).length) throw new Error('Seçilen yerde "Isil-motor" klasörü zaten var ve boş değil.')
+    await stopEngine()
+    const send = sender(e.sender)
+    if (existsSync(from)) {
+      const need = await dirSize(from)
+      try {
+        await fs.mkdir(parent, { recursive: true })
+        await fs.rename(from, to)
+      } catch {
+        await ensureSpace(parent, need)
+        send({ stage: 'download', text: 'Motor taşınıyor…' })
+        await fs.cp(from, to, { recursive: true, errorOnExist: false })
+        await fs.rm(from, { recursive: true, force: true })
+      }
+    } else await fs.mkdir(to, { recursive: true })
+    await fs.writeFile(locFile(), to)
+    locCache = to
+    return { dir: to }
+  })
+
+  // Motoru kaldır: gömülü Python ve üretken modeller silinir (projeler ve küçük modeller kalır).
+  ipcMain.handle('engine:remove', async () => {
+    if (installAbort) throw new Error('kurulum sürerken kaldırılamaz')
+    await stopEngine()
+    await fs.rm(engineDir(), { recursive: true, force: true })
   })
 
   ipcMain.handle('engine:cancel', () => {

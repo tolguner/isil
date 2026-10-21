@@ -138,6 +138,10 @@ export interface Settings {
   genQuality: 'fast' | 'best'   // FLUX.2 klein 4B / 9B
   autosave: boolean
   myLooks?: MyLook[]
+  /** ticari kullanıma kapalı modeller (UltraSharp V2, Depth V2 Base, AnimeGANv2, FLUX.2 klein 9B) yalnız açıkça izin verilince */
+  personalModels?: boolean
+  /** ilk açılış turu gösterildi */
+  onboarded?: boolean
 }
 
 export const DEFAULT_SETTINGS: Settings = {

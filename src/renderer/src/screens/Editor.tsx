@@ -1,3 +1,4 @@
+import { ErrorBoundary } from '@/components/ErrorBoundary'
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { CommandPalette } from '@/components/CommandPalette'
 import { copyLook, pasteLook } from '@/lib/edits-clipboard'
@@ -25,7 +26,8 @@ export function Editor() {
 
   // otomatik kayıt
   useEffect(() => useEditor.subscribe((s, p) => {
-    if (s.dirty !== p.dirty && s.settings.autosave) scheduleSave()
+    // belge her değiştiğinde (araç içindeki kaydırıcılar dahil) 1 sn sonra kaydet
+    if (s.project && s.doc !== p.doc && s.settings.autosave) scheduleSave()
   }), [])
 
   // klavye kısayolları
@@ -105,7 +107,7 @@ function Panel() {
             ))}
           </div>
         )}
-        {toolDef && <toolDef.Panel key={toolDef.id} />}
+        {toolDef && <ErrorBoundary key={toolDef.id} compact><toolDef.Panel /></ErrorBoundary>}
         {!toolDef && !tabDef.auto && <p className="muted">{tr('Bir araç seç.', 'Pick a tool.')}</p>}
         {!toolDef && tabDef.auto && tabDef.tools[0] && (
           <div className="card" style={{ textAlign: 'center' }}>
@@ -334,7 +336,7 @@ function Stage({ toolDef }: { toolDef: ToolDef | null }) {
     >
       <canvas ref={glRef} className="gl" style={style} />
       <canvas ref={ovRef} className="overlay" style={style} />
-      {toolDef?.Overlay && <toolDef.Overlay view={v} />}
+      {toolDef?.Overlay && <ErrorBoundary key={toolDef.id} compact><toolDef.Overlay view={v} /></ErrorBoundary>}
       <CompareFlag />
       {err && <div className="hint" style={{ color: 'var(--c-danger)' }}>{tr('Görüntü çizilemedi: ', 'Render failed: ')}{err}</div>}
       <div className="hud">

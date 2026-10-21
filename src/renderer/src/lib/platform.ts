@@ -40,12 +40,20 @@ export interface Platform {
   onnxRelease(file: string): Promise<void>
   engineStatus(): Promise<EngineStatus>
   engineInstall(part: string): Promise<void>
+  engineLocation(): Promise<{ dir: string; size: number; custom: boolean; movable: boolean }>
+  engineMove(parent: string): Promise<{ dir: string }>
+  engineRemove(): Promise<void>
   genEdit(a: GenEditArgs): Promise<Uint8Array>
   genCancel(): Promise<void>
   /** motor GPU belleğini bıraksın (tarayıcı modelleri çalışmadan önce) */
   engineFree(): Promise<void>
   chat(a: { messages: { role: 'user' | 'assistant'; text: string; image?: Uint8Array }[]; system: string }): Promise<string>
   onEngineProgress(cb: (p: EngineProgress) => void): () => void
+  /** pencere kapanmadan önce: bekleyen kaydı bitir, kaydedilmemiş iş durumunu bildir */
+  onBeforeClose(cb: () => Promise<{ unsaved: boolean; pending: boolean; en: boolean }>): () => void
+  /** hata günlüğüne yaz / günlük dosyasını Gezgin'de göster */
+  log(level: 'error' | 'warn', msg: string): void
+  openLog(): Promise<void>
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -93,11 +101,17 @@ function electronPlatform(): Platform {
     onnxRelease: (f) => api.onnxRelease(f),
     engineStatus: () => api.engineStatus(),
     engineInstall: (part) => api.engineInstall(part),
+    engineLocation: () => api.engineLocation(),
+    engineMove: (parent) => api.engineMove(parent),
+    engineRemove: () => api.engineRemove(),
     genEdit: (a) => api.genEdit(a),
     genCancel: () => api.genCancel(),
     engineFree: () => api.engineFree(),
     chat: (a) => api.chat(a),
-    onEngineProgress: (cb) => api.onEngineProgress(cb)
+    onEngineProgress: (cb) => api.onEngineProgress(cb),
+    onBeforeClose: (cb) => api.onBeforeClose(cb),
+    log: (level, msg) => api.log(level, msg),
+    openLog: () => api.openLog()
   }
 }
 
@@ -255,6 +269,9 @@ function webPlatform(): Platform {
     engineInstall: async () => {
       throw new Error('Tarayıcı modunda yerel motor yok')
     },
+    engineLocation: async () => ({ dir: '', size: 0, custom: false, movable: false }),
+    engineMove: async () => ({ dir: '' }),
+    engineRemove: async () => {},
     genEdit: async () => {
       throw new Error('Tarayıcı modunda yerel motor yok')
     },
@@ -263,7 +280,10 @@ function webPlatform(): Platform {
     chat: async () => {
       throw new Error('Tarayıcı modunda yerel motor yok')
     },
-    onEngineProgress: () => () => {}
+    onEngineProgress: () => () => {},
+    onBeforeClose: () => () => {},
+    log: () => {},
+    openLog: async () => {}
   }
   return p
 }

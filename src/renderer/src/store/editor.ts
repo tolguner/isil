@@ -17,6 +17,8 @@ interface State {
   past: EditDoc[]
   future: EditDoc[]
   toolSnapshot: EditDoc | null
+  /** en son diske yazılan belge (kaydedilmemiş değişiklik tespiti) */
+  savedDoc: EditDoc | null
   tab: TabId
   tool: string | null
   selectedFace: number
@@ -70,6 +72,7 @@ export const useEditor = create<State>((set, get) => ({
   past: [],
   future: [],
   toolSnapshot: null,
+  savedDoc: null,
   tab: 'adjust',
   tool: null,
   selectedFace: 0,
@@ -81,7 +84,7 @@ export const useEditor = create<State>((set, get) => ({
 
   go: (screen) => set({ screen }),
   setSettings: (settings) => set({ settings }),
-  openProject: (p) => set({ project: p, doc: clone(p.doc), past: [], future: [], toolSnapshot: null, tool: null, screen: 'editor', selectedFace: 0, revision: get().revision + 1 }),
+  openProject: (p) => { const doc = clone(p.doc); set({ project: p, doc, savedDoc: doc, past: [], future: [], toolSnapshot: null, tool: null, screen: 'editor', selectedFace: 0, revision: get().revision + 1 }) },
   closeProject: () => set({ project: null, tool: null, toolSnapshot: null, screen: 'home' }),
   setTab: (tab) => {
     if (get().tool) get().closeTool(true)

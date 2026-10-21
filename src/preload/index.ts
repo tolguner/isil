@@ -33,10 +33,24 @@ const api = {
   onnxRelease: (f: string) => invoke('onnx:release', f),
   engineStatus: () => invoke('engine:status'),
   engineInstall: (part: string) => invoke('engine:install', part),
+  engineLocation: () => invoke('engine:location'),
+  engineMove: (parent: string) => invoke('engine:move', parent),
+  engineRemove: () => invoke('engine:remove'),
   genEdit: (a: unknown) => invoke('engine:edit', a),
   genCancel: () => invoke('engine:cancel'),
   engineFree: () => invoke('engine:free'),
   chat: (a: unknown) => invoke('engine:chat', a),
+  log: (level: string, msg: string) => ipcRenderer.send('log:write', { level, msg }),
+  openLog: () => invoke('log:open'),
+  onBeforeClose: (cb: () => Promise<unknown>) => {
+    const h = async () => {
+      let r: unknown = null
+      try { r = await cb() } catch { /* yine de yanıtla */ }
+      ipcRenderer.send('app:close-reply', r)
+    }
+    ipcRenderer.on('app:before-close', h)
+    return () => ipcRenderer.removeListener('app:before-close', h)
+  },
   onEngineProgress: (cb: (p: unknown) => void) => {
     const h = (_: unknown, p: unknown) => cb(p)
     ipcRenderer.on('engine:progress', h)

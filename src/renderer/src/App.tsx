@@ -11,7 +11,9 @@ import { Collage } from './screens/Collage'
 import { Batch } from './screens/Batch'
 import { Camera } from './screens/Camera'
 import { Busy, ConfirmHost, Toasts, confirmDialog } from './components/ui'
-import { saveNow } from './lib/projects'
+import { beforeClose, saveNow } from './lib/projects'
+import { ErrorBoundary } from './components/ErrorBoundary'
+import { Shortcuts, Welcome } from './components/Welcome'
 
 export function App() {
   const screen = useEditor((s) => s.screen)
@@ -22,6 +24,7 @@ export function App() {
   useEffect(() => {
     platform.getSettings().then((s) => useEditor.getState().setSettings(s))
   }, [])
+  useEffect(() => platform.onBeforeClose(beforeClose), [])
 
   useEffect(() => {
     document.documentElement.lang = useEditor.getState().settings.language
@@ -60,6 +63,7 @@ export function App() {
         )}
       </header>
       <div className="main">
+        <ErrorBoundary key={screen} onHome={screen === 'home' ? undefined : () => { useEditor.getState().closeTool(false); useEditor.getState().closeProject() }}>
         {screen === 'home' && <Home />}
         {screen === 'editor' && <Editor />}
         {screen === 'settings' && <SettingsPage />}
@@ -67,10 +71,13 @@ export function App() {
         {screen === 'collage' && <Collage />}
         {screen === 'batch' && <Batch />}
         {screen === 'camera' && <Camera />}
+        </ErrorBoundary>
       </div>
       <Busy />
       <Toasts />
       <ConfirmHost />
+      <Welcome />
+      <Shortcuts />
     </div>
   )
 }

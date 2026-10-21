@@ -167,6 +167,8 @@ function AiFxPanel() {
   useWorkLifecycle()
   const [cat, setCat] = useState('trend')
   const [sel, setSel] = useState<string | null>(null)
+  // AnimeGANv2 yalnız kişisel kullanım lisanslı: izin verilmediyse yerel anime stili gösterilmez
+  const personal = useEditor((st) => !!st.settings.personalModels)
   const run = async (id: string) => {
     const s = STYLES.find((x) => x.id === id)!
     setSel(id)
@@ -220,7 +222,7 @@ function AiFxPanel() {
         </>
       )}
       <div className="presets">
-        {STYLES.filter((s) => s.cat === cat).map((s) => (
+        {STYLES.filter((s) => s.cat === cat && (s.local !== 'anime' || personal)).map((s) => (
           <Preset key={s.id} label={tr(s.label[0], s.label[1])} on={sel === s.id} onClick={() => run(s.id)} bg={s.local ? 'linear-gradient(160deg,#3a2a5a,#ffb547)' : 'linear-gradient(160deg,#2a2e36,#5a4a7a)'}>
             <StyleSample id={s.id} mark={s.local ? '⚡' : '✦'} />
           </Preset>

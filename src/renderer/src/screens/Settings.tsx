@@ -5,6 +5,7 @@ import { useEditor } from '@/store/editor'
 import { platform } from '@/lib/platform'
 import { useT } from '@/lib/i18n'
 import { Segmented, Switch, confirmDialog } from '@/components/ui'
+import { MANUAL_URL, openShortcuts, openWelcome } from '@/components/Welcome'
 import { visibleModels, ensureModel, modelReady } from '@/ai/models'
 import { PARTS, engineStatus } from '@/ai/generative'
 import type { EngineStatus } from '@/lib/platform'
@@ -66,7 +67,24 @@ export function SettingsPage() {
 
         <section>
           <div className="group-label">{tr('Yerel yapay zekâ modelleri', 'Local AI models')}</div>
-          <p className="note">{tr('Bu modeller bir kez indirilir ve bilgisayarında çalışır; fotoğrafların dışarı gönderilmez. Yüz, vücut, saç ve dokun-seç modelleri uygulamayla birlikte gelir.', 'These download once and run on your computer; your photos never leave it. Face, body, hair and tap-select models ship with the app.')} {tr('YZ motoru kuruluysa güçlü modeller (BiRefNet, UltraSharp V2, GFPGAN, Depth V2 Base) kullanılır; değilse hafif sürümleri.', 'With the AI engine installed the strong models (BiRefNet, UltraSharp V2, GFPGAN, Depth V2 Base) are used; otherwise their light versions.')}</p>
+          <p className="note">{tr('Bu modeller bir kez indirilir ve bilgisayarında çalışır; fotoğrafların dışarı gönderilmez. Yüz, vücut, saç ve dokun-seç modelleri uygulamayla birlikte gelir.', 'These download once and run on your computer; your photos never leave it. Face, body, hair and tap-select models ship with the app.')} {tr('YZ motoru kuruluysa güçlü modeller (BiRefNet, GFPGAN) GPU’da çalışır; değilse hafif sürümleri.', 'With the AI engine installed the strong models (BiRefNet, GFPGAN) run on the GPU; otherwise their light versions.')}</p>
+          <div className="setting">
+            <div>
+              <b>{tr('Kişisel kullanım modelleri', 'Personal-use models')}</b>
+              <span>{tr('4x-UltraSharp V2, Depth Anything V2 Base, AnimeGANv2 ve FLUX.2 klein 9B. Daha iyi sonuç verirler ama lisansları ticari kullanıma kapalıdır: bunlarla düzenlediğin fotoğrafları para kazandığın işlerde kullanamazsın.', '4x-UltraSharp V2, Depth Anything V2 Base, AnimeGANv2 and FLUX.2 klein 9B. They give better results but their licences forbid commercial use: you may not use photos edited with them in paid work.')}</span>
+            </div>
+            <Switch label="personal-models" on={!!s.personalModels} onChange={async (v) => {
+              if (v) {
+                const ok = await confirmDialog({
+                  title: tr('Yalnız kişisel kullanım', 'Personal use only'),
+                  text: tr('Bu modellerin lisansı ticari kullanımı yasaklar. Açarsan bu modellerle yaptığın düzenlemeleri yalnız kişisel amaçla kullanacağını kabul edersin. Kapattığında Işıl ticari kullanıma açık modellere döner.', 'These models are licensed for non-commercial use only. By turning this on you agree to use edits made with them for personal purposes only. Turning it off returns Işıl to commercially licensed models.'),
+                  confirm: tr('Kabul ediyorum', 'I agree')
+                })
+                if (!ok) return
+              }
+              set(v ? { personalModels: true } : { personalModels: false, genQuality: 'fast' })
+            }} />
+          </div>
           {visibleModels().map((m) => (
             <div className="setting" key={m.id}>
               <div>
@@ -106,9 +124,9 @@ export function SettingsPage() {
             <>
               <div className="setting">
                 <div><b>{tr('Üretken YZ modeli', 'Generative AI model')}</b><span>{tr('En iyi: 9B model; kimliği ve ayrıntıyı daha iyi korur ama yaklaşık 3 kat yavaş ve ≈12 GB ek indirme', 'Best: 9B model; keeps identity and detail better but about 3× slower and ≈12 GB extra download')}</span></div>
-                <div style={{ width: 220 }}><Segmented items={[{ id: 'fast', label: tr('Hızlı (4B)', 'Fast (4B)') }, { id: 'best', label: tr('En iyi (9B)', 'Best (9B)') }]} value={s.genQuality} onChange={(v) => set({ genQuality: v })} /></div>
+                <div style={{ width: 220 }}><Segmented items={[{ id: 'fast', label: tr('Hızlı (4B)', 'Fast (4B)') }, ...(s.personalModels ? [{ id: 'best' as const, label: tr('En iyi (9B, kişisel)', 'Best (9B, personal)') }] : [])]} value={s.personalModels ? s.genQuality : 'fast'} onChange={(v) => set({ genQuality: v })} /></div>
               </div>
-              {Object.entries(PARTS).map(([id, p]) => (
+              {Object.entries(PARTS).filter(([id]) => id !== 'flux-best' || s.personalModels).map(([id, p]) => (
                 <div className="setting" key={id}>
                   <div><b>{tr(p.name[0], p.name[1])}</b><span>{p.size}{eng.device && id === 'runtime' ? ` · ${eng.device}` : ''}</span></div>
                   {eng.installed[id] ? (
@@ -140,6 +158,7 @@ export function SettingsPage() {
                   )}
                 </div>
               ))}
+              <EngineLocation onChange={() => void refresh()} />
             </>
           )}
         </section>
@@ -149,8 +168,60 @@ export function SettingsPage() {
           <p className="note">
             Işıl {__APP_VERSION__} · {tr('Ücretsiz ve açık kaynak (MIT).', 'Free and open source (MIT).')} {tr('Açık kaynak bileşenler', 'Open-source components')}: Electron, React, MediaPipe (Apache-2.0), EfficientDet-Lite2 (Apache-2.0), YuNet (MIT), ONNX Runtime (MIT), libheif (LGPL-3.0), PyTorch (BSD-3), diffusers / transformers (Apache-2.0), FLUX.2 klein 4B (Apache-2.0) / 9B (FLUX Non-Commercial), Qwen3 / Qwen3-VL (Apache-2.0), BiRefNet (MIT), LaMa (Apache-2.0), Real-ESRGAN (BSD-3), 4x-UltraSharp V2 (CC BY-NC-SA 4.0), GFPGAN 1.4 (Apache-2.0), Depth Anything V2 Small (Apache-2.0) / Base (CC BY-NC 4.0), AnimeGANv2, Lucide (ISC), Inter ve diğer yazı tipleri (OFL).
           </p>
+          <div className="row">
+            <button className="btn ghost" onClick={() => window.open(MANUAL_URL)}>{tr('Kullanım kılavuzu', 'User manual')}</button>
+            <button className="btn ghost" onClick={openShortcuts}>{tr('Klavye kısayolları', 'Keyboard shortcuts')}</button>
+            <button className="btn ghost" onClick={openWelcome}>{tr('Tanıtım turu', 'Welcome tour')}</button>
+            <button className="btn ghost" onClick={() => void platform.openLog()}>{tr('Hata günlüğünü aç', 'Open error log')}</button>
+          </div>
+          <p className="note">{tr('Sorun bildirirken bu dosyayı ekleyebilirsin. İçinde fotoğraf ya da kişisel bilgi yok, yalnız hata iletileri var.', 'Attach this file when reporting a problem. It contains no photos or personal data, only error messages.')}</p>
         </section>
       </div>
+    </div>
+  )
+}
+
+/** Motorun diskteki yeri ve boyutu; başka bir diske taşıma ve kaldırma. */
+function EngineLocation({ onChange }: { onChange: () => void }) {
+  const tr = useT()
+  const [loc, setLoc] = useState<{ dir: string; size: number; movable: boolean } | null>(null)
+  const [busyText, setBusyText] = useState('')
+  const load = () => void platform.engineLocation().then(setLoc).catch(() => setLoc(null))
+  useEffect(load, [])
+  if (!loc || !loc.movable) return null
+  const gb = (loc.size / 1024 ** 3).toFixed(1)
+  const act = async (text: string, f: () => Promise<unknown>) => {
+    setBusyText(text)
+    try {
+      await f()
+    } catch (e) {
+      useEditor.getState().toast('error', (e as Error).message)
+    } finally {
+      setBusyText('')
+      load()
+      onChange()
+    }
+  }
+  return (
+    <div className="setting">
+      <div>
+        <b>{tr('Motor konumu', 'Engine location')}</b>
+        <span title={loc.dir} style={{ wordBreak: 'break-all' }}>{loc.dir} · {loc.size ? `${gb} GB` : tr('boş', 'empty')}</span>
+      </div>
+      {busyText ? <span className="muted">{busyText}</span> : (
+        <div className="row">
+          <button className="btn sm ghost" onClick={async () => {
+            const parent = await platform.pickDir()
+            if (parent) await act(tr('Taşınıyor…', 'Moving…'), () => platform.engineMove(parent))
+          }}>{tr('Taşı', 'Move')}</button>
+          {loc.size > 0 && (
+            <button className="btn sm ghost" onClick={async () => {
+              const ok = await confirmDialog({ title: tr('Motor kaldırılsın mı?', 'Remove the engine?'), text: tr(`Yerel YZ motoru ve üretken modeller silinir (${gb} GB). Projelerin ve küçük modeller kalır; motoru istediğinde yeniden kurabilirsin.`, `The local AI engine and generative models are deleted (${gb} GB). Your projects and small models stay; you can reinstall the engine any time.`), confirm: tr('Kaldır', 'Remove'), danger: true })
+              if (ok) await act(tr('Kaldırılıyor…', 'Removing…'), () => platform.engineRemove())
+            }}><Trash2 size={14} /> {tr('Kaldır', 'Remove')}</button>
+          )}
+        </div>
+      )}
     </div>
   )
 }

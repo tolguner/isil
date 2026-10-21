@@ -1,3 +1,4 @@
+import { tNow } from '@/lib/i18n'
 // Etkin projenin görüntü kaynakları, analiz önbelleği ve dışa aktarma.
 import type { EditDoc, Project, Settings } from '@shared/schema'
 import { platform } from '@/lib/platform'
@@ -86,6 +87,19 @@ class Session {
   attach(canvas: HTMLCanvasElement) {
     if (this.canvas === canvas && this.renderer) return
     this.renderer?.dispose()
+    if (this.canvas !== canvas) {
+      // ekran kartı bağlamı kaybolursa (sürücü sıfırlama, uzun GPU işi) motoru yeniden kur; yoksa tuval siyah kalır
+      canvas.addEventListener('webglcontextlost', (e) => {
+        e.preventDefault()
+        // kendi dispose() çağrımız da bağlamı kaybettirir (tuval değişince ya da ekrandan çıkınca): onu yoksay
+        if (this.canvas !== canvas || !this.renderer || this.renderer.gl.canvas !== canvas) return
+        console.warn('WebGL bağlamı kayboldu; motor yeniden kurulacak')
+        this.renderer = null // preventDefault: tarayıcı bağlamı geri verir, 'restored' ile yeniden kurulur
+      })
+      canvas.addEventListener('webglcontextrestored', () => {
+        if (this.canvas === canvas && !this.renderer) { this.attach(canvas); this.emit() }
+      })
+    }
     this.canvas = canvas
     this.renderer = new Renderer(canvas)
     if (this.preview) this.renderer.setBase(this.preview)
@@ -407,6 +421,8 @@ class Session {
       this.prepareExport(r, doc, saved)
       const out = r.render(doc, { maxSide })
       const img = r.read(out.target)
+      // ekran kartı işi yarıda kestiyse (sürücü sıfırlaması) okunan görüntü siyahtır: siyah dosya kaydetme
+      if (r.gl.isContextLost()) throw new Error(tNow('Ekran kartı dışa aktarmayı yarıda kesti. Daha küçük boyutla (Ayarlar → Dışa aktarma) yeniden dene.', 'The graphics card interrupted the export. Try again with a smaller size (Settings → Export).'))
       const c = imageDataToCanvas(img)
       const ctx = c.getContext('2d')!
       await document.fonts.ready

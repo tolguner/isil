@@ -339,3 +339,27 @@ kbd { background: var(--c-surface-3); border-radius: 4px; padding: 1px 5px; font
 /* metin silme: algılanan yazı kutuları */
 .text-box { position: absolute; border: 2px dashed var(--c-text-muted); border-radius: 6px; background: transparent; cursor: pointer; }
 .text-box.on { border-style: solid; border-color: var(--c-accent); background: color-mix(in srgb, var(--c-accent) 18%, transparent); }
+
+/* hata sınırı */
+.crash { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: var(--sp-2); text-align: center; padding: var(--sp-6) var(--sp-4); max-width: 520px; margin: 10vh auto 0; color: var(--c-text); }
+.crash.compact { margin: var(--sp-3) 0; padding: var(--sp-3); max-width: none; background: var(--c-surface-2); border: 1px solid var(--c-border); border-radius: var(--r-md); }
+.crash svg { color: var(--c-warning); }
+.crash .row { justify-content: center; flex-wrap: wrap; margin-top: var(--sp-2); }
+.crash-msg { font-size: var(--fs-xs); color: var(--c-text-faint); word-break: break-word; max-width: 100%; }
+
+/* ilk açılış turu ve kısayollar */
+.welcome .dialog { position: relative; width: min(480px, 92vw); text-align: center; }
+.welcome .dialog p { text-align: left; line-height: 1.55; }
+.welcome-icon { color: var(--c-accent); margin: var(--sp-2) 0 var(--sp-3); }
+.welcome-x { position: absolute; top: var(--sp-2); right: var(--sp-2); }
+.welcome-dots { display: flex; justify-content: center; gap: 6px; margin-bottom: var(--sp-4); }
+.welcome-dots span { width: 7px; height: 7px; border-radius: 50%; background: var(--c-surface-3); }
+.welcome-dots span.on { background: var(--c-accent); }
+.welcome-foot { flex-wrap: wrap; }
+.dialog .grow { flex: 1; }
+.dialog.shortcuts { width: min(520px, 92vw); }
+.dialog.shortcuts h2 { display: flex; align-items: center; gap: var(--sp-2); }
+.dialog.shortcuts table { width: 100%; border-collapse: collapse; margin-bottom: var(--sp-4); font-size: var(--fs-sm); }
+.dialog.shortcuts td { padding: 5px 4px; border-bottom: 1px solid var(--c-border); vertical-align: top; }
+.dialog.shortcuts td:first-child { white-space: nowrap; width: 1%; padding-right: var(--sp-3); }
+kbd { font: inherit; font-size: var(--fs-xs); background: var(--c-surface-2); border: 1px solid var(--c-border); border-bottom-width: 2px; border-radius: 5px; padding: 1px 6px; }

@@ -1,7 +1,7 @@
 {
   "name": "isil",
   "productName": "Işıl",
-  "version": "0.8.14",
+  "version": "0.8.15",
   "description": "Fotoğraf düzenleme, yüz rötuşu, vücut şekillendirme ve filtreleri tek araçta toplayan ücretsiz masaüstü uygulaması",
   "main": "./out/main/index.js",
   "author": "Tolga Olguner",
@@ -82,14 +82,16 @@
       "oneClick": false,
       "allowToChangeInstallationDirectory": true,
       "artifactName": "Isil-Setup-${version}.${ext}",
-      "shortcutName": "Işıl"
+      "shortcutName": "Işıl",
+      "include": "build/installer.nsh"
     },
     "extraResources": [
       {
         "from": "engine",
         "to": "engine",
         "filter": [
-          "*.py"
+          "*.py",
+          "*.lock"
         ]
       }
     ]

@@ -5,6 +5,8 @@ import { join, extname, basename, dirname, normalize, sep } from 'path'
 import { pathToFileURL } from 'url'
 import { DEFAULT_SETTINGS, type Project, type ProjectMeta, type Settings } from '../shared/schema'
 import { registerEngineHandlers } from './engine'
+import { installMainLogging, logFile, writeLog } from './log'
+import { downloadFile, ensureSpace, knownSize } from './download'
 
 // Dizüstünde harici GPU (ör. RTX) tercih edilsin; WebGPU/WebGL performansı için.
 app.commandLine.appendSwitch('force_high_performance_gpu')
@@ -80,7 +82,41 @@ async function createWindow() {
     if (st.maximized) win.maximize()
     win.show()
   })
+  // Kapanmadan önce arayüze sor: bekleyen kaydı tamamlasın, kaydedilmemiş iş varsa kullanıcıya soralım.
+  // Arayüz yanıt vermezse (donmuş ya da çökmüşse) 4 sn sonra yine kapanır.
+  let closeOk = TEST_MODE, asking = false
+  win.on('close', (e) => {
+    if (closeOk) return
+    e.preventDefault()
+    if (asking) return
+    asking = true
+    const t = setTimeout(() => { closeOk = true; win.close() }, 4000)
+    ipcMain.once('app:close-reply', async (_ev, r: { unsaved?: boolean; pending?: boolean; en?: boolean } | null) => {
+      clearTimeout(t)
+      if (r?.unsaved || r?.pending) {
+        const en = !!r.en
+        const { response } = await dialog.showMessageBox(win, {
+          type: 'warning',
+          buttons: en ? ['Quit anyway', 'Cancel'] : ['Yine de çık', 'Vazgeç'],
+          defaultId: 1,
+          cancelId: 1,
+          title: 'Işıl',
+          message: r.pending
+            ? (en ? 'A tool result has not been applied.' : 'Bir aracın sonucu henüz uygulanmadı.')
+            : (en ? 'You have unsaved changes.' : 'Kaydedilmemiş değişikliklerin var.'),
+          detail: r.pending
+            ? (en ? 'Press Apply in the tool first to keep it.' : "Saklamak için önce araçta Uygula'ya bas.")
+            : (en ? 'Turn on autosave in Settings or press Ctrl+S to keep them.' : "Saklamak için Ctrl+S'ye bas ya da Ayarlar'da otomatik kaydı aç.")
+        })
+        if (response !== 0) { asking = false; return }
+      }
+      closeOk = true
+      win.close()
+    })
+    win.webContents.send('app:before-close')
+  })
   win.on('close', () => {
+    if (!closeOk) return
     const b = win.getNormalBounds()
     try {
       writeFileSync(windowFile(), JSON.stringify({ ...b, maximized: win.isMaximized() }))
@@ -98,6 +134,7 @@ async function createWindow() {
 }
 
 app.whenReady().then(async () => {
+  installMainLogging()
   await fs.mkdir(projectsDir(), { recursive: true })
   await fs.mkdir(modelsDir(), { recursive: true })
 
@@ -254,6 +291,18 @@ function registerIpc() {
 
   ipcMain.handle('shell:reveal', (_e, p: string) => shell.showItemInFolder(p))
   ipcMain.handle('app:testMode', () => TEST_MODE)
+  // arayüz hataları günlüğe (oran sınırı: dakikada en çok 60 satır, döngüye giren hata dosyayı şişirmesin)
+  let logWin = 0, logN = 0
+  ipcMain.on('log:write', (_e, a: { level?: string; msg?: string }) => {
+    const now = Date.now()
+    if (now - logWin > 60000) { logWin = now; logN = 0 }
+    if (++logN > 60) return
+    writeLog(a?.level === 'warn' ? 'warn' : 'error', 'ui', String(a?.msg ?? ''))
+  })
+  ipcMain.handle('log:open', async () => {
+    writeLog('info', 'main', 'günlük açıldı')
+    shell.showItemInFolder(logFile())
+  })
 
   ipcMain.handle('settings:get', loadSettings)
   ipcMain.handle('settings:set', async (_e, s: Partial<Settings>) => {
@@ -277,46 +326,32 @@ function registerIpc() {
   })
 
   const downloads = new Map<string, AbortController>()
-  ipcMain.handle('models:download', async (e, a: { file: string; url: string; sha256?: string }) => {
+  ipcMain.handle('models:download', async (e, a: { file: string; url: string; sha256?: string; extra?: { url: string } }) => {
     const target = safeJoin(modelsDir(), a.file)
-    const tmp = target + '.part'
     const ac = new AbortController()
     downloads.set(a.file, ac)
     try {
-      const res = await net.fetch(a.url, { signal: ac.signal })
-      if (!res.ok || !res.body) throw new Error(`indirme başarısız: ${res.status}`)
-      const total = Number(res.headers.get('content-length') || 0)
-      const hash = createHash('sha256')
-      const out = createWriteStream(tmp)
-      let got = 0
-      let last = 0
-      const reader = res.body.getReader()
-      for (;;) {
-        const { done, value } = await reader.read()
-        if (done) break
-        hash.update(value)
-        got += value.length
-        if (!out.write(value)) await new Promise((r) => out.once('drain', r))
-        const now = Date.now()
-        if (now - last > 200) {
-          last = now
-          e.sender.send('models:progress', { file: a.file, got, total })
+      await ensureSpace(modelsDir(), knownSize(a.url) ?? 0)
+      let got = 0, last = 0
+      const r = await downloadFile(a.url, target, {
+        signal: ac.signal,
+        sha256: a.sha256,
+        onBytes: (n, total) => {
+          got += n
+          const now = Date.now()
+          if (now - last > 200) { last = now; e.sender.send('models:progress', { file: a.file, got, total }) }
         }
-      }
-      await new Promise<void>((r, j) => out.end((err?: Error) => (err ? j(err) : r())))
-      const digest = hash.digest('hex')
-      if (a.sha256 && digest !== a.sha256) {
-        await fs.rm(tmp, { force: true })
-        throw new Error('dosya doğrulaması başarısız')
-      }
-      await fs.rename(tmp, target)
-      e.sender.send('models:progress', { file: a.file, got, total: got, done: true })
-      return { size: got, sha256: digest }
+      })
+      e.sender.send('models:progress', { file: a.file, got: r.size, total: r.size, done: true })
+      return r
     } finally {
       downloads.delete(a.file)
     }
   })
   ipcMain.handle('models:cancel', (_e, file: string) => downloads.get(file)?.abort())
-  ipcMain.handle('models:delete', async (_e, file: string) => fs.rm(safeJoin(modelsDir(), file), { force: true }))
+  ipcMain.handle('models:delete', async (_e, file: string) => {
+    await fs.rm(safeJoin(modelsDir(), file), { force: true })
+    await fs.rm(safeJoin(modelsDir(), file) + '.part', { force: true })
+  })
   ipcMain.handle('models:dir', () => modelsDir())
 }

@@ -1,3 +1,4 @@
+import { BlockedError, blockedPrompt } from './safety'
 // Yerel üretken YZ: FLUX.2 klein (görsel düzenleme) ve Qwen3-VL (stil danışmanı).
 // Hepsi bilgisayarda çalışır; fotoğraflar dışarı gönderilmez. Motor main süreçte yönetilir.
 import { platform, type EngineStatus } from '@/lib/platform'
@@ -110,9 +111,15 @@ function toGray(c: HTMLCanvasElement) {
 /** Siyah-beyaz girdi, komut açıkça renk istemedikçe siyah-beyaz kalır (FLUX renk ekliyordu). */
 const wantsColor = (p: string) => /colou?ri[sz]|renklendir|renkli|in color/i.test(p)
 
+/** Çıplaklık, soyma ve cinsel içerik isteyen komutlar motora hiç gitmez. */
+function guardPrompt(prompt: string) {
+  if (blockedPrompt(prompt)) throw new BlockedError(tNow('Bu istek uygulanamaz: Işıl çıplak ya da cinsel içerikli görüntü üretmez, kişilerin kıyafetlerini çıkarmaz.', 'This request cannot be done: Işıl does not create nude or sexual images or remove people’s clothes.'))
+}
+
 /** Görseli yazılı komutla düzenle; sonuç kaynak boyutuna ölçeklenir. */
 export async function localEdit(src: Src, prompt: string, refs: Src[] = []): Promise<HTMLCanvasElement | null> {
-  const quality = useEditor.getState().settings.genQuality
+  guardPrompt(prompt)
+  const quality = useEditor.getState().settings.personalModels ? useEditor.getState().settings.genQuality : 'fast'
   const part = quality === 'best' ? 'flux-best' : 'flux-fast'
   if (!(await ensureEngine(['runtime', part]))) return null
   const { w, h } = fluxSize(src.width, src.height)
@@ -166,7 +173,8 @@ export async function localEditKeepPeople(src: Src, prompt: string): Promise<HTM
 
 /** Maskeli düzenleme (FLUX.2 klein inpaint): yalnız maskeli alan yeniden çizilir, dışı birebir korunur. */
 export async function localMaskedEdit(src: Src, mask: HTMLCanvasElement, what: string, opts: { prefill?: Src; raw?: boolean; strength?: number } = {}): Promise<HTMLCanvasElement | null> {
-  const quality = useEditor.getState().settings.genQuality
+  guardPrompt(what)
+  const quality = useEditor.getState().settings.personalModels ? useEditor.getState().settings.genQuality : 'fast'
   const part = quality === 'best' ? 'flux-best' : 'flux-fast'
   if (!(await ensureEngine(['runtime', part]))) return null
   const { w, h } = fluxSize(src.width, src.height)

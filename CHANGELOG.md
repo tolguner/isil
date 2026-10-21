@@ -2,6 +2,19 @@
 
 Her yayımlanan yapıda sürümün yalnız son hanesi artırılır (0.8.0 → 0.8.1); ara sürüm (0.9) büyük aşamalarda, 1.0.0 ise yayına hazır tam üründe. Uygulama Ayarlar → Hakkında'da sürümü gösterir.
 
+## 0.8.15 — 2026-10-22
+
+1.0 öncesi "ürün olma" işleri (araştırma raporundaki P0 listesi), birinci bölüm:
+
+- **Veri kaybı:** araç açıkken yapılan değişiklikler de otomatik kaydediliyor; uygulama kapanır ya da çökerse kaybolmuyor. İptal edilen araç diskte de geri alınıyor. Otomatik kayıt kapalıysa ya da bir aracın sonucu henüz uygulanmadıysa kapanışta sorulur.
+- **Hata yakalama:** bir ekran ya da panel çökerse beyaz ekran yerine "yeniden dene" ve "ana sayfa" seçenekli bir hata kartı çıkar. Ekran kartı WebGL2 desteklemiyorsa açıklayıcı bir ileti gösterilir. Ekran kartı bağlamı kaybolursa motor kendini yeniden kurar; dışa aktarma yarıda kesilirse siyah dosya kaydedilmez.
+- **Hata günlüğü:** `%APPDATA%\Işıl\logs\isil.log`. Ayarlar → Hakkında → Hata günlüğünü aç. İçinde fotoğraf ya da kişisel bilgi yok.
+- **Lisans temizliği:** ticari kullanıma kapalı modeller (4x-UltraSharp V2, Depth Anything V2 Base, AnimeGANv2, FLUX.2 klein 9B) artık varsayılan değil; Ayarlar'daki "Kişisel kullanım modelleri" anahtarı ve uyarı onayıyla açılıyor. Varsayılanlar Real-ESRGAN, Depth V2 Small ve klein 4B. Depoya THIRD_PARTY_LICENSES.md eklendi.
+- **Kötüye kullanım koruması (1. katman):** çıplaklık, soyma ve cinsel içerik isteyen komutlar üretken motora hiç gitmiyor (Türkçe ve İngilizce, harf oyunlarına dayanıklı).
+- **Dayanıklı indirmeler:** tüm model dosyaları sabit sürüme (commit) bağlandı ve sha256 ile doğrulanıyor; bağlantı koparsa kaldığı yerden devam ediyor, ağ hatasında yeniden deniyor, başlamadan disk alanına bakıyor. Python paketleri kilit dosyasıyla tam sürümlerinden kuruluyor; get-pip ve Python da sabit ve doğrulanmış.
+- **Motor yönetimi:** Ayarlar'da motorun konumu ve boyutu görünüyor; başka bir diske taşınabiliyor ya da kaldırılabiliyor. Kaldırıcı, yapay zekâ motorunu ve modelleri de silmek isteyip istemediğini soruyor (projeler korunur).
+- **İlk açılış turu** (4 adım), **klavye kısayolları** penceresi (? tuşu) ve [kullanım kılavuzu](docs/KILAVUZ.md).
+
 ## 0.8.14 — 2026-10-21
 
 Kalite turu: araçlar tek portre yerine 20 farklı fotoğrafla denendi (farklı ten renkleri ve yaşlar, gözlük, sakal, başörtüsü, siyah-beyaz, profil, grup, gece, gökyüzü, tabela, tam boy). Bulunan hatalar:

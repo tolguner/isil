@@ -68,11 +68,14 @@ export async function saveNow() {
   const st = useEditor.getState()
   const p = st.project
   if (!p) return
-  const doc = st.toolSnapshot ?? st.doc
+  // araç açıkken de canlı belge kaydedilir: pencere kapanır ya da uygulama çökerse kaydırıcı ayarları kaybolmaz
+  // (araç iptal edilirse belge eski haline döner ve o da kaydedilir)
+  const doc = st.doc
   saving = saving.then(async () => {
     try {
-      const thumb = await session.thumbnail(st.doc).catch(() => null)
+      const thumb = await session.thumbnail(doc).catch(() => null)
       await platform.saveProject({ id: p.id, doc, thumb: thumb ?? undefined })
+      if (useEditor.getState().project?.id === p.id) useEditor.setState({ savedDoc: doc })
     } catch (e) {
       console.error('kayıt hatası', e)
     }
@@ -131,3 +134,15 @@ export async function leaveEditorTo(screen: import('@/store/editor').Screen) {
   useEditor.getState().go(screen)
 }
 export const goSettings = () => leaveEditorTo('settings')
+
+/** Kapanış denetimi: bekleyen kaydı bitir; otomatik kayıt kapalıysa kaydedilmemiş değişikliği, açık araçta uygulanmamış sonucu bildir. */
+export async function beforeClose() {
+  const st = useEditor.getState()
+  const en = st.settings.language === 'en'
+  if (!st.project) return { unsaved: false, pending: false, en }
+  if (st.settings.autosave) await saveNow()
+  else await saving
+  const s2 = useEditor.getState()
+  const { work } = await import('@/tools/raster')
+  return { unsaved: s2.doc !== s2.savedDoc, pending: !!s2.tool && work.changed, en }
+}
