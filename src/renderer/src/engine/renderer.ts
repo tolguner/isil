@@ -23,6 +23,22 @@ export interface RenderOptions {
 
 export interface OutputInfo { target: Target; w: number; h: number; place: [number, number, number, number] }
 
+/** Görüntü renksiz mi (gri tonlamalı ya da çok hafif tonlu siyah-beyaz)? 64 px'lik örnekle. */
+function isMono(src: TexImageSource): boolean {
+  try {
+    const c = document.createElement('canvas')
+    c.width = c.height = 64
+    const x = c.getContext('2d', { willReadFrequently: true })!
+    x.drawImage(src as CanvasImageSource, 0, 0, 64, 64)
+    const d = x.getImageData(0, 0, 64, 64).data
+    let s = 0
+    for (let i = 0; i < d.length; i += 4) s += Math.max(d[i], d[i + 1], d[i + 2]) - Math.min(d[i], d[i + 1], d[i + 2])
+    return s / (d.length / 4) < 6
+  } catch {
+    return false
+  }
+}
+
 function hexToRgb(hex: string): [number, number, number] {
   const h = hex.replace('#', '')
   const n = parseInt(h.length === 3 ? h.split('').map((c) => c + c).join('') : h, 16)
@@ -104,7 +120,10 @@ export class Renderer {
 
   setBase(src: TexImageSource) {
     this.base = this.replace(this.base, src)
+    this.mono = isMono(src)
   }
+  /** Siyah-beyaz fotoğraf: rötuş ve makyaj renk katmaz (pembe dudak, mavi göz gri karede yapay duruyordu). */
+  mono = false
   setOriginal(src: TexImageSource | null) {
     this.orig = this.replace(this.orig, src)
   }
@@ -196,7 +215,7 @@ export class Renderer {
     p.tex('uBase', 0, src.tex).tex('uBlurS', 1, bsCopy.tex).tex('uBlurM', 2, bm.tex)
       .tex('uMaskA', 3, this.maskA.tex).tex('uMaskB', 4, (this.maskB ?? this.blank).tex).tex('uMaskC', 5, (this.maskC ?? this.blank).tex)
       .tex('uMaskP', 6, (this.maskP ?? this.blank).tex)
-      .tex('uEyeFx', 7, (this.eyeFx ?? this.blank).tex).tex('uIris', 8, (this.iris ?? this.blank).tex).f('uEyeOn', this.eyeFx ? 1 : 0)
+      .tex('uEyeFx', 7, (this.eyeFx ?? this.blank).tex).tex('uIris', 8, (this.iris ?? this.blank).tex).f('uEyeOn', this.eyeFx ? 1 : 0).f('uMono', this.mono ? 1 : 0)
       .tex('uSkinTex', 9, (this.skinTex ?? this.blank).tex).f('uSkinTexOn', this.skinTex ? 1 : 0)
       .fv('uSkin', f.skin, 4).fv('uSkin2', f.skin2, 4).fv('uTone', f.tone, 4).fv('uLip', f.lip, 4)
       .fv('uBlush', f.blush, 4).fv('uLid', f.lid, 4).fv('uBrow', f.brow, 4).fv('uSculpt', f.sculpt, 4).fv('uSkinX', f.skinX, 4)

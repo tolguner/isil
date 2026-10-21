@@ -51,6 +51,7 @@ precision highp float;
 in vec2 vUv; out vec4 o;
 uniform sampler2D uBase, uBlurS, uBlurM, uMaskA, uMaskB, uMaskC, uMaskP, uEyeFx, uIris, uSkinTex;
 uniform float uSkinTexOn; // gerçek gözenek dokusu döşemesi yüklü mü
+uniform float uMono;    // siyah-beyaz fotoğraf: sonuç griye indirilir
 uniform float uEyeOn;    // göz makyajı katmanı (kalem, kirpik, kapak, ışıltı) ve iris rengi
 uniform vec4 uSkin[8];   // pürüzsüz, leke, beyazlat, gözenek
 uniform vec4 uSkin2[8];  // göz altı, diş, göz parlat, ten tonu miktarı
@@ -172,6 +173,7 @@ void main(){
     vec4 fx = texture(uEyeFx, vUv);
     col = mix(col, fx.rgb, fx.a);
   }
+  if (uMono > 0.5) col = vec3(luma(col));
   o = vec4(clamp(col, 0.0, 1.0), c4.a);
 }`
 

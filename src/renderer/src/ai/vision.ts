@@ -68,9 +68,18 @@ function ptsBox(f: Pt[], W: number, H: number): FaceBox {
 
 /** YuNet kutusunun büyütülmüş kırpımında 478 nokta; loşsa aydınlatarak. Koordinatlar kaynağa geri taşınır. */
 async function landmarksInCrop(lm: FaceLandmarker, img: TexImageSource, b: FaceBox, W: number, H: number): Promise<Pt[] | null> {
-  const side = Math.max(b.w, b.h) * 2.4
+  // farklı kırpım genişlikleri: sakal, pipo gibi yüzü uzatan ögelerde dedektör bazı ölçeklerde yüzü kaçırıyor
+  // (çeşitli fotoğraf turu: piposu ve uzun sakalı olan yaşlı adam yalnız sıkı ve küçük kırpımda bulundu)
+  for (const [k, N] of [[2.4, 384], [1.7, 256], [1.3, 256], [3.2, 384]]) {
+    const r = await landmarksInCropAt(lm, img, b, W, H, k, N)
+    if (r) return r
+  }
+  return null
+}
+
+async function landmarksInCropAt(lm: FaceLandmarker, img: TexImageSource, b: FaceBox, W: number, H: number, k: number, N: number): Promise<Pt[] | null> {
+  const side = Math.max(b.w, b.h) * k
   const cx0 = b.x + b.w / 2 - side / 2, cy0 = b.y + b.h / 2 - side / 2
-  const N = 384
   const c = document.createElement('canvas')
   c.width = c.height = N
   const ctx = c.getContext('2d', { willReadFrequently: true })!

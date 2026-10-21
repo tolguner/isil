@@ -16,11 +16,11 @@ async function coarse(src: Src): Promise<Float32Array | null> {
   const t = new Float32Array(3 * S * S)
   for (let i = 0; i < S * S; i++) for (let k = 0; k < 3; k++) t[k * S * S + i] = (d[i * 4 + k] / 255 - MEAN[k]) / STD[k]
   const { out, sess } = await runModel('skyseg', { 'input.1': new ort.Tensor('float32', t, [1, 3, S, S]) })
+  // çıktı zaten olasılık (sigmoid); en küçük-en büyük germesi yapılmaz, yoksa gökyüzü olmayan fotoğrafta en
+  // açık düz duvar "gökyüzü" olur (çeşitli fotoğraf turunda stüdyo fonlarında görüldü)
   const r = out[sess.outputNames[0]].data as Float32Array
-  let mn = Infinity, mx = -Infinity
-  for (const v of r) { if (v < mn) mn = v; if (v > mx) mx = v }
   const o = new Float32Array(S * S)
-  for (let i = 0; i < S * S; i++) o[i] = (r[i] - mn) / Math.max(mx - mn, 1e-6)
+  for (let i = 0; i < S * S; i++) o[i] = Math.max(0, Math.min(1, r[i]))
   return o
 }
 
@@ -65,7 +65,7 @@ function guided(I: Float32Array, p: Float32Array, w: number, h: number, r: numbe
  * Gökyüzü maskesi (0..1), en çok 1024 px'lik çalışma boyutunda; dönen nesne boyut bilgisi taşır.
  * Kaba maske çift doğrusal büyütülür, sonra görüntü kılavuzlu süzgeçle kenara oturtulur.
  */
-export async function skyMask(src: Src, person?: { w: number; h: number; background: Float32Array } | null): Promise<{ m: Float32Array; w: number; h: number; share: number } | null> {
+export async function skyMask(src: Src, person?: { w: number; h: number; background: Float32Array } | null): Promise<{ m: Float32Array; w: number; h: number; share: number; backdrop: boolean } | null> {
   const c = await coarse(src)
   if (!c) return null
   const k = Math.min(1, 1024 / Math.max(src.width, src.height))
@@ -119,7 +119,16 @@ export async function skyMask(src: Src, person?: { w: number; h: number; backgro
   }
   let s = 0
   for (let i = 0; i < w * h; i++) s += m[i]
-  return { m, w, h, share: s / (w * h) }
+  // stüdyo fonu: kişi kareyi doldururken "gökyüzü" renksiz ve düz (siyah, gri, beyaz fon). Model bunları da
+  // gökyüzü sanabiliyor; panel uyarı gösterir, kullanıcı yine de uygulayabilir.
+  let backdrop = false
+  if (person && n > 50) {
+    let fg = 0
+    for (let i = 0; i < person.background.length; i++) fg += 1 - person.background[i]
+    const chroma = Math.max(cr, cg, cb) - Math.min(cr, cg, cb)
+    backdrop = fg / person.background.length > 0.2 && chroma < 20
+  }
+  return { m, w, h, share: s / (w * h), backdrop }
 }
 
 /** Gökyüzünün alt sınırı (ufuk): maskenin ağırlıklı en alt satırı, 0..1. */

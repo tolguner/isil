@@ -383,10 +383,15 @@ class Session {
       r.setBase(full)
       if (this.maskBitmap && this.project && doc.mask) r.setSubjectMask(await decode(await platform.getFile(this.project.id, doc.mask)))
       if (this.bgImage && this.project && doc.background.fill?.type === 'image') r.setBgImage(await decode(await platform.getFile(this.project.id, doc.background.fill.file)))
-      // önizleme henüz çizilmediyse maskeler burada kurulur
-      if (!this.masks && this.faces && doc.retouch.faces.some(faceHasSkinWork)) {
-        const hairAmt = (doc.retouch.faces[0]?.makeup.hair?.amount ?? 0) / 100
-        this.masks = buildMasks(this.faceGeos(), this.W, this.H, this.seg, hairAmt > 0)
+      // maskeler bu görsele ait değilse (önizleme henüz çizilmedi ya da önceki fotoğraftan kaldı) burada kurulur
+      if (this.faces && doc.retouch.faces.some(faceHasSkinWork)) {
+        const needHair = (doc.retouch.faces[0]?.makeup.hair?.amount ?? 0) > 0
+        const key = this.baseKey + ':' + this.faces.length + ':' + (this.seg ? 's' : '') + (needHair ? 'h' : '')
+        if (!this.masks || key !== this.masksKey) {
+          this.masks = buildMasks(this.faceGeos(), this.W, this.H, this.seg, needHair)
+          this.masksKey = key
+          this.renderer?.setFaceMasks(this.masks.a, this.masks.b, this.masks.c)
+        }
       }
       if (this.masks) r.setFaceMasks(this.masks.a, this.masks.b, this.masks.c)
       // göz makyajı tam çözünürlükte çizilir (kirpik ve kalem ince ayrıntı)

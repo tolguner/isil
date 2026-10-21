@@ -2,6 +2,16 @@
 
 Her yayımlanan yapıda sürümün yalnız son hanesi artırılır (0.8.0 → 0.8.1); ara sürüm (0.9) büyük aşamalarda, 1.0.0 ise yayına hazır tam üründe. Uygulama Ayarlar → Hakkında'da sürümü gösterir.
 
+## 0.8.14 — 2026-10-21
+
+Kalite turu: araçlar tek portre yerine 20 farklı fotoğrafla denendi (farklı ten renkleri ve yaşlar, gözlük, sakal, başörtüsü, siyah-beyaz, profil, grup, gece, gökyüzü, tabela, tam boy). Bulunan hatalar:
+
+- **Gökyüzü:** model çıktısı gerilerek kullanılıyordu; gökyüzü olmayan fotoğrafta en açık düz duvar gökyüzü sanılıyordu (bej duvar, kitaplık köşesi). Artık olasılık olduğu gibi kullanılıyor. Kişinin kareyi doldurduğu düz, renksiz fonlarda (stüdyo fonu) panel "bu bir fon olabilir" uyarısı gösteriyor.
+- **Metin silme:** yüz, gözlük, ağız, başörtüsü, saç ve bulutlar yazı sanılıyordu. Yüzlerin içi dışarıda bırakılıyor; iri ve kareye yakın bölgeler yazı sayılmıyor (dikey tabela yazısı korunuyor).
+- **Yüz bulma:** uzun sakallı, piposu olan siyah-beyaz portrede yüz bulunamıyordu. Yedek tarama artık birkaç kırpım boyutu deniyor.
+- **Dışa aktarma:** önizleme henüz çizilmemişken ya da önceki fotoğrafın yüz maskeleri kalmışken dışa aktarılan dosyada rötuş ve makyaj eksik ya da yanlış yerde olabiliyordu; maskeler dışa aktarmada yeniden kuruluyor.
+- **Siyah-beyaz fotoğraf:** makyaj ve rötuş gri karede renk katıyordu (pembe dudak, mavi göz). Renksiz fotoğraflarda sonuç gri kalıyor.
+
 ## 0.8.13 — 2026-10-18
 
 - **Gökyüzü değiştirme** (Arka plan → Gökyüzü):

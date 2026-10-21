@@ -4,7 +4,8 @@ import { useEffect, useState } from 'react'
 import { Type } from 'lucide-react'
 import { useEditor } from '@/store/editor'
 import { useT } from '@/lib/i18n'
-import { detectText } from '@/ai/text'
+import { detectText, faceRects } from '@/ai/text'
+import { session } from '@/engine/session'
 import { inpaintTiles } from '@/ai/ops'
 import { generativeErase } from '@/ai/generative'
 import { FillMethod, eraseOpts } from './fill'
@@ -23,7 +24,9 @@ function useSt() {
 
 async function find() {
   if (!work.preview) return
-  const r = await detectText(work.preview)
+  // yüzlerin içi (göz, ağız) yazı sanılmasın diye yüz kutuları dışarıda bırakılır
+  const faces = await session.ensureFaces().catch(() => [])
+  const r = await detectText(work.preview, faceRects(faces))
   st.boxes = (r?.boxes ?? []).map((b) => ({ ...b, on: true }))
   emit()
 }

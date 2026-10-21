@@ -66,6 +66,7 @@ function SkyPanel() {
     <>
       <p className="note">{tr('Gökyüzü yapay zekâyla ayrılır ve yenisiyle değiştirilir; ön plan yeni ışığa uyumlanır. Bilgisayarında çalışır.', 'The sky is found by AI and replaced; the foreground adapts to the new light. Runs on your computer.')}</p>
       {none && <div className="card"><b>{tr('Gökyüzü bulunamadı', 'No sky found')}</b><div className="note">{tr('Bu fotoğrafta değiştirilecek kadar gökyüzü yok.', 'There is not enough sky in this photo to replace.')}</div></div>}
+      {!none && mk?.backdrop && <div className="card"><b>{tr('Bu bir fon olabilir', 'This may be a backdrop')}</b><div className="note">{tr('Arka plan düz ve renksiz; gerçek gökyüzü yerine stüdyo fonu ya da duvar olabilir. Yine de değiştirebilirsin.', 'The background is flat and colourless; it may be a studio backdrop or wall rather than sky. You can still replace it.')}</div></div>}
       <div className="presets">
         {SKIES.map((s) => (
           <Preset key={s.id} label={tr(s.label[0], s.label[1])} on={sel === s.id} onClick={() => void pick(s.id)}>

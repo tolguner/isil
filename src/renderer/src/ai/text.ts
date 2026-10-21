@@ -6,7 +6,32 @@ import { toCanvas } from './ops'
 
 type Src = CanvasImageSource & { width: number; height: number }
 
-export async function detectText(src: Src): Promise<{ mask: HTMLCanvasElement; boxes: { x: number; y: number; w: number; h: number }[] } | null> {
+type Rect = { x: number; y: number; w: number; h: number }
+
+/**
+ * Yazı çekirdeğinin biçimi gerçek yazıya benziyor mu? Çeşitli fotoğraf turunda model yüzü, gözlüğü, ağzı, başlığı
+ * ve bulutları da "yazı" sandı; bunların çekirdekleri iri ve kareye yakın. Satır yazısı yatay ince, tabela yazısı
+ * dikey ince olur. hRel çekirdek yüksekliğinin görüntü yüksekliğine oranı, asp en/boy.
+ */
+function textLike(hRel: number, asp: number, score: number) {
+  if (asp < 0.35) return true // dikey yazı (tabela)
+  if (hRel > 0.12 && asp < 3) return false
+  if (hRel > 0.04 && asp < 2.8) return false
+  if (hRel < 0.004 && score < 0.8) return false // çok küçük ve kararsız: doku gürültüsü
+  return true
+}
+
+/** Yüz noktalarından (0..1) yüz kutuları. */
+export function faceRects(faces: { x: number; y: number }[][]): Rect[] {
+  return faces.map((f) => {
+    let x0 = 1, y0 = 1, x1 = 0, y1 = 0
+    for (const p of f) { x0 = Math.min(x0, p.x); y0 = Math.min(y0, p.y); x1 = Math.max(x1, p.x); y1 = Math.max(y1, p.y) }
+    return { x: x0, y: y0, w: x1 - x0, h: y1 - y0 }
+  })
+}
+
+/** avoid: yüz kutuları (0..1); merkezi bir yüzün içinde kalan bölge yazı sayılmaz (göz, ağız, kaş). */
+export async function detectText(src: Src, avoid: Rect[] = []): Promise<{ mask: HTMLCanvasElement; boxes: { x: number; y: number; w: number; h: number }[] } | null> {
   if (!(await ensureModel('textdet'))) return null
   const W = src.width, H = src.height
   const k = Math.min(1, 1280 / Math.max(W, H))
@@ -42,7 +67,13 @@ export async function detectText(src: Src): Promise<{ mask: HTMLCanvasElement; b
     boxes.push(b)
   }
   // güveni düşük ya da çok küçük bölgeleri ele (gürültü)
-  const keep = boxes.filter((b) => b.n >= 12 && b.s / b.n > 0.55)
+  const keep = boxes.filter((b) => {
+    if (b.n < 12 || b.s / b.n <= 0.55) return false
+    const bw = b.x1 - b.x0 + 1, bh = b.y1 - b.y0 + 1
+    const cx = (b.x0 + bw / 2) / w, cy = (b.y0 + bh / 2) / h
+    if (avoid.some((r) => cx > r.x && cx < r.x + r.w && cy > r.y && cy < r.y + r.h)) return false
+    return textLike(bh / h, bw / bh, b.s / b.n)
+  })
   const mask = document.createElement('canvas')
   mask.width = W
   mask.height = H
