@@ -139,6 +139,8 @@ export interface Settings {
   exportMaxSide: number   // 0 = orijinal
   /** dışa aktarmada kaynak EXIF'i (tarih, kamera) korunsun mu; konum her zaman silinir */
   exportMeta?: 'keep' | 'strip'
+  /** görünür damga: rötuşlu fotoğraf etiketi (Fransa/Norveç reklam kuralları) ya da YZ ibaresi */
+  exportStamp?: 'none' | 'tr' | 'fr' | 'no' | 'en' | 'ai'
   genQuality: 'fast' | 'best'   // FLUX.2 klein 4B / 9B
   autosave: boolean
   myLooks?: MyLook[]

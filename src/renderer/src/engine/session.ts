@@ -1,3 +1,4 @@
+import { drawStamp } from '@/lib/stamp'
 import { usedGenerativeAI, wideIcc, withMetadata } from '@/lib/metadata'
 import { tNow } from '@/lib/i18n'
 // Etkin projenin görüntü kaynakları, analiz önbelleği ve dışa aktarma.
@@ -389,7 +390,7 @@ class Session {
   }
 
   /** Tam çözünürlükte dışa aktarma. */
-  async exportBlob(doc: EditDoc, s: Pick<Settings, 'exportFormat' | 'exportQuality' | 'exportMaxSide'> & { exportMeta?: Settings['exportMeta'] }, opts: { maxSide?: number } = {}): Promise<{ blob: Blob; w: number; h: number }> {
+  async exportBlob(doc: EditDoc, s: Pick<Settings, 'exportFormat' | 'exportQuality' | 'exportMaxSide'> & { exportMeta?: Settings['exportMeta']; exportStamp?: Settings['exportStamp'] }, opts: { maxSide?: number } = {}): Promise<{ blob: Blob; w: number; h: number }> {
     // geniş renk aralığı (iPhone Display P3 gibi): kaynakta piksel değiştiren adım yoksa ve JPEG çıkıyorsa profil
     // korunur; değerler dönüştürülmeden işlenir. Piksel adımı varsa taban zaten sRGB PNG'dir.
     const sourceAll = this.project ? new Uint8Array(await (await platform.getFile(this.project.id, this.project.sourceFile)).arrayBuffer()).subarray(0, 512 * 1024) : null
@@ -403,7 +404,7 @@ class Session {
     return { blob: new Blob([out as BlobPart], { type: r.blob.type }), w: r.w, h: r.h }
   }
 
-  private async exportRaw(doc: EditDoc, s: Pick<Settings, 'exportFormat' | 'exportQuality' | 'exportMaxSide'>, opts: { maxSide?: number } = {}, rawColor = false): Promise<{ blob: Blob; w: number; h: number }> {
+  private async exportRaw(doc: EditDoc, s: Pick<Settings, 'exportFormat' | 'exportQuality' | 'exportMaxSide' | 'exportStamp'>, opts: { maxSide?: number } = {}, rawColor = false): Promise<{ blob: Blob; w: number; h: number }> {
     if (!this.baseBlob) throw new Error('görüntü yok')
     const full = await decode(this.baseBlob, undefined, rawColor)
     const off = document.createElement('canvas')
@@ -443,6 +444,7 @@ class Session {
       const ctx = c.getContext('2d')!
       await document.fonts.ready
       drawLayers(ctx, doc.layers, c.width, c.height)
+      if (s.exportStamp && s.exportStamp !== 'none') drawStamp(ctx, c.width, c.height, s.exportStamp)
       let type = s.exportFormat === 'png' ? 'image/png' : s.exportFormat === 'webp' ? 'image/webp' : 'image/jpeg'
       // şeffaflık varsa JPEG yerine PNG
       const transparent = doc.background.fill?.type === 'transparent' || (doc.background.useCutout && !doc.background.fill)

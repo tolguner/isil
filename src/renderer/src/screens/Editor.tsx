@@ -1,3 +1,4 @@
+import { STAMPS } from '@/lib/stamp'
 import { ErrorBoundary } from '@/components/ErrorBoundary'
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { CommandPalette } from '@/components/CommandPalette'
@@ -382,6 +383,7 @@ export function EditorTopActions() {
   const [fmt, setFmt] = useState(settings.exportFormat)
   const [quality, setQuality] = useState(settings.exportQuality)
   const [maxSide, setMaxSide] = useState(settings.exportMaxSide)
+  const [stamp, setStamp] = useState<NonNullable<typeof settings.exportStamp>>(settings.exportStamp ?? 'none')
 
   const doExport = async () => {
     const st = useEditor.getState()
@@ -391,12 +393,12 @@ export function EditorTopActions() {
       st.setBusy({ text: tr('Dışa aktarılıyor…', 'Exporting…') })
       await saveNow()
       const doc = useEditor.getState().doc
-      const { blob } = await session.exportBlob(doc, { exportFormat: fmt, exportQuality: quality, exportMaxSide: maxSide, exportMeta: useEditor.getState().settings.exportMeta })
+      const { blob } = await session.exportBlob(doc, { exportFormat: fmt, exportQuality: quality, exportMaxSide: maxSide, exportMeta: useEditor.getState().settings.exportMeta, exportStamp: stamp })
       const ext = blob.type === 'image/png' ? 'png' : blob.type === 'image/webp' ? 'webp' : 'jpg'
       const name = (st.project?.name || 'isil') + '-isil'
       const path = await platform.exportSave({ bytes: new Uint8Array(await blob.arrayBuffer()), ext, suggestedName: name })
       if (path) st.toast('success', tr('Kaydedildi: ', 'Saved: ') + path.split(/[\\/]/).pop(), platform.isElectron ? { label: tr('Klasörde göster', 'Show in folder'), run: () => platform.reveal(path) } : undefined)
-      void platform.setSettings({ exportFormat: fmt, exportQuality: quality, exportMaxSide: maxSide }).then(st.setSettings)
+      void platform.setSettings({ exportFormat: fmt, exportQuality: quality, exportMaxSide: maxSide, exportStamp: stamp }).then(st.setSettings)
     } catch (e) {
       console.error(e)
       st.toast('error', tr('Dışa aktarma başarısız: ', 'Export failed: ') + (e as Error).message)
@@ -424,6 +426,13 @@ export function EditorTopActions() {
               <option value={4096}>4096 px</option>
               <option value={2048}>2048 px</option>
               <option value={1080}>1080 px</option>
+            </select>
+          </div>
+          <div className="field">
+            <span>{tr('Görünür damga', 'Visible label')}</span>
+            <select className="select" value={stamp} onChange={(e) => setStamp(e.target.value as typeof stamp)}>
+              <option value="none">{tr('Yok', 'None')}</option>
+              {Object.entries(STAMPS).map(([k, v]) => <option key={k} value={k}>{tr(v.label[0], v.label[1])}</option>)}
             </select>
           </div>
           <button className="btn primary block" onClick={doExport}>{tr('Kaydet', 'Save')}</button>
