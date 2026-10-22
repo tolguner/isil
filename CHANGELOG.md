@@ -2,6 +2,17 @@
 
 Her yayımlanan yapıda sürümün yalnız son hanesi artırılır (0.8.0 → 0.8.1); ara sürüm (0.9) büyük aşamalarda, 1.0.0 ise yayına hazır tam üründe. Uygulama Ayarlar → Hakkında'da sürümü gösterir.
 
+## 0.9.5 — 2026-10-22
+
+Tasarım ve deneyim cilasının ilk bölümü (45 aracın ve tüm ekranların iki pencere boyutunda denetimi sonrası):
+
+- **Ana sayfa:** "Projelerim" artık en üstte, giriş alanının hemen altında; ilk 8 proje görünüyor, gerisi "Tümünü göster" ile açılıyor. Hiç proje yoksa boş durum en altta kalıyor. Desteklenen biçimlere HEIC eklendi.
+- **Sekmeler:** her sekme ilk aracıyla açılıyor; sağ panel artık "Bir araç seç" diye boş kalmıyor.
+- **Açılır listeler:** Windows'un kendi görünümü yerine uygulamanın koyu temasında; açılan liste de koyu.
+- **Okunabilirlik:** hazır ayar kartlarının altındaki yazılar büyüdü.
+- **Hız:** yüz modelleri açılıştan kısa süre sonra arka planda yükleniyor; ilk fotoğrafta yüz bulma beklemesi kalktı (önceden yaklaşık 4 sn).
+- **Kalabalık gruplar:** 16 yüze kadar her yüze ayrı rötuş ve makyaj verilebiliyor (önceden 8).
+
 ## 0.9.4 — 2026-10-22
 
 - **Renk profili korunuyor:** iPhone'un Display P3 gibi geniş renk aralıklı JPEG'lerinde, piksel adımı yoksa dışa aktarma renkleri sRGB'ye sıkıştırmadan işliyor ve profili dosyaya geri yazıyor.

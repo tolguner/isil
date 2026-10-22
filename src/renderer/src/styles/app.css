@@ -176,7 +176,7 @@ button, input, select, textarea { font: inherit; color: inherit; }
 
 /* ön ayar kartları */
 .presets { display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--sp-2); }
-.preset { background: none; border: 0; padding: 0; cursor: pointer; text-align: center; color: var(--c-text-muted); font-size: var(--fs-2xs); }
+.preset { background: none; border: 0; padding: 0; cursor: pointer; text-align: center; color: var(--c-text-muted); font-size: var(--fs-xs); line-height: var(--lh-xs); }
 .preset .pv { aspect-ratio: 4/5; border-radius: var(--r-sm); overflow: hidden; border: 2px solid transparent; background: var(--c-surface-2) center/cover; margin-bottom: 4px; display: grid; place-items: center; font-size: 22px; }
 .preset .pv img, .preset .pv canvas { width: 100%; height: 100%; object-fit: cover; display: block; }
 .preset.on { color: var(--c-text); }
@@ -199,6 +199,12 @@ button, input, select, textarea { font: inherit; color: inherit; }
   background: var(--c-bg); border: 1px solid var(--c-border-input); border-radius: var(--r-md); padding: 8px 10px; color: var(--c-text); width: 100%;
 }
 .textarea { resize: vertical; min-height: 72px; }
+/* açılır liste: Windows görünümü yerine uygulamanın koyu teması (açılan liste de koyu) */
+.select { appearance: none; color-scheme: dark; cursor: pointer; padding-right: 32px;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%23a3a9b4' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+  background-repeat: no-repeat; background-position: right 10px center; }
+.select:hover { border-color: var(--c-text-faint); }
+.select option { background: var(--c-surface-2); color: var(--c-text); }
 .row { display: flex; gap: var(--sp-2); align-items: center; }
 .row.wrap { flex-wrap: wrap; }
 .muted { color: var(--c-text-muted); font-size: var(--fs-sm); }

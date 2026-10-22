@@ -22,7 +22,8 @@ export function Editor() {
 
   // tek araçlı sekmeler sekmeye girince otomatik açılır (uygulandıktan sonra sonucu görmek için açılmaz)
   useEffect(() => {
-    if (tabDef.auto && !useEditor.getState().tool && tabDef.tools[0]) useEditor.getState().openTool(tabDef.tools[0].id)
+    // her sekme ilk aracıyla açılır (boş "bir araç seç" paneli kalmasın)
+    if (!useEditor.getState().tool && tabDef.tools[0]) useEditor.getState().openTool(tabDef.tools[0].id)
   }, [tab])
 
   // otomatik kayıt

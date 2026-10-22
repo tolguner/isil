@@ -29,6 +29,12 @@ export function App() {
   }, [])
   useEffect(() => platform.onBeforeClose(beforeClose), [])
 
+  // yüz modelleri açılıştan kısa süre sonra arka planda yüklenir (ilk fotoğrafta bekleme olmasın)
+  useEffect(() => {
+    const t = setTimeout(() => void import('./ai/vision').then((v) => v.warmFaces()).catch(() => {}), 1500)
+    return () => clearTimeout(t)
+  }, [])
+
   // "Işıl ile aç" (Gezgin'de sağ tık ya da çift tık): gelen fotoğraf yeni proje olarak açılır
   useEffect(() => {
     const open = async (paths: string[]) => {

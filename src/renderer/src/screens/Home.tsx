@@ -30,6 +30,7 @@ export function Home() {
   const [over, setOver] = useState(false)
   const [selecting, setSelecting] = useState(false)
   const [sel, setSel] = useState<Set<string>>(new Set())
+  const [showAll, setShowAll] = useState(false)
 
   // toplu düzenlemenin geçici projeleri listede görünmez
   const refresh = () => platform.listProjects().then((p) => setProjects(p.filter((x) => !x.name.startsWith('~toplu-')))).catch(() => setProjects([]))
@@ -90,6 +91,61 @@ export function Home() {
     refresh()
   }
 
+  const projectsSection = (
+    <>
+        <div className="section-title">
+        <h2>{tr('Projelerim', 'My projects')}</h2>
+        {!!projects?.length && (
+          <div className="row">
+            {selecting ? (
+              <>
+                <span className="muted">{tr(`${sel.size} seçili`, `${sel.size} selected`)}</span>
+                <button className="btn sm" disabled={!sel.size} onClick={dup}><Copy size={14} /> {tr('Çoğalt', 'Duplicate')}</button>
+                <button className="btn sm danger" disabled={!sel.size} onClick={del}><Trash2 size={14} /> {tr('Sil', 'Delete')}</button>
+                <button className="btn sm ghost" onClick={() => { setSelecting(false); setSel(new Set()) }}>{tr('Bitti', 'Done')}</button>
+              </>
+            ) : (
+              <button className="btn sm ghost" onClick={() => setSelecting(true)}><CheckSquare size={14} /> {tr('Seç', 'Select')}</button>
+            )}
+          </div>
+        )}
+      </div>
+      {projects === null ? (
+        <div className="grid-projects" aria-busy="true">
+          {[0, 1, 2, 3].map((i) => <div key={i} className="pcard" style={{ aspectRatio: '4/5.6', opacity: 0.4 }} />)}
+        </div>
+      ) : projects.length === 0 ? (
+        <div className="empty">
+          <Sparkles size={28} />
+          <div>{tr('Henüz proje yok. İlk fotoğrafını aç, otomatik kaydedilir.', 'No projects yet. Open your first photo — it saves automatically.')}</div>
+        </div>
+      ) : (
+        <div className="grid-projects">
+          {(showAll || selecting ? projects : projects.slice(0, 8)).map((p) => (
+            <button
+              key={p.id}
+              className={'pcard' + (sel.has(p.id) ? ' selected' : '')}
+              onClick={() => (selecting ? toggle(p.id) : openExisting(p.id))}
+              aria-pressed={selecting ? sel.has(p.id) : undefined}
+            >
+              <span className="thumb" style={{ backgroundImage: p.thumb ? `url("${p.thumb}")` : undefined }} />
+              {selecting && <span className="check">{sel.has(p.id) && <Check size={14} />}</span>}
+              <span className="meta">
+                <b title={p.name}>{p.name}</b>
+                <span>{new Date(p.updatedAt).toLocaleString()} · {p.width}×{p.height}</span>
+              </span>
+            </button>
+          ))}
+        </div>
+      )}
+      {!!projects && projects.length > 8 && !selecting && (
+        <button className="btn sm ghost" style={{ marginTop: 8 }} onClick={() => setShowAll((v) => !v)}>
+          {showAll ? tr('Daha az göster', 'Show less') : tr(`Tümünü göster (${projects.length})`, `Show all (${projects.length})`)}
+        </button>
+      )}
+    </>
+  )
+
   return (
     <div className="home" onDragOver={(e) => { e.preventDefault(); setOver(true) }} onDragLeave={() => setOver(false)} onDrop={onDrop}>
       <div className="home-inner">
@@ -107,9 +163,12 @@ export function Home() {
           <div className={'dropzone' + (over ? ' over' : '')} aria-hidden>
             <FolderOpen size={36} />
             <div style={{ marginTop: 8 }}>{tr('Görseli buraya bırak', 'Drop an image here')}</div>
-            <div className="note">JPG · PNG · WebP · AVIF</div>
+            <div className="note">JPG · PNG · WebP · HEIC · AVIF</div>
           </div>
         </section>
+
+        {/* geri dönen kullanıcı için projeler en üstte; hiç proje yoksa en altta boş durum */}
+        {!!projects?.length && projectsSection}
 
         <div className="section-title"><h2>{tr('Hızlı başla', 'Quick start')}</h2></div>
         <div className="quick">
@@ -146,51 +205,7 @@ export function Home() {
           })}
         </div>
 
-        <div className="section-title">
-          <h2>{tr('Projelerim', 'My projects')}</h2>
-          {!!projects?.length && (
-            <div className="row">
-              {selecting ? (
-                <>
-                  <span className="muted">{tr(`${sel.size} seçili`, `${sel.size} selected`)}</span>
-                  <button className="btn sm" disabled={!sel.size} onClick={dup}><Copy size={14} /> {tr('Çoğalt', 'Duplicate')}</button>
-                  <button className="btn sm danger" disabled={!sel.size} onClick={del}><Trash2 size={14} /> {tr('Sil', 'Delete')}</button>
-                  <button className="btn sm ghost" onClick={() => { setSelecting(false); setSel(new Set()) }}>{tr('Bitti', 'Done')}</button>
-                </>
-              ) : (
-                <button className="btn sm ghost" onClick={() => setSelecting(true)}><CheckSquare size={14} /> {tr('Seç', 'Select')}</button>
-              )}
-            </div>
-          )}
-        </div>
-        {projects === null ? (
-          <div className="grid-projects" aria-busy="true">
-            {[0, 1, 2, 3].map((i) => <div key={i} className="pcard" style={{ aspectRatio: '4/5.6', opacity: 0.4 }} />)}
-          </div>
-        ) : projects.length === 0 ? (
-          <div className="empty">
-            <Sparkles size={28} />
-            <div>{tr('Henüz proje yok. İlk fotoğrafını aç, otomatik kaydedilir.', 'No projects yet. Open your first photo — it saves automatically.')}</div>
-          </div>
-        ) : (
-          <div className="grid-projects">
-            {projects.map((p) => (
-              <button
-                key={p.id}
-                className={'pcard' + (sel.has(p.id) ? ' selected' : '')}
-                onClick={() => (selecting ? toggle(p.id) : openExisting(p.id))}
-                aria-pressed={selecting ? sel.has(p.id) : undefined}
-              >
-                <span className="thumb" style={{ backgroundImage: p.thumb ? `url("${p.thumb}")` : undefined }} />
-                {selecting && <span className="check">{sel.has(p.id) && <Check size={14} />}</span>}
-                <span className="meta">
-                  <b title={p.name}>{p.name}</b>
-                  <span>{new Date(p.updatedAt).toLocaleString()} · {p.width}×{p.height}</span>
-                </span>
-              </button>
-            ))}
-          </div>
-        )}
+        {!projects?.length && projectsSection}
       </div>
     </div>
   )

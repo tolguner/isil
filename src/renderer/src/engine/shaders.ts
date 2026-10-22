@@ -53,15 +53,15 @@ uniform sampler2D uBase, uBlurS, uBlurM, uMaskA, uMaskB, uMaskC, uMaskP, uEyeFx,
 uniform float uSkinTexOn; // gerçek gözenek dokusu döşemesi yüklü mü
 uniform float uMono;    // siyah-beyaz fotoğraf: sonuç griye indirilir
 uniform float uEyeOn;    // göz makyajı katmanı (kalem, kirpik, kapak, ışıltı) ve iris rengi
-uniform vec4 uSkin[8];   // pürüzsüz, leke, beyazlat, gözenek
-uniform vec4 uSkin2[8];  // göz altı, diş, göz parlat, ten tonu miktarı
-uniform vec4 uTone[8];   // ten rengi rgb + doku(ayrıntı)
-uniform vec4 uLip[8];    // renk + miktar
-uniform vec4 uBlush[8];
-uniform vec4 uLid[8];
-uniform vec4 uBrow[8];
-uniform vec4 uSculpt[8]; // kontür, aydınlatıcı, dolgun ışık, kırışık
-uniform vec4 uSkinX[8];  // doku (yapay gözenek), -, -, -
+uniform vec4 uSkin[16];   // pürüzsüz, leke, beyazlat, gözenek
+uniform vec4 uSkin2[16];  // göz altı, diş, göz parlat, ten tonu miktarı
+uniform vec4 uTone[16];   // ten rengi rgb + doku(ayrıntı)
+uniform vec4 uLip[16];    // renk + miktar
+uniform vec4 uBlush[16];
+uniform vec4 uLid[16];
+uniform vec4 uBrow[16];
+uniform vec4 uSculpt[16]; // kontür, aydınlatıcı, dolgun ışık, kırışık
+uniform vec4 uSkinX[16];  // doku (yapay gözenek), -, -, -
 uniform vec4 uHair;      // saç rengi + miktar
 uniform float uHairOn;
 ${COMMON}
@@ -73,9 +73,9 @@ void main(){
   vec4 A = texture(uMaskA, vUv);
   vec4 B = texture(uMaskB, vUv);
   vec4 C = texture(uMaskC, vUv);
-  int id = int(floor(C.r * 8.0 + 0.5)) - 1;
+  int id = int(floor(C.r * 16.0 + 0.5)) - 1; // en çok 16 yüz ayrı ayarlanır
   vec3 col = c;
-  if (id >= 0 && id < 8) {
+  if (id >= 0 && id < 16) {
     vec4 sk = uSkin[id]; vec4 sk2 = uSkin2[id];
     float skin = A.r;
     // korunan işaretler (kullanıcı fırçası): yumuşatma, leke, kırışık ve ten burada sıfır

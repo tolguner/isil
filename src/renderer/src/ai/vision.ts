@@ -138,6 +138,18 @@ export async function detectFaces(img: TexImageSource): Promise<Pt[][]> {
   return faces.sort((a, b) => a[1].x - b[1].x)
 }
 
+/**
+ * Yüz modellerini önceden yükle (açılışta boştayken): ilk fotoğrafta yüz bulma 4 sn yerine anında başlasın.
+ * Küçük boş bir görüntüyle MediaPipe ve YuNet oturumları kurulur; hata olursa sessizce geçilir.
+ */
+export async function warmFaces() {
+  const c = document.createElement('canvas')
+  c.width = c.height = 64
+  const lm = await landmarker()
+  lm.detect(c)
+  await detectFaceBoxes(c).catch(() => [])
+}
+
 /** Hızlı yüz noktaları (canlı kamera için): yalnız MediaPipe, YuNet ek taraması yok. */
 export async function detectFacesFast(img: TexImageSource): Promise<Pt[][]> {
   const lm = await landmarker()

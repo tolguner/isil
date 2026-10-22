@@ -551,7 +551,7 @@ export function buildMasks(
     const blur = (ctx: CanvasRenderingContext2D, k: number) => (ctx.filter = `blur(${Math.max(1, F * k)}px)`)
     // kimlik haritası (yüz + boyun payı)
     const bb = g.bbox(0.18)
-    const v = Math.round(((fi + 1) / 8) * 255)
+    const v = Math.round(((Math.min(fi, 15) + 1) / 16) * 255) // 16 yüz yuvası; fazlası son yuvayı paylaşır
     L.id.ctx.fillStyle = `rgb(${v},${v},${v})`
     L.id.ctx.fillRect(bb.x * s, bb.y * s, bb.w * s, bb.h * s * 1.15)
     // cilt: oval − gözler, kaşlar, dudaklar
@@ -793,7 +793,7 @@ export function hexRgb(hex: string): [number, number, number] {
 
 export function faceUniforms(edits: FaceEdit[], count: number): FaceUniforms {
   const u = emptyFaceUniforms()
-  for (let i = 0; i < Math.min(count, 8); i++) {
+  for (let i = 0; i < Math.min(count, 16); i++) {
     const e = edits.find((x) => x.index === i)
     if (!e) continue
     const k = (n: string) => (e.skin[n] ?? 0) / 100

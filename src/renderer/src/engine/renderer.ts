@@ -9,7 +9,7 @@ export interface FaceUniforms {
   lip: Float32Array; blush: Float32Array; lid: Float32Array; brow: Float32Array; sculpt: Float32Array; skinX: Float32Array
 }
 export function emptyFaceUniforms(): FaceUniforms {
-  const z = () => new Float32Array(32)
+  const z = () => new Float32Array(16 * 4) // yüz başına bir vec4, en çok 16 yüz
   return { skin: z(), skin2: z(), tone: z(), lip: z(), blush: z(), lid: z(), brow: z(), sculpt: z(), skinX: z() }
 }
 
