@@ -1,4 +1,4 @@
-import { usedGenerativeAI, withMetadata } from '@/lib/metadata'
+import { usedGenerativeAI, wideIcc, withMetadata } from '@/lib/metadata'
 import { tNow } from '@/lib/i18n'
 // Etkin projenin görüntü kaynakları, analiz önbelleği ve dışa aktarma.
 import type { EditDoc, Project, Settings } from '@shared/schema'
@@ -24,8 +24,9 @@ function skinTexture() {
   return skinTile
 }
 
-async function decode(blob: Blob, maxSide?: number): Promise<ImageBitmap> {
-  const full = await createImageBitmap(blob, { imageOrientation: 'from-image' })
+async function decode(blob: Blob, maxSide?: number, raw = false): Promise<ImageBitmap> {
+  // raw: renk profili dönüştürülmez (geniş renk aralıklı JPEG'in değerleri olduğu gibi işlenir, profil dosyaya geri yazılır)
+  const full = await createImageBitmap(blob, raw ? { imageOrientation: 'from-image', colorSpaceConversion: 'none' } : { imageOrientation: 'from-image' })
   if (!maxSide || Math.max(full.width, full.height) <= maxSide) return full
   const s = maxSide / Math.max(full.width, full.height)
   const bm = await createImageBitmap(full, { resizeWidth: Math.round(full.width * s), resizeHeight: Math.round(full.height * s), resizeQuality: 'high' })
@@ -389,17 +390,22 @@ class Session {
 
   /** Tam çözünürlükte dışa aktarma. */
   async exportBlob(doc: EditDoc, s: Pick<Settings, 'exportFormat' | 'exportQuality' | 'exportMaxSide'> & { exportMeta?: Settings['exportMeta'] }, opts: { maxSide?: number } = {}): Promise<{ blob: Blob; w: number; h: number }> {
-    const r = await this.exportRaw(doc, s, opts)
-    // meta veri: kaynak EXIF (konumsuz) ve üretken YZ işareti
+    // geniş renk aralığı (iPhone Display P3 gibi): kaynakta piksel değiştiren adım yoksa ve JPEG çıkıyorsa profil
+    // korunur; değerler dönüştürülmeden işlenir. Piksel adımı varsa taban zaten sRGB PNG'dir.
+    const sourceAll = this.project ? new Uint8Array(await (await platform.getFile(this.project.id, this.project.sourceFile)).arrayBuffer()).subarray(0, 512 * 1024) : null
+    const transparent = doc.background.fill?.type === 'transparent' || (doc.background.useCutout && !doc.background.fill)
+    const icc = !doc.base && s.exportFormat === 'jpeg' && !transparent ? wideIcc(sourceAll) : null
+    const r = await this.exportRaw(doc, s, opts, !!icc)
+    // meta veri: kaynak EXIF (konumsuz), üretken YZ işareti, renk profili
     const bytes = new Uint8Array(await r.blob.arrayBuffer())
-    const source = this.project && s.exportMeta !== 'strip' ? new Uint8Array(await (await platform.getFile(this.project.id, this.project.sourceFile)).arrayBuffer()).subarray(0, 256 * 1024) : null
-    const out = withMetadata(bytes, { source, keepExif: s.exportMeta !== 'strip', ai: usedGenerativeAI(doc), version: __APP_VERSION__ })
+    const source = s.exportMeta !== 'strip' ? sourceAll : null
+    const out = withMetadata(bytes, { source, keepExif: s.exportMeta !== 'strip', ai: usedGenerativeAI(doc), version: __APP_VERSION__, icc })
     return { blob: new Blob([out as BlobPart], { type: r.blob.type }), w: r.w, h: r.h }
   }
 
-  private async exportRaw(doc: EditDoc, s: Pick<Settings, 'exportFormat' | 'exportQuality' | 'exportMaxSide'>, opts: { maxSide?: number } = {}): Promise<{ blob: Blob; w: number; h: number }> {
+  private async exportRaw(doc: EditDoc, s: Pick<Settings, 'exportFormat' | 'exportQuality' | 'exportMaxSide'>, opts: { maxSide?: number } = {}, rawColor = false): Promise<{ blob: Blob; w: number; h: number }> {
     if (!this.baseBlob) throw new Error('görüntü yok')
-    const full = await decode(this.baseBlob)
+    const full = await decode(this.baseBlob, undefined, rawColor)
     const off = document.createElement('canvas')
     const r = new Renderer(off)
     try {

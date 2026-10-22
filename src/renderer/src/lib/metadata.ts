@@ -66,12 +66,56 @@ function app1(payload: Uint8Array) {
   return seg
 }
 
-function jpegWith(out: Uint8Array, exif: string | null, xmp: string) {
+/**
+ * Kaynak JPEG'in ICC renk profili (APP2 "ICC_PROFILE" bölümleri, sırasıyla). sRGB ise null: o zaman profil
+ * yazmaya gerek yok. Geniş renk aralıklı (Display P3, Adobe RGB) profiller dışa aktarmaya aynen taşınır.
+ */
+export function wideIcc(source: Uint8Array | null | undefined): Uint8Array[] | null {
+  if (!source || source[0] !== 0xff || source[1] !== 0xd8) return null
+  const segs: Uint8Array[] = []
+  let i = 2
+  while (i + 4 < source.length && source[i] === 0xff) {
+    const m = source[i + 1]
+    if (m === 0xda || m === 0xd9) break
+    const len = (source[i + 2] << 8) | source[i + 3]
+    if (m === 0xe2 && String.fromCharCode(...source.subarray(i + 4, i + 15)) === 'ICC_PROFILE') segs.push(source.subarray(i, i + 2 + len))
+    i += 2 + len
+  }
+  if (!segs.length) return null
+  // profil açıklamasında (desc) sRGB geçiyorsa standart profil sayılır
+  const head = Array.from(segs[0].subarray(0, Math.min(segs[0].length, 4096)), (c) => (c ? String.fromCharCode(c) : '')).join('')
+  if (/sRGB/i.test(head) && !/P3|Adobe|ProPhoto|2020/i.test(head)) return null
+  return segs
+}
+
+/** SOI'siz JPEG gövdesinden APP2 ICC bölümlerini çıkar (parçalar halinde döner). */
+function withoutIcc(body: Uint8Array): Uint8Array[] {
+  const out: Uint8Array[] = []
+  let i = 0, start = 0
+  while (i + 4 < body.length && body[i] === 0xff) {
+    const m = body[i + 1]
+    if (m === 0xda) break
+    const len = (body[i + 2] << 8) | body[i + 3]
+    if (m === 0xe2 && String.fromCharCode(...body.subarray(i + 4, i + 15)) === 'ICC_PROFILE') {
+      out.push(body.subarray(start, i))
+      start = i + 2 + len
+    }
+    i += 2 + len
+  }
+  out.push(body.subarray(start))
+  return out
+}
+
+function jpegWith(out: Uint8Array, exif: string | null, xmp: string, icc: Uint8Array[] | null = null) {
   const parts: Uint8Array[] = [out.subarray(0, 2)]
   // piexif.dump "Exif\0\0" ile başlayan TIFF verisini verir
   if (exif) parts.push(app1(unbin(exif)))
   parts.push(app1(new Uint8Array([...new TextEncoder().encode('http://ns.adobe.com/xap/1.0/\0'), ...new TextEncoder().encode(xmp)])))
-  parts.push(out.subarray(2))
+  if (icc) {
+    parts.push(...icc)
+    // tarayıcının kodlayıcısı kendi sRGB profilini yazar; iki profil çakışmasın diye onu çıkar
+    parts.push(...withoutIcc(out.subarray(2)))
+  } else parts.push(out.subarray(2))
   const total = parts.reduce((a, p) => a + p.length, 0)
   const r = new Uint8Array(total)
   let o = 0
@@ -115,11 +159,11 @@ function pngWith(out: Uint8Array, xmp: string) {
 }
 
 /** Dışa aktarılan dosyaya meta veriyi ekle. */
-export function withMetadata(out: Uint8Array, opts: { source?: Uint8Array | null; keepExif: boolean; ai: boolean; version: string }): Uint8Array {
+export function withMetadata(out: Uint8Array, opts: { source?: Uint8Array | null; keepExif: boolean; ai: boolean; version: string; icc?: Uint8Array[] | null }): Uint8Array {
   const xmp = xmpPacket(opts.ai, opts.version)
   if (out[0] === 0xff && out[1] === 0xd8) {
     const exif = opts.keepExif && opts.source ? cleanExif(opts.source, opts.version) : null
-    return jpegWith(out, exif, xmp)
+    return jpegWith(out, exif, xmp, opts.icc ?? null)
   }
   if (out[0] === 0x89 && out[1] === 0x50) return pngWith(out, xmp)
   return out
