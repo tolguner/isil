@@ -42,13 +42,14 @@ export async function ensureEngine(parts: string[]): Promise<boolean> {
   const { confirmDialog } = await import('@/components/ui')
   const lang = st.settings.language
   const list = missing.map((p) => `${PARTS[p].name[lang === 'en' ? 1 : 0]} (${PARTS[p].size})`).join(', ')
+  const warn = gpuWarning(await platform.engineGpu().catch(() => null))
   const ok = await confirmDialog({
     title: tNow('Yerel YZ kurulsun mu?', 'Install local AI?'),
     text: tNow(
       `Bu araç için şunlar indirilecek: ${list}. Bir kez kurulur, sonra internetsiz ve ücretsiz çalışır.`,
       `This tool needs: ${list}. It installs once, then runs offline and free.`
-    ),
-    confirm: tNow('Kur', 'Install')
+    ) + (warn ? ' ' + warn : ''),
+    confirm: tNow(warn ? 'Yine de kur' : 'Kur', warn ? 'Install anyway' : 'Install')
   })
   if (!ok) return false
   for (const p of missing) {
@@ -115,6 +116,14 @@ function toGray(c: HTMLCanvasElement) {
 
 /** Siyah-beyaz girdi, komut açıkça renk istemedikçe siyah-beyaz kalır (FLUX renk ekliyordu). */
 const wantsColor = (p: string) => /colou?ri[sz]|renklendir|renkli|in color/i.test(p)
+
+/** Ekran kartı motor için uygun değilse kullanıcıya gösterilecek uyarı (uygunsa null). */
+export function gpuWarning(g: { nvidia: boolean; name: string; vramMB: number | null } | null): string | null {
+  if (!g) return null
+  if (!g.nvidia) return tNow(`Ekran kartın (${g.name || 'bilinmiyor'}) NVIDIA değil. Üretken motor NVIDIA kartlarda (CUDA) çalışır; bu bilgisayarda çok yavaş çalışabilir ya da hiç çalışmayabilir. Diğer araçlar etkilenmez.`, `Your graphics card (${g.name || 'unknown'}) is not NVIDIA. The generative engine runs on NVIDIA (CUDA) cards; on this computer it may be very slow or not work at all. Other tools are not affected.`)
+  if (g.vramMB !== null && g.vramMB < 5800) return tNow(`Ekran kartının belleği ${Math.round(g.vramMB / 1024)} GB. Üretken motor için en az 6 GB önerilir; daha azında çok yavaş çalışabilir ya da bellek yetmeyebilir.`, `Your graphics card has ${Math.round(g.vramMB / 1024)} GB of memory. At least 6 GB is recommended for the generative engine; with less it may be very slow or run out of memory.`)
+  return null
+}
 
 /** Çıplaklık, soyma ve cinsel içerik isteyen komutlar motora hiç gitmez. */
 function guardPrompt(prompt: string) {

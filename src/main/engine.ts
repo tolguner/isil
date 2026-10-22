@@ -321,6 +321,34 @@ export function registerEngineHandlers({ root, onnxDir }: { root: () => string; 
     return n
   }
 
+  // Ekran kartı denetimi (kurulumdan önce): motor CUDA ister. NVIDIA sürücüsü nvidia-smi ile kartı ve belleği verir;
+  // yoksa Chromium'un GPU bilgisinden üretici okunur.
+  let gpuCache: { nvidia: boolean; name: string; vramMB: number | null } | null = null
+  ipcMain.handle('engine:gpu', async () => {
+    if (gpuCache) return gpuCache
+    const smi = await new Promise<string>((res) => {
+      const p = spawn('nvidia-smi', ['--query-gpu=name,memory.total', '--format=csv,noheader,nounits'], { windowsHide: true })
+      let out = ''
+      p.stdout.on('data', (d) => (out += d))
+      p.on('error', () => res(''))
+      p.on('close', () => res(out))
+      setTimeout(() => { p.kill(); res(out) }, 5000)
+    })
+    const rows = smi.split(/\r?\n/).map((l) => l.split(',').map((x) => x.trim())).filter((r) => r.length >= 2 && r[0])
+    if (rows.length) {
+      const best = rows.sort((a, b) => Number(b[1]) - Number(a[1]))[0]
+      gpuCache = { nvidia: true, name: best[0], vramMB: Number(best[1]) || null }
+    } else {
+      const info = (await app.getGPUInfo('basic').catch(() => null)) as { gpuDevice?: { vendorId: number; deviceString?: string; active?: boolean }[] } | null
+      const devs = info?.gpuDevice ?? []
+      const nv = devs.find((d) => d.vendorId === 0x10de)
+      const any = nv ?? devs.find((d) => d.active) ?? devs[0]
+      const vendor = any ? ({ 0x10de: 'NVIDIA', 0x1002: 'AMD', 0x8086: 'Intel' } as Record<number, string>)[any.vendorId] ?? 'bilinmeyen' : 'bilinmeyen'
+      gpuCache = { nvidia: !!nv, name: any?.deviceString || vendor, vramMB: null }
+    }
+    return gpuCache
+  })
+
   ipcMain.handle('engine:location', async () => {
     const dir = engineDir()
     const size = existsSync(dir) ? await dirSize(dir) : 0

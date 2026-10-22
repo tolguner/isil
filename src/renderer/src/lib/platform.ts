@@ -41,6 +41,7 @@ export interface Platform {
   engineStatus(): Promise<EngineStatus>
   engineInstall(part: string): Promise<void>
   engineLocation(): Promise<{ dir: string; size: number; custom: boolean; movable: boolean }>
+  engineGpu(): Promise<{ nvidia: boolean; name: string; vramMB: number | null }>
   engineMove(parent: string): Promise<{ dir: string }>
   engineRemove(): Promise<void>
   genEdit(a: GenEditArgs): Promise<Uint8Array>
@@ -53,6 +54,10 @@ export interface Platform {
   onBeforeClose(cb: () => Promise<{ unsaved: boolean; pending: boolean; en: boolean }>): () => void
   /** hata günlüğüne yaz / günlük dosyasını Gezgin'de göster */
   log(level: 'error' | 'warn', msg: string): void
+  /** "Işıl ile aç": açılışta ya da ikinci açılışta gelen dosya yolları */
+  pendingFiles(): Promise<string[]>
+  onOpenPaths(cb: (paths: string[]) => void): () => void
+  readPath(p: string): Promise<PickedFile>
   openLog(): Promise<void>
 }
 
@@ -102,6 +107,7 @@ function electronPlatform(): Platform {
     engineStatus: () => api.engineStatus(),
     engineInstall: (part) => api.engineInstall(part),
     engineLocation: () => api.engineLocation(),
+    engineGpu: () => api.engineGpu(),
     engineMove: (parent) => api.engineMove(parent),
     engineRemove: () => api.engineRemove(),
     genEdit: (a) => api.genEdit(a),
@@ -111,6 +117,9 @@ function electronPlatform(): Platform {
     onEngineProgress: (cb) => api.onEngineProgress(cb),
     onBeforeClose: (cb) => api.onBeforeClose(cb),
     log: (level, msg) => api.log(level, msg),
+    pendingFiles: () => api.pendingFiles(),
+    onOpenPaths: (cb) => api.onOpenPaths(cb),
+    readPath: async (p) => { const { normalizePicked } = await import('./heic'); return normalizePicked(await api.readPath(p)) },
     openLog: () => api.openLog()
   }
 }
@@ -270,6 +279,7 @@ function webPlatform(): Platform {
       throw new Error('Tarayıcı modunda yerel motor yok')
     },
     engineLocation: async () => ({ dir: '', size: 0, custom: false, movable: false }),
+    engineGpu: async () => ({ nvidia: false, name: '', vramMB: null }),
     engineMove: async () => ({ dir: '' }),
     engineRemove: async () => {},
     genEdit: async () => {
@@ -283,6 +293,9 @@ function webPlatform(): Platform {
     onEngineProgress: () => () => {},
     onBeforeClose: () => () => {},
     log: () => {},
+    pendingFiles: async () => [],
+    onOpenPaths: () => () => {},
+    readPath: async () => { throw new Error('Tarayıcı modunda dosya yolu açılamaz') },
     openLog: async () => {}
   }
   return p

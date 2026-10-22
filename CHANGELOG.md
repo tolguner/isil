@@ -2,6 +2,17 @@
 
 Her yayımlanan yapıda sürümün yalnız son hanesi artırılır (0.8.0 → 0.8.1); ara sürüm (0.9) büyük aşamalarda, 1.0.0 ise yayına hazır tam üründe. Uygulama Ayarlar → Hakkında'da sürümü gösterir.
 
+## 0.9.1 — 2026-10-22
+
+1.0'a kadar "olmalı" listesinden ilk bölüm:
+
+- **YZ ile düzenlendi işareti:** üretken yapay zekâ (FLUX) kullanılan fotoğraflara dışa aktarmada makinece okunabilir IPTC "DigitalSourceType" kaydı yazılıyor (AB Yapay Zekâ Yasası madde 50). Her dosyada oluşturan araç olarak Işıl yazıyor.
+- **Çekim bilgileri korunuyor:** dışa aktarmada çekim tarihi, kamera ve objektif bilgisi kalıyor; konum (GPS), üreticiye özel notlar ve eski küçük resim her zaman siliniyor. Ayarlar → Dışa aktarma → "Çekim bilgilerini koru" ile kapatılabilir.
+- **"Işıl ile aç":** JPEG, PNG, WebP ve HEIC dosyalarında Gezgin'in "Birlikte aç" menüsünde Işıl çıkıyor. Uygulama tek pencerede çalışıyor; ikinci açılış dosyayı açık pencereye gönderiyor.
+- **Ekran kartı uyarısı:** üretken motor kurulmadan önce kart denetleniyor. NVIDIA değilse ya da bellek 6 GB'tan azsa açık bir uyarı çıkıyor; Ayarlar'da da görünüyor.
+- **Güvenlik:** Electron 44.9.3'e güncellendi. Dışa aktarma kanalı yalnız bilinen biçimleri ve kullanıcının seçtiği klasörleri kabul ediyor, dosya adındaki yollar temizleniyor. Pencere uygulama dışına yönlendirilemiyor.
+- **Testler:** 31 birim testi (komut engeli, yaş kapısı yanıtı, meta veri) CI'da çalışıyor. Yeni uçtan uca testler: meta veri, "ile aç" ve ağ denetimi; tipik bir düzenleme oturumunda dışarıya hiç istek gitmediği doğrulandı.
+
 ## 0.9.0 — 2026-10-22
 
 Özellikler donduruldu; 1.0'a kadar sertleştirme ve cila. 1.0 öncesi şart işlerin (P0) hepsi 0.8.14–0.8.16 sürümlerinde tamamlandı:

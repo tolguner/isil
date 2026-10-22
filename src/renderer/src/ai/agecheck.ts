@@ -6,6 +6,8 @@ import { session } from '@/engine/session'
 import { tNow } from '@/lib/i18n'
 import { engineStatus, ensureEngine, localChat } from './generative'
 import { BlockedError } from './safety'
+import { parseVerdict } from './rules'
+export { parseVerdict }
 
 type Src = CanvasImageSource & { width: number; height: number }
 export type AgeVerdict = 'minor' | 'adult' | 'unknown'
@@ -15,13 +17,6 @@ const pending = new Map<string, Promise<AgeVerdict>>()
 
 const SYSTEM = 'You are a careful safety checker for a photo editor. You only answer with one word.'
 const QUESTION = 'Look at every person in this photo. Does any of them appear to be younger than 18 (a child or a teenager)? Answer with exactly one word: YES, NO or UNSURE.'
-
-/** Yanıtı karara çevir: yalnız açık bir "NO" yetişkin sayılır. */
-export function parseVerdict(answer: string | null): Exclude<AgeVerdict, 'unknown'> {
-  const a = (answer ?? '').trim().toUpperCase()
-  if (/^(NO|HAYIR)\b/.test(a)) return 'adult'
-  return 'minor'
-}
 
 /**
  * Fotoğraftaki kişiler için yaş kararı (oturumdaki görsel başına bir kez sorulur).

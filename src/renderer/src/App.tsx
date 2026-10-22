@@ -11,7 +11,7 @@ import { Collage } from './screens/Collage'
 import { Batch } from './screens/Batch'
 import { Camera } from './screens/Camera'
 import { Busy, ConfirmHost, Toasts, confirmDialog } from './components/ui'
-import { beforeClose, saveNow } from './lib/projects'
+import { beforeClose, saveNow, startEditing } from './lib/projects'
 import { ErrorBoundary } from './components/ErrorBoundary'
 import { Shortcuts, Welcome } from './components/Welcome'
 
@@ -25,6 +25,23 @@ export function App() {
     platform.getSettings().then((s) => useEditor.getState().setSettings(s))
   }, [])
   useEffect(() => platform.onBeforeClose(beforeClose), [])
+
+  // "Işıl ile aç" (Gezgin'de sağ tık ya da çift tık): gelen fotoğraf yeni proje olarak açılır
+  useEffect(() => {
+    const open = async (paths: string[]) => {
+      if (!paths[0]) return
+      try {
+        const st = useEditor.getState()
+        if (st.tool) st.closeTool(true)
+        await saveNow()
+        await startEditing(await platform.readPath(paths[0]))
+      } catch (e) {
+        useEditor.getState().toast('error', tr('Dosya açılamadı: ', 'Could not open the file: ') + (e as Error).message)
+      }
+    }
+    void platform.pendingFiles().then(open)
+    return platform.onOpenPaths(open)
+  }, [])
 
   useEffect(() => {
     document.documentElement.lang = useEditor.getState().settings.language

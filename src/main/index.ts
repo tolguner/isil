@@ -27,12 +27,27 @@ protocol.registerSchemesAsPrivileged([
 if (process.env.ISIL_USERDATA) app.setPath('userData', process.env.ISIL_USERDATA)
 const TEST_MODE = process.env.ISIL_TEST === '1'
 
+const IMAGE_EXT = ['jpg', 'jpeg', 'png', 'webp', 'heic', 'heif', 'bmp', 'gif', 'avif']
+
+// Tek pencere: "Işıl ile aç" ya da ikinci açılış yeni pencere başlatmaz, dosya açık pencereye gider
+const imageArgs = (argv: string[]) => argv.slice(1).filter((a) => !a.startsWith('-') && IMAGE_EXT.includes(extname(a).slice(1).toLowerCase()) && existsSync(a))
+let pendingOpen: string[] = []
+if (!TEST_MODE && !app.requestSingleInstanceLock()) app.quit()
+else pendingOpen = imageArgs(process.argv)
+app.on('second-instance', (_e, argv) => {
+  const win = BrowserWindow.getAllWindows()[0]
+  if (!win) return
+  if (win.isMinimized()) win.restore()
+  win.focus()
+  const files = imageArgs(argv)
+  if (files.length) win.webContents.send('app:open-paths', files)
+})
+
 const root = () => app.getPath('userData')
 const projectsDir = () => join(root(), 'projects')
 const modelsDir = () => join(root(), 'models')
 const settingsFile = () => join(root(), 'settings.json')
 
-const IMAGE_EXT = ['jpg', 'jpeg', 'png', 'webp', 'heic', 'heif', 'bmp', 'gif', 'avif']
 
 function safeJoin(base: string, ...parts: string[]): string {
   const p = normalize(join(base, ...parts))
@@ -124,6 +139,12 @@ async function createWindow() {
       /* yoksay */
     }
   })
+  // pencere uygulama dışına gidemez (bağlantı tıklaması ya da sürükle-bırak); dış bağlantılar tarayıcıda açılır
+  win.webContents.on('will-navigate', (e, url) => {
+    if (url.startsWith('isil://') || (process.env['ELECTRON_RENDERER_URL'] && url.startsWith(process.env['ELECTRON_RENDERER_URL']))) return
+    e.preventDefault()
+    if (url.startsWith('https://')) void shell.openExternal(url)
+  })
   win.webContents.setWindowOpenHandler(({ url }) => {
     if (url.startsWith('https://')) shell.openExternal(url)
     return { action: 'deny' }
@@ -171,6 +192,9 @@ app.on('window-all-closed', () => {
 async function loadSettings(): Promise<Settings> {
   return { ...DEFAULT_SETTINGS, ...(await readJSON<Partial<Settings>>(settingsFile(), {})) }
 }
+
+const EXPORT_EXT = ['jpg', 'png', 'webp', 'gif', 'mp4', 'webm']
+const pickedDirs = new Set<string>()
 
 function registerIpc() {
   const stateFile = () => join(root(), 'state.json')
@@ -265,6 +289,11 @@ function registerIpc() {
   })
 
   ipcMain.handle('export:save', async (e, a: { bytes: Uint8Array; ext: string; suggestedName: string; dir?: string }) => {
+    // arayüzden gelen ad, uzantı ve klasör denetlenir: yalnız bilinen biçimler, ad içinde yol yok, klasör yalnız
+    // kullanıcının seçtiği klasörlerden biri
+    if (!EXPORT_EXT.includes(a.ext)) throw new Error('desteklenmeyen biçim')
+    a.suggestedName = (a.suggestedName || 'isil').replace(/[\\/:*?"<>|\u0000-\u001f]/g, '_').replace(/^\.+/, '').slice(0, 120) || 'isil'
+    if (a.dir && !TEST_MODE && !pickedDirs.has(normalize(a.dir))) throw new Error('klasör seçilmedi')
     let target: string
     if (a.dir) {
       // klasöre doğrudan yazarken var olan dosyanın üstüne yazma: "ad (2).jpg", "ad (3).jpg"…
@@ -286,11 +315,14 @@ function registerIpc() {
   ipcMain.handle('export:pickDir', async (e) => {
     const win = BrowserWindow.fromWebContents(e.sender)!
     const r = await dialog.showOpenDialog(win, { properties: ['openDirectory', 'createDirectory'] })
-    return r.canceled ? null : r.filePaths[0]
+    if (r.canceled || !r.filePaths[0]) return null
+    pickedDirs.add(normalize(r.filePaths[0]))
+    return r.filePaths[0]
   })
 
   ipcMain.handle('shell:reveal', (_e, p: string) => shell.showItemInFolder(p))
   ipcMain.handle('app:testMode', () => TEST_MODE)
+  ipcMain.handle('app:pendingFiles', () => { const f = pendingOpen; pendingOpen = []; return f })
   // arayüz hataları günlüğe (oran sınırı: dakikada en çok 60 satır, döngüye giren hata dosyayı şişirmesin)
   let logWin = 0, logN = 0
   ipcMain.on('log:write', (_e, a: { level?: string; msg?: string }) => {

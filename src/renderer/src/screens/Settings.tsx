@@ -7,7 +7,7 @@ import { useT } from '@/lib/i18n'
 import { Segmented, Switch, confirmDialog } from '@/components/ui'
 import { MANUAL_URL, openShortcuts, openWelcome } from '@/components/Welcome'
 import { visibleModels, ensureModel, modelReady } from '@/ai/models'
-import { PARTS, engineStatus } from '@/ai/generative'
+import { PARTS, engineStatus, gpuWarning } from '@/ai/generative'
 import type { EngineStatus } from '@/lib/platform'
 
 export function SettingsPage() {
@@ -19,6 +19,8 @@ export function SettingsPage() {
   const [installing, setInstalling] = useState<string | null>(null)
   const [prog, setProg] = useState<number | null>(null)
   const [ready, setReady] = useState<Record<string, boolean>>({})
+  const [gpuWarn, setGpuWarn] = useState<string | null>(null)
+  useEffect(() => { void platform.engineGpu().then((g) => setGpuWarn(gpuWarning(g))).catch(() => {}) }, [])
 
   const refresh = async () => {
     setEng(await engineStatus())
@@ -124,6 +126,7 @@ export function SettingsPage() {
             )}
           </p>
           {eng && !eng.available && <div className="card"><b><Cpu size={14} /> {tr('Kullanılamıyor', 'Unavailable')}</b><p className="note">{eng.blocked ?? tr('Yerel motor yalnızca masaüstü uygulamasında çalışır.', 'The local engine only runs in the desktop app.')}</p></div>}
+          {eng?.available && gpuWarn && <div className="card"><b><Cpu size={14} /> {tr('Ekran kartı uyarısı', 'Graphics card warning')}</b><p className="note">{gpuWarn}</p></div>}
           {eng?.available && (
             <>
               <div className="setting">

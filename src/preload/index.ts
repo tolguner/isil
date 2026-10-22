@@ -34,6 +34,7 @@ const api = {
   engineStatus: () => invoke('engine:status'),
   engineInstall: (part: string) => invoke('engine:install', part),
   engineLocation: () => invoke('engine:location'),
+  engineGpu: () => invoke('engine:gpu'),
   engineMove: (parent: string) => invoke('engine:move', parent),
   engineRemove: () => invoke('engine:remove'),
   genEdit: (a: unknown) => invoke('engine:edit', a),
@@ -42,6 +43,12 @@ const api = {
   chat: (a: unknown) => invoke('engine:chat', a),
   log: (level: string, msg: string) => ipcRenderer.send('log:write', { level, msg }),
   openLog: () => invoke('log:open'),
+  pendingFiles: () => invoke('app:pendingFiles'),
+  onOpenPaths: (cb: (paths: string[]) => void) => {
+    const h = (_: unknown, p: string[]) => cb(p)
+    ipcRenderer.on('app:open-paths', h)
+    return () => ipcRenderer.removeListener('app:open-paths', h)
+  },
   onBeforeClose: (cb: () => Promise<unknown>) => {
     const h = async () => {
       let r: unknown = null
