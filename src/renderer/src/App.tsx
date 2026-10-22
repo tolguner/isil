@@ -101,7 +101,7 @@ export function App() {
 
 function UndoRedo() {
   const canUndo = useEditor((s) => s.past.length > 0 || !!s.tool)
-  const canRedo = useEditor((s) => s.future.length > 0 && !s.tool)
+  const canRedo = useEditor((s) => (s.tool ? s.toolFuture.length > 0 : s.future.length > 0))
   const tr = useT()
   return (
     <>

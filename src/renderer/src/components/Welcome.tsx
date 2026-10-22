@@ -73,7 +73,7 @@ export function Shortcuts() {
   if (!open) return null
   const rows: [string, string, string][] = [
     ['Ctrl+K', 'Araç ya da ayar bul', 'Find a tool or setting'],
-    ['Ctrl+Z', 'Geri al (araç açıkken aracı iptal eder)', 'Undo (cancels the open tool)'],
+    ['Ctrl+Z', 'Geri al (araç açıkken önce aracın adımları, sonra aracın kendisi)', 'Undo (inside a tool: its steps first, then the tool)'],
     ['Ctrl+Y · Ctrl+Shift+Z', 'Yinele', 'Redo'],
     ['Ctrl+S', 'Kaydet', 'Save'],
     ['Ctrl+E', 'Dışa aktar', 'Export'],

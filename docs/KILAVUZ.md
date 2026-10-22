@@ -11,7 +11,7 @@ Işıl, Windows için ücretsiz ve açık kaynak bir fotoğraf düzenleyicidir. 
 ## Ekran
 
 - **Sekmeler** araç gruplarıdır. Bir sekmeye girip bir aracı seçince sağda ayarları açılır.
-- **Uygula** aracın sonucunu kalıcı yapar, **İptal** (Esc) geri döner. Uygulanan her adım Ctrl+Z ile geri alınabilir.
+- **Uygula** aracın sonucunu kalıcı yapar, **İptal** (Esc) geri döner. Uygulanan her adım Ctrl+Z ile geri alınabilir; araç açıkken Ctrl+Z önce aracın içindeki adımları tek tek geri alır.
 - Önceki hali görmek için **\\** tuşunu basılı tut.
 - Herhangi bir aracı ya da ayarı adıyla bulmak için **Ctrl+K**. Tüm kısayollar için **?** tuşu.
 
