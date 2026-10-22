@@ -30,7 +30,7 @@ export function Batch() {
   const [running, setRunning] = useState(false)
   // toplu rötuş: yok, tek dokunuş ön ayarı ya da (projeden kaynakta) projedeki rötuş
   const [retouch, setRetouch] = useState<string>('none')
-  const [rAmount, setRAmount] = useState(70)
+  const [rAmount, setRAmount] = useState(60)
 
   const pick = async () => {
     const files = await platform.openFiles(true)

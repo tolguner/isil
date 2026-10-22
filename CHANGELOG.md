@@ -2,6 +2,10 @@
 
 Her yayımlanan yapıda sürümün yalnız son hanesi artırılır (0.8.0 → 0.8.1); ara sürüm (0.9) büyük aşamalarda, 1.0.0 ise yayına hazır tam üründe. Uygulama Ayarlar → Hakkında'da sürümü gösterir.
 
+## 0.9.3 — 2026-10-22
+
+- **Doğal varsayılanlar:** tek dokunuş güzellik artık %60 yoğunlukla başlıyor (önceden %80; cilt dokusu daha çok korunuyor). Vücut hazırlarında ilk sırada "Doğal" var. Toplu rötuş da %60'la başlıyor.
+
 ## 0.9.2 — 2026-10-22
 
 - **Araç içinde adım adım geri alma:** bir araç açıkken Ctrl+Z önce aracın içindeki adımları tek tek geri alıyor (bir kaydırıcıyı sürüklemek tek adım sayılıyor), adımlar bitince aracı iptal ediyor. Ctrl+Y araç içinde yineliyor.

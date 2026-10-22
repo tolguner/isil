@@ -6,9 +6,10 @@ import type { WarpOp } from './face'
 type V = { x: number; y: number }
 const mid = (a: V, b: V, t = 0.5): V => ({ x: a.x + (b.x - a.x) * t, y: a.y + (b.y - a.y) * t })
 
+// sıra önemli: arayüzde ilk gösterilen "Doğal" (doğal varsayılanlar, 22.10)
 export const BODY_PRESETS: Record<string, Record<string, number>> = {
-  classic: { waist: 30, legs: 25, head: -10 },
   natural: { waist: 15, legs: 12 },
+  classic: { waist: 30, legs: 25, head: -10 },
   slender: { slim: 35, waist: 25, legs: 20, arms: 25 },
   hourglass: { waist: 45, hips: 25, chest: 15 },
   athletic: { shoulders: 30, waist: 20, arms: -15 },

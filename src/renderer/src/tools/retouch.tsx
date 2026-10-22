@@ -365,7 +365,8 @@ function BeautyPanel() {
   const idx = useEditor((s) => s.selectedFace)
   const update = useEditor((s) => s.update)
   const [sel, setSel] = useState<string | null>(null)
-  const [amt, setAmt] = useState(80)
+  // doğal varsayılan (Tolga onayı 22.10): %80 cildi plastikleştiriyordu
+  const [amt, setAmt] = useState(60)
   const pv = useBeautyPreviews(idx)
   const apply = (id: string, a: number) => update((d) => applyBeauty(d, idx, id, a))
   return (
