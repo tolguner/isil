@@ -116,6 +116,8 @@ export interface Project extends ProjectMeta {
   sourceFile: string
   doc: EditDoc
   version: 1
+  /** geri alma geçmişi (en çok 30 adım geri, 30 ileri); proje yeniden açılınca geri yüklenir */
+  history?: { past: EditDoc[]; future: EditDoc[] }
 }
 
 /** Kullanıcının kaydettiği görünüm (Tarifler → Benim): ışık, renk, filtre ve efektler; rötuş ve katmanlar hariç. */

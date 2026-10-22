@@ -72,10 +72,11 @@ export async function saveNow() {
   // araç açıkken de canlı belge kaydedilir: pencere kapanır ya da uygulama çökerse kaydırıcı ayarları kaybolmaz
   // (araç iptal edilirse belge eski haline döner ve o da kaydedilir)
   const doc = st.doc
+  const history = { past: st.past.slice(-30), future: st.future.slice(0, 30) }
   saving = saving.then(async () => {
     try {
       const thumb = await session.thumbnail(doc).catch(() => null)
-      await platform.saveProject({ id: p.id, doc, thumb: thumb ?? undefined })
+      await platform.saveProject({ id: p.id, doc, thumb: thumb ?? undefined, history })
       if (useEditor.getState().project?.id === p.id) useEditor.setState({ savedDoc: doc })
     } catch (e) {
       console.error('kayıt hatası', e)

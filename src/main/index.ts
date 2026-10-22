@@ -253,11 +253,12 @@ function registerIpc() {
     return p
   })
 
-  ipcMain.handle('project:save', async (_e, a: { id: string; doc: Project['doc']; name?: string; thumb?: Uint8Array }) => {
+  ipcMain.handle('project:save', async (_e, a: { id: string; doc: Project['doc']; name?: string; thumb?: Uint8Array; history?: Project['history'] }) => {
     const file = safeJoin(projectsDir(), a.id, 'project.json')
     const p = await readJSON<Project | null>(file, null)
     if (!p) throw new Error('proje bulunamadı')
     p.doc = a.doc
+    if (a.history) p.history = a.history
     if (a.name) p.name = a.name
     p.updatedAt = new Date().toISOString()
     if (a.thumb) await fs.writeFile(safeJoin(projectsDir(), a.id, 'thumb.jpg'), a.thumb)

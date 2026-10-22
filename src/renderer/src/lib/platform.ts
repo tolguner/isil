@@ -20,7 +20,7 @@ export interface Platform {
   listProjects(): Promise<ProjectMeta[]>
   createProject(a: { name: string; bytes: Uint8Array; width: number; height: number; doc: EditDoc }): Promise<Project>
   loadProject(id: string): Promise<Project>
-  saveProject(a: { id: string; doc: EditDoc; name?: string; thumb?: Uint8Array }): Promise<string>
+  saveProject(a: { id: string; doc: EditDoc; name?: string; thumb?: Uint8Array; history?: { past: EditDoc[]; future: EditDoc[] } }): Promise<string>
   putAsset(a: { id: string; name: string; bytes: Uint8Array }): Promise<string>
   getFile(id: string, rel: string): Promise<Blob>
   deleteProjects(ids: string[]): Promise<void>

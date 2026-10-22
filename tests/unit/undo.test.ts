@@ -47,3 +47,30 @@ describe('araç içinde adım adım geri alma', () => {
     expect(S().doc.adjust.exposure).toBe(0)
   })
 })
+
+describe('geçmiş paneli', () => {
+  it('adımlar adlandırılır ve bir adıma gidilip geri gelinebilir', async () => {
+    const { describeStep } = await import('../../src/renderer/src/lib/history')
+    S().openProject(project)
+    S().commit((d) => { d.adjust.exposure = 10 })
+    S().commit((d) => { d.filter = { id: 'x', amount: 50 } })
+    S().commit((d) => { d.rasterOps.push({ id: 'r', type: 'gen', file: 'f', params: { tool: 'expand' }, at: '' }) })
+    const states = [...S().past, S().doc]
+    expect(describeStep(states[0], states[1])[0]).toBe('Ayarlar')
+    expect(describeStep(states[1], states[2])[0]).toBe('Filtre')
+    expect(describeStep(states[2], states[3])[0]).toBe('YZ genişlet')
+    S().jumpTo(1)
+    expect(S().doc.adjust.exposure).toBe(10)
+    expect(S().doc.filter).toBeNull()
+    expect(S().future.length).toBe(2)
+    S().redo(); S().redo()
+    expect(S().doc.rasterOps.length).toBe(1)
+  })
+  it('kayıtlı geçmiş proje açılınca geri yüklenir', () => {
+    const d1 = emptyDoc(); const d2 = emptyDoc(); d2.adjust.contrast = 30
+    S().openProject({ ...project, doc: d2, history: { past: [d1], future: [] } } as unknown as Project)
+    expect(S().past.length).toBe(1)
+    S().undo()
+    expect(S().doc.adjust.contrast).toBe(0)
+  })
+})
