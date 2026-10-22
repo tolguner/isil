@@ -2,6 +2,17 @@
 
 Her yayımlanan yapıda sürümün yalnız son hanesi artırılır (0.8.0 → 0.8.1); ara sürüm (0.9) büyük aşamalarda, 1.0.0 ise yayına hazır tam üründe. Uygulama Ayarlar → Hakkında'da sürümü gösterir.
 
+## 0.9.0 — 2026-10-22
+
+Özellikler donduruldu; 1.0'a kadar sertleştirme ve cila. 1.0 öncesi şart işlerin (P0) hepsi 0.8.14–0.8.16 sürümlerinde tamamlandı:
+
+- 20 farklı fotoğrafla kalite turu ve bulunan hataların düzeltilmesi (0.8.14)
+- Veri kaybına karşı kayıt, hata ekranı ve hata günlüğü, lisans temizliği, doğrulanan ve kaldığı yerden devam eden indirmeler, motor yönetimi, ilk açılış turu ve kullanım kılavuzu (0.8.15)
+- Üç katmanlı kötüye kullanım koruması: komut engeli, çıktıda çıplaklık denetimi, yaş kapısı (0.8.16)
+- Kod imzalama için SignPath Foundation'a başvuruldu; onay gelince yükleyiciler imzalanacak.
+
+Bu sürümde kod değişikliği yok.
+
 ## 0.8.16 — 2026-10-22
 
 Kötüye kullanım korumasının üç katmanı tamamlandı:
