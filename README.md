@@ -4,6 +4,10 @@ Fotoğraf düzenleme, yüz rötuşu, vücut şekillendirme ve filtreleme işleri
 
 Her şey ücretsiz ve yerel: yapay zekâ araçları bilgisayarında, internetsiz çalışır; hiçbir fotoğraf dışarı gönderilmez, API anahtarı gerekmez.
 
+## İndirme
+
+Windows yükleyicisi [GitHub Releases](https://github.com/tolguner/isil/releases) sayfasındadır. Yükleyiciler GitHub Actions ile bu depodan derlenir. Kod imzalama için SignPath Foundation'a başvuruldu: ücretsiz kod imzalama [SignPath.io](https://signpath.io), sertifika [SignPath Foundation](https://signpath.org) tarafından sağlanacak (onaylanana kadar yükleyiciler imzasızdır). Ayrıntılar: [kod imzalama politikası](docs/CODE_SIGNING.md).
+
 ## Özellikler
 
 - **Ayarla:** pozlama, kontrast, vurgular/gölgeler, sıcaklık, HSL, ton eğrileri, netlik, pus giderme, gren, vinyet, akıllı otomatik ayar
