@@ -48,6 +48,8 @@ export const MODELS: ModelDef[] = [
   { id: 'skyseg', name: ['Gökyüzü bölütleme (U²-Net)', 'Sky segmentation (U²-Net)'], task: ['Gökyüzü değiştirme', 'Sky replacement'], file: 'skyseg.onnx', url: `${HF}/JianyuanWang/skyseg/resolve/main/skyseg.onnx`, size: 175997079, license: 'MIT' },
   // üretken çıktı denetimi (kötüye kullanım koruması): yalnız YZ motoruyla birlikte, motor içinde çalışır
   { id: 'nsfw', name: ['Çıplaklık denetimi (ViT)', 'Nudity check (ViT)'], task: ['Üretken çıktı denetimi', 'Generative output check'], file: 'nsfw_vit_int8.onnx', url: `${HF}/AdamCodd/vit-base-nsfw-detector/resolve/main/onnx/model_quantized.onnx`, size: 88500985, license: 'Apache-2.0', native: true },
+  // kimlik ölçümü: üretken düzenleme sonrası yüz benzerliği (motor içinde)
+  { id: 'identity', name: ['Kimlik ölçümü (AuraFace)', 'Identity check (AuraFace)'], task: ['YZ düzenlemesinde yüz benzerliği', 'Face similarity after AI edits'], file: 'auraface_glintr100.onnx', url: `${HF}/fal/AuraFace-v1/resolve/main/glintr100.onnx`, size: 260694151, license: 'Apache-2.0', native: true },
   { id: 'anime', nc: true, name: ['AnimeGANv2 (yüz boyama)', 'AnimeGANv2 (face paint)'], task: ['Anime/çizim stili', 'Anime/paint style'], file: 'animegan_face_paint_v2.onnx', url: `${HF}/akhaliq/AnimeGANv2-ONNX/resolve/main/face_paint_512_v2_0.onnx`, size: 8594990, license: 'Kişisel kullanım / personal use' }
 ]
 

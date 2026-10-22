@@ -37,7 +37,7 @@ export async function ensureEngine(parts: string[]): Promise<boolean> {
   }
   const missing = parts.filter((p) => !s.installed[p])
   // üretken araçların güvenlik denetimi modeli (88 MB) motorla birlikte gelir; eksikse sessizce indirilir
-  const safety = async () => { if (parts.some((p) => p.startsWith('flux'))) await ensureModel('nsfw', false).catch(() => false) }
+  const safety = async () => { if (parts.some((p) => p.startsWith('flux'))) { await ensureModel('nsfw', false).catch(() => false); void ensureModel('identity', false).catch(() => false) } }
   if (!missing.length) { await safety(); return true }
   const { confirmDialog } = await import('@/components/ui')
   const lang = st.settings.language

@@ -1,3 +1,4 @@
+import { IDENTITY_WARN, identityScores, restoreFaces } from '@/ai/identity'
 import { useEffect, useState } from 'react'
 import { Wand2, Bot, Send, ImagePlus, X, Cpu } from 'lucide-react'
 import { useEditor } from '@/store/editor'
@@ -61,6 +62,7 @@ function AiEditorPanel() {
   const [refs, setRefs] = useState<{ url: string; bm: ImageBitmap }[]>([])
   const [history, setHistory] = useState<string[]>([])
   const [keep, setKeep] = useState(false)
+  const [ident, setIdent] = useState<{ min: number; before: HTMLCanvasElement; res: HTMLCanvasElement } | null>(null)
   const run = async (text: string, keepPeople = keep) => {
     if (!text.trim() || !work.full) return
     try {
@@ -70,6 +72,11 @@ function AiEditorPanel() {
       if (res) {
         setWorkResult(res)
         setHistory((h) => [text.trim(), ...h].slice(0, 6))
+        setIdent(null)
+        // kimlik ölçümü: yüz benzerliği düştüyse uyar ve yüzleri geri koymayı öner
+        const before = work.full
+        const faces = session.faces ?? []
+        if (before && faces.length) void identityScores(before, res, faces).then((sc) => sc && setIdent({ min: Math.min(...sc), before, res })).catch(() => {})
       }
     } catch (e) {
       useEditor.getState().toast('error', tr('Düzenleme başarısız: ', 'Edit failed: ') + (e as Error).message)
@@ -112,6 +119,13 @@ function AiEditorPanel() {
           <div className="group-label">{tr('Son komutlar', 'Recent')}</div>
           {history.map((h) => <button key={h} className="link" style={{ display: 'block', marginBottom: 6 }} onClick={() => setPrompt(h)}>{h}</button>)}
         </>
+      )}
+      {ident && ident.min < IDENTITY_WARN && w.changed && (
+        <div className="card" role="status">
+          <b>{tr(`Yüz değişmiş olabilir (benzerlik %${Math.round(ident.min * 100)})`, `The face may have changed (similarity ${Math.round(ident.min * 100)}%)`)}</b>
+          <p className="note">{tr('Yapay zekâ kişinin yüzünü değiştirmiş görünüyor. Düzenlemeyi koruyup orijinal yüzleri geri koyabilirsin.', 'The AI seems to have changed the person’s face. You can keep the edit and put the original faces back.')}</p>
+          <button className="btn sm" onClick={() => { setWorkResult(restoreFaces(ident.before, ident.res, session.faces ?? [])); setIdent(null) }}>{tr('Yüzleri geri koy', 'Restore faces')}</button>
+        </div>
       )}
       {w.changed && <p className="note">{tr('Sonucu beğenmezsen İptal ile geri dönebilir ya da yeni bir komutla üzerine devam edebilirsin.', 'Not happy? Cancel to go back, or keep refining with another prompt.')}</p>}
       <WorkFooter type="gen" params={{ prompt }} />

@@ -184,6 +184,16 @@
   "size": 294264232,
   "sha256": "164818b70d1745da4108a45c9263b05452236d14ac0ffab2202af0ac4a438195"
  },
+ "fal/AuraFace-v1/LICENSE.md": {
+  "rev": "af6d057c9b0ec4071d4c49c80e3539258798b609",
+  "size": 12624,
+  "sha256": "609e2cb599f84aaa41d8ef29d8fdb04d164fab22e8d9292ca34a599d0f56a338"
+ },
+ "fal/AuraFace-v1/glintr100.onnx": {
+  "rev": "af6d057c9b0ec4071d4c49c80e3539258798b609",
+  "size": 260694151,
+  "sha256": "a7933ea5330113b01c9b60351d8f4c33003f145d8470ac5f0e52ee2effe25c60"
+ },
  "imgly/isnet-general-onnx/config.json": {
   "rev": "440dea96dd4a3b06bbbf5abec3e26569dd7ec49f",
   "size": 27,
