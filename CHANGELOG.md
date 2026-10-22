@@ -2,6 +2,12 @@
 
 Her yayımlanan yapıda sürümün yalnız son hanesi artırılır (0.8.0 → 0.8.1); ara sürüm (0.9) büyük aşamalarda, 1.0.0 ise yayına hazır tam üründe. Uygulama Ayarlar → Hakkında'da sürümü gösterir.
 
+## 0.9.2 — 2026-10-22
+
+- **Araç içinde adım adım geri alma:** bir araç açıkken Ctrl+Z önce aracın içindeki adımları tek tek geri alıyor (bir kaydırıcıyı sürüklemek tek adım sayılıyor), adımlar bitince aracı iptal ediyor. Ctrl+Y araç içinde yineliyor.
+- **Kimlik ölçümü:** YZ Editör'de düzenlemeden sonra kişinin yüzü önceki haliyle karşılaştırılıyor (AuraFace, Apache-2.0, yerel). Benzerlik %40'ın altına düşerse uyarı çıkıyor ve "Yüzleri geri koy" ile düzenleme korunup orijinal yüzler geri konabiliyor. Model YZ motoruyla birlikte arka planda iniyor.
+- **Toplu rötuş:** Toplu düzenle ekranında artık rötuş da seçilebiliyor: tek dokunuş ön ayarlarından biri (yoğunluk ayarlı) ya da bir projedeki rötuş. Her fotoğraftaki her yüze aynı rötuş uygulanıyor; dışa aktarma meta verisi de yazılıyor.
+
 ## 0.9.1 — 2026-10-22
 
 1.0'a kadar "olmalı" listesinden ilk bölüm:

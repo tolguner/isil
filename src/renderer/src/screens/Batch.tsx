@@ -1,3 +1,7 @@
+import { BEAUTY } from '@/tools/retouch'
+import { batchRetouch } from '@/lib/batch'
+import { normalizePicked } from '@/lib/heic'
+import type { FaceEdit } from '@shared/schema'
 import { useState } from 'react'
 import { ImagePlus, Play, Check, X } from 'lucide-react'
 import { emptyDoc, type EditDoc, type ProjectMeta } from '@shared/schema'
@@ -24,6 +28,9 @@ export function Batch() {
   const [proj, setProj] = useState<string>('')
   const [fmt, setFmt] = useState<'jpeg' | 'png'>('jpeg')
   const [running, setRunning] = useState(false)
+  // toplu rötuş: yok, tek dokunuş ön ayarı ya da (projeden kaynakta) projedeki rötuş
+  const [retouch, setRetouch] = useState<string>('none')
+  const [rAmount, setRAmount] = useState(70)
 
   const pick = async () => {
     const files = await platform.openFiles(true)
@@ -52,18 +59,25 @@ export function Batch() {
     if (!dir) return
     setRunning(true)
     const doc = await buildDoc()
+    let faceTpl: FaceEdit | null = null
+    if (retouch === 'project' && proj) faceTpl = (await platform.loadProject(proj)).doc.retouch.faces[0] ?? null
+    const doRetouch = retouch !== 'none' && (retouch !== 'project' || !!faceTpl)
     const r = new Renderer(document.createElement('canvas'))
     let ok = 0
     try {
       for (let i = 0; i < items.length; i++) {
         setItems((xs) => xs.map((x, k) => (k === i ? { ...x, status: 'run' } : x)))
         try {
-          const bm = await createImageBitmap(new Blob([items[i].bytes as BlobPart]), { imageOrientation: 'from-image' })
-          r.setBase(bm)
-          bm.close()
-          const out = r.render(doc, {})
-          const c = imageDataToCanvas(r.read(out.target))
-          const b = await encodeCanvas(c, fmt === 'png' ? 'image/png' : 'image/jpeg', useEditor.getState().settings.exportQuality / 100)
+          let b: Blob
+          if (doRetouch) b = await batchRetouch((await normalizePicked(items[i])).bytes, items[i].name, doc, faceTpl ?? { preset: retouch, amount: rAmount }, fmt)
+          else {
+            const bm = await createImageBitmap(new Blob([items[i].bytes as BlobPart]), { imageOrientation: 'from-image' })
+            r.setBase(bm)
+            bm.close()
+            const out = r.render(doc, {})
+            const c = imageDataToCanvas(r.read(out.target))
+            b = await encodeCanvas(c, fmt === 'png' ? 'image/png' : 'image/jpeg', useEditor.getState().settings.exportQuality / 100)
+          }
           await platform.exportSave({ bytes: new Uint8Array(await b.arrayBuffer()), ext: fmt === 'png' ? 'png' : 'jpg', suggestedName: items[i].name.replace(/\.[^.]+$/, '') + '-isil', dir })
           ok++
           setItems((xs) => xs.map((x, k) => (k === i ? { ...x, status: 'done' } : x)))
@@ -126,7 +140,15 @@ export function Batch() {
             ) : <p className="note">{tr('Ayarları kopyalanacak bir proje yok.', 'No project to copy settings from.')}</p>
           )}
           {src !== 'project' && <Slider plain label={tr('Yoğunluk', 'Intensity')} value={amount} onChange={setAmount} />}
-          {src === 'project' && <p className="note">{tr('Projedeki ayar, HSL, eğri, filtre ve efektler kopyalanır; rötuş ve katmanlar fotoğrafa özel olduğu için kopyalanmaz.', 'Adjustments, HSL, curves, looks and effects are copied; retouch and layers are photo-specific and are not.')}</p>}
+          {src === 'project' && <p className="note">{tr('Projedeki ayar, HSL, eğri, filtre ve efektler kopyalanır. Rötuşu da kopyalamak için aşağıdan "Projedeki rötuş"u seç; katmanlar kopyalanmaz.', 'Adjustments, HSL, curves, looks and effects are copied. To copy the retouch too, pick "Retouch from project" below; layers are not copied.')}</p>}
+          <div className="group-label">{tr('Rötuş', 'Retouch')}</div>
+          <select className="select" value={retouch} onChange={(e) => setRetouch(e.target.value)} disabled={running}>
+            <option value="none">{tr('Rötuş yok', 'No retouch')}</option>
+            {BEAUTY.map((b) => <option key={b.id} value={b.id}>{tr('Tek dokunuş: ', 'One-tap: ') + tr(b.label[0], b.label[1])}</option>)}
+            {src === 'project' && <option value="project">{tr('Projedeki rötuş', 'Retouch from project')}</option>}
+          </select>
+          {retouch !== 'none' && retouch !== 'project' && <Slider plain label={tr('Rötuş yoğunluğu', 'Retouch intensity')} value={rAmount} onChange={setRAmount} />}
+          {retouch !== 'none' && <p className="note">{tr('Her fotoğraftaki her yüze aynı rötuş uygulanır. Yüz bulma ve maskeler fotoğraf başına yapıldığı için rötuşlu toplu işlem daha yavaştır.', 'The same retouch is applied to every face in every photo. Face detection and masks run per photo, so batch retouching is slower.')}</p>}
           <div className="group-label">{tr('Biçim', 'Format')}</div>
           <Segmented items={[{ id: 'jpeg', label: 'JPG' }, { id: 'png', label: 'PNG' }]} value={fmt} onChange={setFmt} />
         </div>

@@ -270,7 +270,7 @@ function SkinOverlay({ view }: { view: View }) {
 }
 
 // ---------------- Tek dokunuş güzellik ----------------
-const BEAUTY: { id: string; label: [string, string]; skin: Record<string, number>; shape: Record<string, number>; makeup?: Record<string, { amount: number; color: string }> }[] = [
+export const BEAUTY: { id: string; label: [string, string]; skin: Record<string, number>; shape: Record<string, number>; makeup?: Record<string, { amount: number; color: string }> }[] = [
   { id: 'natural', label: ['Doğal', 'Natural'], skin: { smooth: 30, blemish: 50, undereye: 30, eyes: 15 }, shape: {} },
   { id: 'fresh', label: ['Taze', 'Fresh'], skin: { smooth: 40, blemish: 60, undereye: 45, eyes: 30, whiten: 15, teeth: 25 }, shape: { eyeSize: 10, slim: 10 } },
   { id: 'studio', label: ['Stüdyo', 'Studio'], skin: { smooth: 55, blemish: 70, pores: 40, undereye: 50, contour: 30, highlight: 25 }, shape: { slim: 15, noseWidth: -10 } },
@@ -282,7 +282,7 @@ const BEAUTY: { id: string; label: [string, string]; skin: Record<string, number
 ]
 
 /** Tek dokunuş ön ayarını belgedeki bir yüze uygular (hem panel hem önizleme kullanır). */
-function applyBeauty(d: EditDoc, idx: number, id: string, a: number) {
+export function applyBeauty(d: EditDoc, idx: number, id: string, a: number) {
   const p = BEAUTY.find((b) => b.id === id)!
   editFace(d, idx, (f) => {
     f.skin = Object.fromEntries(Object.entries(p.skin).map(([k, v]) => [k, Math.round((v * a) / 100)]))

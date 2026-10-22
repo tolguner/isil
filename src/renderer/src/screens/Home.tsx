@@ -31,7 +31,8 @@ export function Home() {
   const [selecting, setSelecting] = useState(false)
   const [sel, setSel] = useState<Set<string>>(new Set())
 
-  const refresh = () => platform.listProjects().then(setProjects).catch(() => setProjects([]))
+  // toplu düzenlemenin geçici projeleri listede görünmez
+  const refresh = () => platform.listProjects().then((p) => setProjects(p.filter((x) => !x.name.startsWith('~toplu-')))).catch(() => setProjects([]))
   useEffect(() => {
     refresh()
   }, [])
