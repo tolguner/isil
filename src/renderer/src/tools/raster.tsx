@@ -1,3 +1,4 @@
+import { resetGenerated } from '@/lib/aiflag'
 // Raster araçları için ortak çalışma görüntüsü: tam çözünürlük + önizleme, art arda işlemler, uygula/iptal.
 import { useEffect, useRef, useState } from 'react'
 import { useEditor } from '@/store/editor'
@@ -68,6 +69,7 @@ export function useWorkLifecycle() {
   const tr = useT()
   useEffect(() => {
     const st = useEditor.getState()
+    resetGenerated() // önceki aracın kullanılmayan YZ sonucu bu aracın adımına yazılmasın
     st.setBusy({ text: tr('Hazırlanıyor…', 'Preparing…') })
     initWork().finally(() => useEditor.getState().setBusy(null))
     return () => disposeWork()

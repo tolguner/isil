@@ -1,3 +1,4 @@
+import { markGenerated } from '@/lib/aiflag'
 import { ensureModel } from './models'
 import { BlockedError, NSFW_LIMIT, blockedPrompt, nsfwScore } from './safety'
 // Yerel üretken YZ: FLUX.2 klein (görsel düzenleme) ve Qwen3-VL (stil danışmanı).
@@ -128,9 +129,9 @@ async function guardOutput(src: Src, res: HTMLCanvasElement | null) {
   if (!res) return res
   const after = await nsfwScore(res)
   if (after === null) throw new BlockedError(tNow('Güvenlik denetimi modeli indirilemedi; üretken sonuç gösterilmiyor. İnternet bağlantını kontrol edip yeniden dene.', 'The safety check model could not be downloaded, so the generated result is not shown. Check your connection and try again.'))
-  if (after < NSFW_LIMIT) return res
+  if (after < NSFW_LIMIT) { markGenerated(); return res }
   const before = await nsfwScore(src as HTMLCanvasElement)
-  if (before !== null && before >= NSFW_LIMIT && after <= before + 0.1) return res
+  if (before !== null && before >= NSFW_LIMIT && after <= before + 0.1) { markGenerated(); return res }
   throw new BlockedError(tNow('Sonuç uygunsuz içerik denetimine takıldı ve gösterilmedi. Işıl çıplak ya da cinsel içerikli görüntü üretmez.', 'The result failed the content check and was not shown. Işıl does not create nude or sexual images.'))
 }
 

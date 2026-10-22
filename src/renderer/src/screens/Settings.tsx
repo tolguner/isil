@@ -63,6 +63,10 @@ export function SettingsPage() {
               />
             </div>
           </div>
+          <div className="setting">
+            <div><b>{tr('Çekim bilgilerini koru', 'Keep photo details')}</b><span>{tr('Çekim tarihi, kamera ve objektif bilgisi dışa aktarılan fotoğrafta kalır. Konum her zaman silinir. Üretken yapay zekâ kullanıldıysa dosyaya "YZ ile düzenlendi" kaydı yazılır.', 'Capture date, camera and lens stay in the exported photo. Location is always removed. If generative AI was used, an "edited with AI" record is written into the file.')}</span></div>
+            <Switch label="export-meta" on={s.exportMeta !== 'strip'} onChange={(v) => set({ exportMeta: v ? 'keep' : 'strip' })} />
+          </div>
         </section>
 
         <section>

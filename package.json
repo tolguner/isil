@@ -95,5 +95,8 @@
         ]
       }
     ]
+  },
+  "dependencies": {
+    "piexifjs": "^1.0.6"
   }
 }

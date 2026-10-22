@@ -391,7 +391,7 @@ export function EditorTopActions() {
       st.setBusy({ text: tr('Dışa aktarılıyor…', 'Exporting…') })
       await saveNow()
       const doc = useEditor.getState().doc
-      const { blob } = await session.exportBlob(doc, { exportFormat: fmt, exportQuality: quality, exportMaxSide: maxSide })
+      const { blob } = await session.exportBlob(doc, { exportFormat: fmt, exportQuality: quality, exportMaxSide: maxSide, exportMeta: useEditor.getState().settings.exportMeta })
       const ext = blob.type === 'image/png' ? 'png' : blob.type === 'image/webp' ? 'webp' : 'jpg'
       const name = (st.project?.name || 'isil') + '-isil'
       const path = await platform.exportSave({ bytes: new Uint8Array(await blob.arrayBuffer()), ext, suggestedName: name })

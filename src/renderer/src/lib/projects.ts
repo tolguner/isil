@@ -3,6 +3,7 @@ import { platform, type PickedFile } from './platform'
 import { useEditor } from '@/store/editor'
 import { session, encodeCanvas, imageDataToCanvas } from '@/engine/session'
 import { tNow } from './i18n'
+import { takeGenerated } from './aiflag'
 import { normalizePicked } from './heic'
 
 export async function imageSize(bytes: Uint8Array) {
@@ -94,9 +95,10 @@ export async function commitRaster(img: ImageData | HTMLCanvasElement | Blob, ty
   else blob = await encodeCanvas(img instanceof ImageData ? imageDataToCanvas(img) : img, 'image/png')
   const name = `${Date.now().toString(36)}-${(opCounter++).toString(36)}-${type}.png`
   const rel = await platform.putAsset({ id: p.id, name, bytes: new Uint8Array(await blob.arrayBuffer()) })
+  const ai = takeGenerated()
   st.commit((d) => {
     d.base = rel
-    d.rasterOps.push({ id: name, type, file: rel, params, at: new Date().toISOString() })
+    d.rasterOps.push({ id: name, type, file: rel, params: { ...params, ai }, at: new Date().toISOString() })
     mutate?.(d) // aynı geri alma adımında belgeyi de güncelle (ör. fotoğrafa işlenen vücut ayarlarını sıfırla)
   })
   useEditor.getState().bumpRevision()

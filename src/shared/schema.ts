@@ -135,6 +135,8 @@ export interface Settings {
   exportFormat: 'jpeg' | 'png' | 'webp'
   exportQuality: number   // 50..100
   exportMaxSide: number   // 0 = orijinal
+  /** dışa aktarmada kaynak EXIF'i (tarih, kamera) korunsun mu; konum her zaman silinir */
+  exportMeta?: 'keep' | 'strip'
   genQuality: 'fast' | 'best'   // FLUX.2 klein 4B / 9B
   autosave: boolean
   myLooks?: MyLook[]

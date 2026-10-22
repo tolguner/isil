@@ -1,3 +1,4 @@
+import { usedGenerativeAI, withMetadata } from '@/lib/metadata'
 import { tNow } from '@/lib/i18n'
 // Etkin projenin görüntü kaynakları, analiz önbelleği ve dışa aktarma.
 import type { EditDoc, Project, Settings } from '@shared/schema'
@@ -387,7 +388,16 @@ class Session {
   }
 
   /** Tam çözünürlükte dışa aktarma. */
-  async exportBlob(doc: EditDoc, s: Pick<Settings, 'exportFormat' | 'exportQuality' | 'exportMaxSide'>, opts: { maxSide?: number } = {}): Promise<{ blob: Blob; w: number; h: number }> {
+  async exportBlob(doc: EditDoc, s: Pick<Settings, 'exportFormat' | 'exportQuality' | 'exportMaxSide'> & { exportMeta?: Settings['exportMeta'] }, opts: { maxSide?: number } = {}): Promise<{ blob: Blob; w: number; h: number }> {
+    const r = await this.exportRaw(doc, s, opts)
+    // meta veri: kaynak EXIF (konumsuz) ve üretken YZ işareti
+    const bytes = new Uint8Array(await r.blob.arrayBuffer())
+    const source = this.project && s.exportMeta !== 'strip' ? new Uint8Array(await (await platform.getFile(this.project.id, this.project.sourceFile)).arrayBuffer()).subarray(0, 256 * 1024) : null
+    const out = withMetadata(bytes, { source, keepExif: s.exportMeta !== 'strip', ai: usedGenerativeAI(doc), version: __APP_VERSION__ })
+    return { blob: new Blob([out as BlobPart], { type: r.blob.type }), w: r.w, h: r.h }
+  }
+
+  private async exportRaw(doc: EditDoc, s: Pick<Settings, 'exportFormat' | 'exportQuality' | 'exportMaxSide'>, opts: { maxSide?: number } = {}): Promise<{ blob: Blob; w: number; h: number }> {
     if (!this.baseBlob) throw new Error('görüntü yok')
     const full = await decode(this.baseBlob)
     const off = document.createElement('canvas')

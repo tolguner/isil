@@ -44,7 +44,7 @@ Ana sayfada ayrıca **kolaj**, **toplu düzenleme** (birçok fotoğrafa aynı ı
 
 **Projelerim nerede?** `%APPDATA%\Işıl\projects` klasöründe. Orijinal fotoğrafın ve uyguladığın her adım orada durur.
 
-**Dışa aktardığım fotoğrafta konum bilgisi var mı?** Hayır. Dışa aktarmada konum dahil meta veriler silinir.
+**Dışa aktardığım fotoğrafta konum bilgisi var mı?** Hayır, konum her zaman silinir. Çekim tarihi ve kamera bilgisi korunur; istemezsen Ayarlar → Dışa aktarma → Çekim bilgilerini koru'yu kapat. Üretken yapay zekâ kullandıysan dosyaya "YZ ile düzenlendi" kaydı yazılır.
 
 **Uygulama yavaş.** Ekran kartı sürücünü güncelle. Dizüstünde Işıl'ın harici ekran kartıyla çalıştığından emin ol (Windows Ayarlar → Ekran → Grafik).
 
