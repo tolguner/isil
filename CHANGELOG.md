@@ -2,6 +2,16 @@
 
 Her yayımlanan yapıda sürümün yalnız son hanesi artırılır (0.8.0 → 0.8.1); ara sürüm (0.9) büyük aşamalarda, 1.0.0 ise yayına hazır tam üründe. Uygulama Ayarlar → Hakkında'da sürümü gösterir.
 
+## 0.9.4 — 2026-10-22
+
+- **Renk profili korunuyor:** iPhone'un Display P3 gibi geniş renk aralıklı JPEG'lerinde, piksel adımı yoksa dışa aktarma renkleri sRGB'ye sıkıştırmadan işliyor ve profili dosyaya geri yazıyor.
+- **Geçmiş paneli:** üst çubuktaki geçmiş düğmesi uygulanan adımları adlarıyla listeliyor; birine tıklayınca o hale dönülüyor, sonraki adımlar yinelenebilir kalıyor. Son 30 adım projeyle birlikte saklanıyor ve proje yeniden açılınca geri geliyor.
+- **Görünür damga:** dışa aktarmada isteğe bağlı "Rötuşlu fotoğraf" ibaresi (Türkçe, Fransızca ve Norveççe reklam kurallarına uygun metinler, İngilizce) ya da "YZ ile düzenlendi" ibaresi eklenebiliyor.
+- **Uygunsuz YZ sonucunu bildir:** üretken araçların sonucunun altında bir bildirme bağlantısı var; GitHub'da hazır bir form açıyor, fotoğraf gönderilmiyor.
+- **Kalabalık gruplar:** yüz bulma artık 48 yüze kadar çıkıyor (önceden 20).
+- **Microsoft Store hazırlığı:** MSIX paketi, İngilizce gizlilik politikası (docs/PRIVACY.md), Store listeleme metni.
+- Test setindeki grup fotoğrafı, üstünde başka bir programın işaretleri olmayan yetişkin grubuyla değiştirildi.
+
 ## 0.9.3 — 2026-10-22
 
 - **Doğal varsayılanlar:** tek dokunuş güzellik artık %60 yoğunlukla başlıyor (önceden %80; cilt dokusu daha çok korunuyor). Vücut hazırlarında ilk sırada "Doğal" var. Toplu rötuş da %60'la başlıyor.

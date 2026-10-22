@@ -1,0 +1,26 @@
+name: Uygunsuz YZ sonucu / Inappropriate AI result
+description: Üretken yapay zekânın uygunsuz bir sonuç ürettiğini bildir / Report an inappropriate generative AI result
+title: "Uygunsuz YZ sonucu"
+labels: ["ai-content"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Bildirimin için teşekkürler. Lütfen başkalarının mahremiyetini ihlal eden ya da yasa dışı görüntü **ekleme**; ne olduğunu yazıyla anlatman yeterli. Bildirimler incelenir ve koruma kuralları buna göre güncellenir.
+        Thanks for reporting. Please do **not** attach images that violate someone's privacy or are illegal; describing it in words is enough. Reports are reviewed and the safeguards are updated accordingly.
+  - type: input
+    id: tool
+    attributes:
+      label: Araç / Tool
+      placeholder: YZ Editör, YZ efekt, YZ ile değiştir…
+  - type: textarea
+    id: what
+    attributes:
+      label: Ne oldu? / What happened?
+      description: Kullandığın komut ve sonucun neden uygunsuz olduğu / The prompt you used and why the result was inappropriate
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: Işıl sürümü / version

@@ -1,3 +1,4 @@
+import { isGenerated } from '@/lib/aiflag'
 import { resetGenerated } from '@/lib/aiflag'
 // Raster araçları için ortak çalışma görüntüsü: tam çözünürlük + önizleme, art arda işlemler, uygula/iptal.
 import { useEffect, useRef, useState } from 'react'
@@ -95,6 +96,8 @@ export function WorkFooter({ type, params }: { type: RasterOpType; params?: Reco
   const tr = useT()
   const w = useWork()
   return (
+    <>
+    {w.changed && isGenerated() && <ReportAiContent tool={String(params?.tool ?? useEditor.getState().tool ?? '')} prompt={typeof params?.prompt === 'string' ? params.prompt : ''} />}
     <ToolFoot>
       <button className="btn ghost" style={{ flex: 1 }} onClick={() => useEditor.getState().closeTool(false)}>{tr('İptal', 'Cancel')}</button>
       <button className="btn primary" style={{ flex: 1 }} disabled={!w.changed} onClick={async () => {
@@ -111,6 +114,31 @@ export function WorkFooter({ type, params }: { type: RasterOpType; params?: Reco
         }
       }}>{tr('Uygula', 'Apply')}</button>
     </ToolFoot>
+    </>
+  )
+}
+
+/**
+ * Üretken YZ sonucunu bildirme (Microsoft Store politikası 11.16): GitHub'da hazır şablonlu bir konu açar.
+ * Fotoğraf gönderilmez; kullanıcı isterse kendisi ekler. Komut yalnız kullanıcının göreceği taslağa yazılır.
+ */
+function ReportAiContent({ tool, prompt }: { tool: string; prompt: string }) {
+  const tr = useT()
+  const open = () => {
+    const body = `**Araç / Tool:** ${tool || '-'}
+**Komut / Prompt:** ${prompt || '-'}
+**Sürüm / Version:** ${__APP_VERSION__}
+
+**Ne uygunsuzdu? / What was inappropriate?**
+
+`
+    const u = 'https://github.com/tolguner/isil/issues/new?' + new URLSearchParams({ template: 'ai-content.yml', labels: 'ai-content', title: tr('Uygunsuz YZ sonucu', 'Inappropriate AI result'), body }).toString()
+    window.open(u)
+  }
+  return (
+    <button className="link" style={{ display: 'block', margin: '8px 0', fontSize: 'var(--fs-xs)' }} onClick={open}>
+      {tr('Uygunsuz bir sonuç mu? Bildir', 'Inappropriate result? Report it')}
+    </button>
   )
 }
 

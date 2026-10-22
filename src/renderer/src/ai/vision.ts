@@ -129,7 +129,7 @@ export async function detectFaces(img: TexImageSource): Promise<Pt[][]> {
           faces.push(f)
           known.push(ptsBox(f, W, H))
         }
-        if (faces.length >= 20) break
+        if (faces.length >= 48) break // kalabalık grup fotoğrafları (konferans, sınıf) için üst sınır
       }
     } catch (e) {
       console.warn('YuNet çalışmadı; yalnız MediaPipe sonuçları', e)

@@ -5,3 +5,4 @@ let pending = false
 export const markGenerated = () => { pending = true }
 export const resetGenerated = () => { pending = false }
 export const takeGenerated = () => { const v = pending; pending = false; return v }
+export const isGenerated = () => pending

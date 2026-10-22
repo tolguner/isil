@@ -16,3 +16,4 @@ replica/ai-results/
 tests/fixtures/out/
 replica/audit/
 __pycache__/
+store-identity.json

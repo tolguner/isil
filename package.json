@@ -1,7 +1,7 @@
 {
   "name": "isil",
   "productName": "Işıl",
-  "version": "0.9.3",
+  "version": "0.9.4",
   "description": "Fotoğraf düzenleme, yüz rötuşu, vücut şekillendirme ve filtreleri tek araçta toplayan ücretsiz masaüstü uygulaması",
   "main": "./out/main/index.js",
   "author": "Tolga Olguner",
@@ -15,7 +15,8 @@
     "test": "vitest run",
     "dist": "electron-vite build && electron-builder --win",
     "postinstall": "node scripts/setup-assets.mjs",
-    "web": "vite --config vite.web.config.ts"
+    "web": "vite --config vite.web.config.ts",
+    "dist:store": "node scripts/dist-store.mjs"
   },
   "devDependencies": {
     "@fontsource/abril-fatface": "^5.3.0",
@@ -109,7 +110,19 @@
           "*.lock"
         ]
       }
-    ]
+    ],
+    "appx": {
+      "applicationId": "Isil",
+      "displayName": "Işıl",
+      "backgroundColor": "#0e0f12",
+      "languages": [
+        "tr-TR",
+        "en-US"
+      ],
+      "artifactName": "Isil-Store-${version}.${ext}",
+      "minVersion": "10.0.17763.0",
+      "maxVersionTested": "10.0.26100.0"
+    }
   },
   "dependencies": {
     "piexifjs": "^1.0.6"

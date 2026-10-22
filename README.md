@@ -71,6 +71,6 @@ Bazı modeller yalnızca **ticari olmayan / kişisel kullanım** içindir: FLUX.
 ## Belgeler
 
 - [Kullanım kılavuzu](docs/KILAVUZ.md)
-- [Gizlilik notu ve kabul edilebilir kullanım](docs/GIZLILIK.md)
+- [Gizlilik notu ve kabul edilebilir kullanım](docs/GIZLILIK.md) · [Privacy policy (English)](docs/PRIVACY.md)
 - [Kod imzalama politikası](docs/CODE_SIGNING.md)
 - [Sürüm geçmişi](CHANGELOG.md)
